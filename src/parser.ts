@@ -12,7 +12,7 @@ interface Param {
 }
 
 export class Parser {
-    private arguments: any;
+    private params: any;
     private trim: boolean;
     private errCb: Function;
 
@@ -25,6 +25,8 @@ export class Parser {
      * @memberOf Parser
      */
     constructor(trim: boolean | Function = false, errCb?: Function) {
+        this.params = {};
+
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
             this.errCb = errCb || function () { };
@@ -60,16 +62,15 @@ export class Parser {
      */
     addParam(param: Param) {
         let name = param.name;
-
-        if (typeof (param.name) !== 'string') {
+        if (typeof(name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string')
         }
 
-        if (this.arguments[param.name]) {
+        if (this.params[name]) {
             throw new TypeError(`The parameter name: ${name} already exists`)
         }
 
-        this.arguments[name] = param;
+        this.params[name] = param;
     }
 
     /**
@@ -81,14 +82,14 @@ export class Parser {
      * @api
      */
     removeParams(name: (string | string[])) {
-        if (typeof (name) !== 'string' || !isArray(name)) {
+        if (typeof (name) !== 'string' && !isArray(name)) {
             throw new TypeError('The parameter type of name must be a string or string array');
         }
         let names = [].concat(name);
 
         names.forEach(name => {
-            if (this.arguments[name]) {
-                delete this.arguments[name];
+            if (this.params[name]) {
+                delete this.params[name];
             }
         })
     }

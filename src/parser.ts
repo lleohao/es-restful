@@ -1,5 +1,7 @@
 import { isArray } from 'util';
-import { IncomingMessage, ServerResponse } from 'http'
+import { IncomingMessage, ServerResponse } from 'http';
+import { parse } from 'url';
+import * as qs from 'querystring';
 
 interface Param {
     name: string;
@@ -48,6 +50,12 @@ export class Parser {
     parse(req: IncomingMessage, res: ServerResponse) {
         let result = {};
 
+        if (req.method === 'post') {
+
+        } else {
+
+        }
+
 
         return result;
     }
@@ -62,7 +70,7 @@ export class Parser {
      */
     addParam(param: Param) {
         let name = param.name;
-        if (typeof(name) !== 'string') {
+        if (typeof (name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string')
         }
 

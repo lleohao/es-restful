@@ -29,7 +29,7 @@ export class Parser {
     private params: any;
     private trim: boolean;
     private errCb: Function;
-    public baseUrl: string;
+    public baseUrl: string = '';
 
     /**
      * Creates an instance of Parser.
@@ -44,7 +44,7 @@ export class Parser {
 
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
-            this.errCb = errCb || function () { };
+            this.errCb = errCb || function() { };
         } else {
             this.trim = false;
             this.errCb = <Function>trim;
@@ -95,7 +95,7 @@ export class Parser {
             result['result'] = qs.parse(queryStr);
         } else {
             contentType = req.headers['content-type'];
-        
+
         }
 
         return this._checkParams(result);

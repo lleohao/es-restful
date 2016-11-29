@@ -3,6 +3,7 @@ const util_1 = require('util');
 const qs = require('querystring');
 class Parser {
     constructor(trim = false, errCb) {
+        this.baseUrl = '';
         this.params = {};
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;

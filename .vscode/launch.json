@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\lib\\parser.js",
+            "program": "${workspaceRoot}\\lib\\index.js",
             "cwd": "${workspaceRoot}",
             "outFiles": [],
             "sourceMaps": true

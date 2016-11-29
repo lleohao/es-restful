@@ -4,14 +4,10 @@ var tsProject = ts.createProject('tsconfig.json');
 
 var paths = ['./src/*.ts']
 
-gulp.task('script', function () {
+gulp.task('build', function () {
     return gulp.src(paths)
         .pipe(tsProject())
         .pipe(gulp.dest('./lib'))
 })
 
-gulp.task('dev', function() {
-    gulp.watch(paths, ['script']);
-})
-
-gulp.task('default', ['dev'])
+gulp.task('default', ['build'])

@@ -4,19 +4,32 @@ import { parse } from 'url';
 import * as qs from 'querystring';
 
 export interface Param {
-    name: string;
-    defaultVal?: any;
-    dset?: string;
-    required?: boolean;
-    ignore?: boolean;
-    type?: string;
-    trim?: boolean;
+    name: string
+    defaultVal?: any
+    dset?: string
+    required?: boolean
+    ignore?: boolean
+    type?: string
+    trim?: boolean
+}
+
+interface Result {
+    method: string,
+    hasError: boolean,
+    error?: [ResultError],
+    result: any
+}
+
+interface ResultError {
+    type: number
+    message: string
 }
 
 export class Parser {
     private params: any;
     private trim: boolean;
     private errCb: Function;
+    public baseUrl: string;
 
     /**
      * Creates an instance of Parser.
@@ -49,10 +62,13 @@ export class Parser {
      * @api
      */
     parse(req: IncomingMessage, res: ServerResponse) {
-        let result = {};
-        let _result = this._parseReqest(req);
+        let result: Result = this._parseReqest(req);
 
-        return result;
+        if (!result.hasError) {
+            return { data: result['result'] };
+        } else {
+            this._handleError(result.error, res);
+        }
     }
 
     /**
@@ -65,32 +81,32 @@ export class Parser {
      * @memberOf Parser
      */
     private _parseReqest(req: IncomingMessage) {
-        let isPost = req.method.toLowerCase() === 'post';
+        let isGet = req.method.toLowerCase() === 'get';
         let contentType: string | null = null;
         let result: any = {
             method: req.method
         }
 
-        if (isPost) {
-            contentType = req.headers['content-type'];
-            if (contentType === 'application/json') {
+        let url = req.url.substr(this.baseUrl.length);
 
-            } else {
-
-            }
-
-        } else {
-            let url = req.url,
-                queryStr = url.substr(url.indexOf('?'));
+        if (isGet) {
+            let queryStr = url.substr(url.indexOf('?') + 1);
 
             result['result'] = qs.parse(queryStr);
+        } else {
+            contentType = req.headers['content-type'];
+        
         }
 
         return this._checkParams(result);
     }
 
     private _checkParams(result: {}) {
-        return result;
+        return <Result>result;
+    }
+
+    private _handleError(error: [ResultError], res: ServerResponse) {
+        console.log('has error');
     }
 
     /**
@@ -118,9 +134,6 @@ export class Parser {
      * delete params
      * 
      * @param {((string | string[]))} name params name
-     * 
-     * @memberOf Parser
-     * @api
      */
     removeParams(name: (string | string[])) {
         if (typeof (name) !== 'string' && !isArray(name)) {
@@ -133,5 +146,15 @@ export class Parser {
                 delete this.params[name];
             }
         })
+    }
+
+    /**
+     * 设置基本url
+     * 当从url中解析数据时会自动取消baseUrl中的内容
+     * 
+     * @param {string} baseUrl
+     */
+    setBaseUrl(baseUrl: string) {
+        this.baseUrl = baseUrl;
     }
 }

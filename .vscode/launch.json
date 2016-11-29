@@ -8,10 +8,10 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\dist\\index.js",
+            "program": "${workspaceRoot}\\lib\\index.ts",
             "cwd": "${workspaceRoot}",
-            "outFiles": [],
-            "sourceMaps": true
+            "sourceMaps": true,
+            "outDir": "${workspaceRoot}/dist"
         }
     ]
 }

@@ -14,31 +14,35 @@ class Parser {
         }
     }
     parse(req, res) {
-        let result = {};
-        let _result = this._parseReqest(req);
-        return result;
+        let result = this._parseReqest(req);
+        if (!result.hasError) {
+            return { data: result['result'] };
+        }
+        else {
+            this._handleError(result.error, res);
+        }
     }
     _parseReqest(req) {
-        let isPost = req.method.toLowerCase() === 'post';
+        let isGet = req.method.toLowerCase() === 'get';
         let contentType = null;
         let result = {
             method: req.method
         };
-        if (isPost) {
-            contentType = req.headers['content-type'];
-            if (contentType === 'application/json') {
-            }
-            else {
-            }
+        let url = req.url.substr(this.baseUrl.length);
+        if (isGet) {
+            let queryStr = url.substr(url.indexOf('?') + 1);
+            result['result'] = qs.parse(queryStr);
         }
         else {
-            let url = req.url, queryStr = url.substr(url.indexOf('?'));
-            result['result'] = qs.parse(queryStr);
+            contentType = req.headers['content-type'];
         }
         return this._checkParams(result);
     }
     _checkParams(result) {
         return result;
+    }
+    _handleError(error, res) {
+        console.log('has error');
     }
     addParam(param) {
         let name = param.name;
@@ -60,6 +64,9 @@ class Parser {
                 delete this.params[name];
             }
         });
+    }
+    setBaseUrl(baseUrl) {
+        this.baseUrl = baseUrl;
     }
 }
 exports.Parser = Parser;

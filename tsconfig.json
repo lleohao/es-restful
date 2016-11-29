@@ -8,6 +8,7 @@
         "removeComments": true,
         
         "sourceMap": true,
+        "sourceRoot": "./lib",
 
         "outDir": "./lib",
         "declaration": true,

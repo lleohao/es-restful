@@ -3,7 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { parse } from 'url';
 import * as qs from 'querystring';
 
-interface Param {
+export interface Param {
     name: string;
     defaultVal?: any;
     dset?: string;
@@ -41,22 +41,55 @@ export class Parser {
     /**
      * parse params
      * 
-     * @param {IncomingMessage} req  request
-     * @param {ServerResponse} res   response
+     * @param {IncomingMessage} req  http request
+     * @param {ServerResponse} res   http response
+     * @returns
+     * 
+     * @memberOf Parser
+     * @api
+     */
+    parse(req: IncomingMessage, res: ServerResponse) {
+        let result = {};
+        let _result = this._parseReqest(req);
+
+        return result;
+    }
+
+    /**
+     * parse request
+     * 
+     * @private
+     * @param {IncomingMessage} req   http request
      * @returns
      * 
      * @memberOf Parser
      */
-    parse(req: IncomingMessage, res: ServerResponse) {
-        let result = {};
-
-        if (req.method === 'post') {
-
-        } else {
-
+    private _parseReqest(req: IncomingMessage) {
+        let isPost = req.method.toLowerCase() === 'post';
+        let contentType: string | null = null;
+        let result: any = {
+            method: req.method
         }
 
+        if (isPost) {
+            contentType = req.headers['content-type'];
+            if (contentType === 'application/json') {
 
+            } else {
+
+            }
+
+        } else {
+            let url = req.url,
+                queryStr = url.substr(url.indexOf('?'));
+
+            result['result'] = qs.parse(queryStr);
+        }
+
+        return this._checkParams(result);
+    }
+
+    private _checkParams(result: {}) {
         return result;
     }
 

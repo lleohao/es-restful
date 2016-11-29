@@ -26,8 +26,6 @@
   "homepage": "https://github.com/lleohao/restful#readme",
   "devDependencies": {
     "@types/node": "^6.0.51",
-    "gulp": "^3.9.1",
-    "gulp-typescript": "^3.1.3",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "mochawesome": "^1.5.4",

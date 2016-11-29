@@ -8,9 +8,8 @@
         "removeComments": true,
         
         "sourceMap": true,
-        "sourceRoot": "./lib",
-
-        "outDir": "./lib",
+        "sourceRoot": "dist",
+        
         "declaration": true,
         "declarationDir": "./lib/@type"
     },

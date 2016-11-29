@@ -4,9 +4,7 @@ import { parse } from 'url';
 
 createServer((req, res) => {
     let parser = new Parser();
-    parser.setBaseUrl('/api');
     let result = parser.parse(req, res);
-    
 
     res.writeHead(200, { 'Content-type': 'application/json' });
     res.end(JSON.stringify(result));

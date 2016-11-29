@@ -36,8 +36,17 @@ class Parser {
         }
         else {
             contentType = req.headers['content-type'];
+            let count = 0;
+            let body = [];
+            req.on('data', (chunk) => {
+                body.push(chunk);
+            }).on('end', () => {
+                result['result'] = this._handleBodyData(contentType, body);
+            });
         }
         return this._checkParams(result);
+    }
+    _handleBodyData(type, body) {
     }
     _checkParams(result) {
         return result;

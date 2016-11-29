@@ -95,10 +95,21 @@ export class Parser {
             result['result'] = qs.parse(queryStr);
         } else {
             contentType = req.headers['content-type'];
+            let count = 0;
 
+            let body: any = [];
+            req.on('data', (chunk) => {
+                body.push(chunk);
+            }).on('end', () => {
+                result['result'] = this._handleBodyData(contentType, body);
+            })
         }
 
         return this._checkParams(result);
+    }
+
+    private _handleBodyData(type: string, body: any) {
+
     }
 
     private _checkParams(result: {}) {

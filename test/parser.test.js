@@ -1,6 +1,7 @@
 let should = require('should');
 let Parser = require('../dist/parser').Parser;
 let http = require('http');
+let qs = require('querystring');
 
 
 describe('Parser', function () {
@@ -118,7 +119,7 @@ describe('Parser', function () {
                     });
                     res.end(JSON.stringify(data));
                 });
-            }).listen(3000);
+            }).listen(5052);
         });
 
         after(function () {
@@ -128,7 +129,7 @@ describe('Parser', function () {
         describe('get请求处理', function () {
             it('should return {data: ""}', function (done) {
                 http.get({
-                    port: 3000,
+                    port: 5052,
                 }, function (res) {
                     let data = [];
                     res.on('data', function (chunk) {
@@ -136,6 +137,7 @@ describe('Parser', function () {
                     }).on('end', function () {
                         data = JSON.parse(data.toString());
                         data.should.have.property('data');
+                        console.log(data);
                         done();
                     });
 
@@ -147,7 +149,7 @@ describe('Parser', function () {
 
             it('should return {data: {name: "lleohao"}}', function (done) {
                 http.get({
-                    port: 3000,
+                    port: 5052,
                     path: '/?name=lleohao',
                 }, function (res) {
                     let data = [];
@@ -164,5 +166,32 @@ describe('Parser', function () {
                 });
             });
         });
+
+        // describe('post put delete 等带有请求数据的请求处理', function () {
+        //     it('should return {data: ""}', (done) => {
+        //         let postData = '';
+
+        //         let request = http.request({
+        //             port: 5052,
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/x-www-form-urlencoded',
+        //                 'Content-Length': Buffer.byteLength(postData)
+        //             }
+        //         }, function (res) {
+        //             let data = [];
+        //             res.on('data', function (chunk) {
+        //                 data.push(chunk);
+        //             }).on('end', function () {
+        //                 data = JSON.parse(data.toString());
+        //                 data.should.have.property('data');
+        //                 done();
+        //             });
+        //         });
+
+        //         request.write(postData);
+        //         request.end();
+        //     });
+        // });
     });
 });

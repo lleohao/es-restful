@@ -167,31 +167,82 @@ describe('Parser', function () {
             });
         });
 
-        // describe('post put delete 等带有请求数据的请求处理', function () {
-        //     it('should return {data: ""}', (done) => {
-        //         let postData = '';
+        describe('post put delete 等带有请求数据的请求处理', function () {
+            it('should return {data: ""}', (done) => {
+                let postData = '';
 
-        //         let request = http.request({
-        //             port: 5052,
-        //             method: 'POST',
-        //             headers: {
-        //                 'Content-Type': 'application/x-www-form-urlencoded',
-        //                 'Content-Length': Buffer.byteLength(postData)
-        //             }
-        //         }, function (res) {
-        //             let data = [];
-        //             res.on('data', function (chunk) {
-        //                 data.push(chunk);
-        //             }).on('end', function () {
-        //                 data = JSON.parse(data.toString());
-        //                 data.should.have.property('data');
-        //                 done();
-        //             });
-        //         });
+                let request = http.request({
+                    port: 5052,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, function (res) {
+                    let data = [];
+                    res.on('data', function (chunk) {
+                        data.push(chunk);
+                    }).on('end', function () {
+                        data = JSON.parse(data.toString());
+                        data.should.have.property('data');
+                        done();
+                    });
+                });
 
-        //         request.write(postData);
-        //         request.end();
-        //     });
-        // });
+                request.write(postData);
+                request.end();
+            });
+
+            it('should return error message', (done) => {
+                let postData = '';
+
+                let request = http.request({
+                    port: 5052,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, function (res) {
+                    let data = [];
+                    res.on('data', function (chunk) {
+                        data.push(chunk);
+                    }).on('end', function () {
+                        data = JSON.parse(data.toString()).data;
+                        data.should.have.property('error');
+                        done();
+                    });
+                });
+
+                request.write(postData);
+                request.end();
+            });
+
+            it('should return {data: {name: "lleohao"}}', (done) => {
+                let postData = JSON.stringify({name: 'lleohao'});
+
+                let request = http.request({
+                    port: 5052,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, function (res) {
+                    let data = [];
+                    res.on('data', function (chunk) {
+                        data.push(chunk);
+                    }).on('end', function () {
+                        data = JSON.parse(data.toString()).data;
+                        data.should.have.property('name');
+                        data['name'].should.be.equal('lleohao')
+                        done();
+                    });
+                });
+
+                request.write(postData);
+                request.end();
+            });
+        });
     });
 });

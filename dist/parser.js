@@ -1,8 +1,10 @@
 "use strict";
 const util_1 = require('util');
 const qs = require('querystring');
-class Parser {
+const events_1 = require('events');
+class Parser extends events_1.EventEmitter {
     constructor(trim = false, errCb) {
+        super();
         this.baseUrl = '';
         this.params = {};
         if (typeof (trim) !== 'function') {
@@ -15,13 +17,19 @@ class Parser {
         }
     }
     parse(req, res) {
-        let result = this._parseReqest(req);
-        if (!result.hasError) {
-            return { data: result['result'] };
+        let _emit = new events_1.EventEmitter();
+        if (!this.eventNames().length) {
+            this.on('parseEnd', (result) => {
+                if (!result.hasError) {
+                    _emit.emit('end', { data: result['result'] });
+                }
+                else {
+                    this._handleError(result.error, res);
+                }
+            });
         }
-        else {
-            this._handleError(result.error, res);
-        }
+        this._parseReqest(req);
+        return _emit;
     }
     _parseReqest(req) {
         let isGet = req.method.toLowerCase() === 'get';
@@ -33,6 +41,7 @@ class Parser {
         if (isGet) {
             let queryStr = url.substr(url.indexOf('?') + 1);
             result['result'] = qs.parse(queryStr);
+            this.emit('parseEnd', this._checkParams(result));
         }
         else {
             contentType = req.headers['content-type'];
@@ -42,17 +51,32 @@ class Parser {
                 body.push(chunk);
             }).on('end', () => {
                 result['result'] = this._handleBodyData(contentType, body);
+                this.emit('parseEnd', this._checkParams(result));
             });
         }
-        return this._checkParams(result);
     }
     _handleBodyData(type, body) {
+        body = body.toString();
+        switch (type) {
+            case 'application/x-www-form-urlencoded':
+                return qs.parse(body);
+            case 'application/json':
+                return JSON.parse(body);
+            default:
+                return {
+                    error: {
+                        type: 1,
+                        message: 'This request method is not supported'
+                    }
+                };
+        }
     }
     _checkParams(result) {
         return result;
     }
     _handleError(error, res) {
         console.log('has error');
+        this.errCb();
     }
     addParam(param) {
         let name = param.name;

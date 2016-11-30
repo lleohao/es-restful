@@ -2,6 +2,7 @@ import { isArray } from 'util';
 import { IncomingMessage, ServerResponse } from 'http';
 import { parse } from 'url';
 import * as qs from 'querystring';
+import { EventEmitter } from 'events';
 
 export interface Param {
     name: string
@@ -25,7 +26,7 @@ interface ResultError {
     message: string
 }
 
-export class Parser {
+export class Parser extends EventEmitter {
     private params: any;
     private trim: boolean;
     private errCb: Function;
@@ -40,11 +41,13 @@ export class Parser {
      * @memberOf Parser
      */
     constructor(trim: boolean | Function = false, errCb?: Function) {
+        super();
+
         this.params = {};
 
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
-            this.errCb = errCb || function() { };
+            this.errCb = errCb || function () { };
         } else {
             this.trim = false;
             this.errCb = <Function>trim;
@@ -62,13 +65,20 @@ export class Parser {
      * @api
      */
     parse(req: IncomingMessage, res: ServerResponse) {
-        let result: Result = this._parseReqest(req);
+        let _emit = new EventEmitter();
 
-        if (!result.hasError) {
-            return { data: result['result'] };
-        } else {
-            this._handleError(result.error, res);
+        if (!this.eventNames().length) {
+            this.on('parseEnd', (result: Result) => {
+                if (!result.hasError) {
+                    _emit.emit('end', { data: result['result'] });
+                } else {
+                    this._handleError(result.error, res);
+                }
+            })
         }
+
+        this._parseReqest(req);
+        return _emit;
     }
 
     /**
@@ -93,6 +103,8 @@ export class Parser {
             let queryStr = url.substr(url.indexOf('?') + 1);
 
             result['result'] = qs.parse(queryStr);
+
+            this.emit('parseEnd', this._checkParams(result))
         } else {
             contentType = req.headers['content-type'];
             let count = 0;
@@ -102,22 +114,59 @@ export class Parser {
                 body.push(chunk);
             }).on('end', () => {
                 result['result'] = this._handleBodyData(contentType, body);
+
+                this.emit('parseEnd', this._checkParams(result))
             })
         }
-
-        return this._checkParams(result);
     }
 
+    /**
+     * 处理请求中的body数据
+     * 
+     * @private
+     * @param {string} type     请求类型
+     * @param {*} body          请求数据主体
+     * @returns
+     */
     private _handleBodyData(type: string, body: any) {
+        body = body.toString();
 
+        switch (type) {
+            case 'application/x-www-form-urlencoded':
+                return qs.parse(body);
+            case 'application/json':
+                return JSON.parse(body);
+            default:
+                return {
+                    error: {
+                        type: 1,
+                        message: 'This request method is not supported'
+                    }
+                }
+        }
     }
 
-    private _checkParams(result: {}) {
+    /**
+     * 检测参数是否正确
+     * 
+     * @private
+     * @param {*} result    解析出来的参数
+     * @returns
+     */
+    private _checkParams(result: any) {
         return <Result>result;
     }
 
+    /**
+     * 错误处理函数
+     * 
+     * @private
+     * @param {[ResultError]} error
+     * @param {ServerResponse} res
+     */
     private _handleError(error: [ResultError], res: ServerResponse) {
         console.log('has error');
+        this.errCb();
     }
 
     /**

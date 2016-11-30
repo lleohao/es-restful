@@ -27,8 +27,6 @@
   "devDependencies": {
     "@types/node": "^6.0.51",
     "cz-conventional-changelog": "^1.2.0",
-    "eslint": "^3.11.1",
-    "eslint-config-google": "^0.7.1",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "mochawesome": "^1.5.4",

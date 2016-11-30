@@ -21,7 +21,9 @@ class Parser extends events_1.EventEmitter {
         if (!this.eventNames().length) {
             this.on('parseEnd', (result) => {
                 if (!result.hasError) {
-                    _emit.emit('end', { data: result['result'] });
+                    process.nextTick(function () {
+                        _emit.emit('end', { data: result['result'] });
+                    });
                 }
                 else {
                     this._handleError(result.error, res);
@@ -37,8 +39,8 @@ class Parser extends events_1.EventEmitter {
         let result = {
             method: req.method
         };
-        let url = req.url.substr(this.baseUrl.length);
         if (isGet) {
+            let url = req.url.substr(this.baseUrl.length);
             let queryStr = url.substr(url.indexOf('?') + 1);
             result['result'] = qs.parse(queryStr);
             this.emit('parseEnd', this._checkParams(result));

@@ -70,7 +70,9 @@ export class Parser extends EventEmitter {
         if (!this.eventNames().length) {
             this.on('parseEnd', (result: Result) => {
                 if (!result.hasError) {
-                    _emit.emit('end', { data: result['result'] });
+                    process.nextTick(function () {
+                        _emit.emit('end', { data: result['result'] });
+                    })
                 } else {
                     this._handleError(result.error, res);
                 }
@@ -97,9 +99,8 @@ export class Parser extends EventEmitter {
             method: req.method
         }
 
-        let url = req.url.substr(this.baseUrl.length);
-
         if (isGet) {
+            let url = req.url.substr(this.baseUrl.length);
             let queryStr = url.substr(url.indexOf('?') + 1);
 
             result['result'] = qs.parse(queryStr);

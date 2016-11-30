@@ -4,10 +4,10 @@ import { parse } from 'url';
 
 createServer((req, res) => {
     let parser = new Parser();
-    parser.setBaseUrl('/api');
-    let result = parser.parse(req, res);
-    
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
-    res.writeHead(200, { 'Content-type': 'application/json' });
-    res.end(JSON.stringify(result));
+    parser.parse(req, res).on('end', (data: any) => {
+        res.writeHead(200, { 'Content-type': 'application/json' });
+        res.end(JSON.stringify(data));
+    })
 }).listen(5051);

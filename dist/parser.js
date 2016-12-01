@@ -2,6 +2,11 @@
 const util_1 = require('util');
 const qs = require('querystring');
 const events_1 = require('events');
+const REQUEST_ERROR = 1;
+const REQUIRED_ERROR = 2;
+const CONVER_ERROR = 3;
+const CHOICES_ERROR = 4;
+const NULL_ERROR = 5;
 class Parser extends events_1.EventEmitter {
     constructor(trim = false, errCb) {
         super();
@@ -67,7 +72,7 @@ class Parser extends events_1.EventEmitter {
             default:
                 return {
                     error: {
-                        type: 1,
+                        type: REQUEST_ERROR,
                         info: 'This request method is not supported'
                     }
                 };
@@ -82,10 +87,99 @@ class Parser extends events_1.EventEmitter {
             parseData.error = result['error'];
         }
         else {
-            for (let rule in params) {
-                if (rule)
-                    ;
-            }
+            Object.keys(params).every((key) => {
+                let rule = params[key];
+                let value = result[key];
+                if (rule.required && value === undefined) {
+                    parseData.hasError = true;
+                    parseData.error.push({
+                        type: REQUIRED_ERROR,
+                        info: key
+                    });
+                    return false;
+                }
+                if (rule.defaultVal !== undefined) {
+                    value = rule.defaultVal;
+                }
+                if (rule.nullabeld && !value) {
+                    parseData.hasError = true;
+                    parseData.error.push({
+                        type: NULL_ERROR,
+                        info: key
+                    });
+                    return false;
+                }
+                if (rule.type) {
+                    let conversion;
+                    let type;
+                    let conversionVal;
+                    switch (typeof (rule.type)) {
+                        case 'int':
+                            conversion = parseInt;
+                            type = 'number';
+                            break;
+                        case 'float':
+                            conversion = parseFloat;
+                            type = 'number';
+                            break;
+                        case 'string':
+                            conversion = (val) => { return '' + val; };
+                            type = 'string';
+                        case 'function':
+                            conversion = rule.type;
+                            type = 'function';
+                            break;
+                    }
+                    if (type === 'function') {
+                        try {
+                            conversionVal = conversion(value);
+                        }
+                        catch (error) {
+                            parseData.hasError = true;
+                            parseData.error.push({
+                                type: CONVER_ERROR,
+                                info: { key: key, type: type, help: rule.help }
+                            });
+                        }
+                    }
+                    else {
+                        conversionVal = conversion(value);
+                    }
+                    if (!rule.ignore) {
+                        if (parseData.hasError)
+                            return false;
+                        if (isNaN(conversionVal)) {
+                            parseData.hasError = true;
+                            parseData.error.push({
+                                type: CONVER_ERROR,
+                                info: { key: key, type: type, help: rule.help }
+                            });
+                            return false;
+                        }
+                    }
+                }
+                if (typeof (value) === 'string') {
+                    if (rule.caseSensitive)
+                        value = value.toLowerCase();
+                    if (rule.trim)
+                        value = value.trim();
+                }
+                if (rule.choices && rule.choices.indexOf(value) == -1) {
+                    parseData.hasError = true;
+                    parseData.error.push({
+                        type: CHOICES_ERROR,
+                        info: { key: key, choices: rule.choices }
+                    });
+                    return false;
+                }
+                if (rule.dset) {
+                    delete result[key];
+                    result[rule.dset] = value;
+                }
+                else {
+                    result[key] = value;
+                }
+            });
         }
         return parseData;
     }
@@ -99,10 +193,10 @@ class Parser extends events_1.EventEmitter {
             ignore: false,
             caseSensitive: false,
             nullabeld: true,
-            defaultVal: null,
+            trim: false,
+            defaultVal: undefined,
             dset: null,
             type: null,
-            trim: false,
             choices: null,
             help: null
         };

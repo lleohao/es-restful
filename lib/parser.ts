@@ -27,8 +27,18 @@ interface Result {
 
 interface ResultError {
     type: number
-    info: string
+    info: string | Object
 }
+
+/**
+ * error code
+ */
+const REQUEST_ERROR = 1;
+const REQUIRED_ERROR = 2;
+const CONVER_ERROR = 3;
+const CHOICES_ERROR = 4;
+const NULL_ERROR = 5;
+
 
 export class Parser extends EventEmitter {
     private params: any
@@ -144,7 +154,7 @@ export class Parser extends EventEmitter {
             default:
                 return {
                     error: {
-                        type: 1,
+                        type: REQUEST_ERROR,
                         info: 'This request method is not supported'
                     }
                 }
@@ -168,17 +178,110 @@ export class Parser extends EventEmitter {
             parseData.hasError = true;
             parseData.error = result['error'];
         } else {
-            for (let key in params) {
+            Object.keys(params).every((key: string) => {
                 let rule = <Param>params[key];
-                
-                // required 检测
-                
-                // type 检测
+                let value = result[key];
+                // 1. required defaultVal
+                if (rule.required && value === undefined) {
+                    parseData.hasError = true;
+                    parseData.error.push({
+                        type: REQUIRED_ERROR,
+                        info: key
+                    })
 
+                    return false;
+                }
 
+                // 2. defaultVal
+                if (rule.defaultVal !== undefined) {
+                    value = rule.defaultVal;
+                }
 
+                // 3. nullabeld
+                if (rule.nullabeld && !value) {
+                    parseData.hasError = true;
+                    parseData.error.push({
+                        type: NULL_ERROR,
+                        info: key
+                    })
 
-            }
+                    return false;
+                }
+
+                // 4. type (ignore help)
+                if (rule.type) {
+                    let conversion: any;
+                    let type: string;
+                    let conversionVal: any;
+                    switch (typeof (rule.type)) {
+                        case 'int':
+                            conversion = parseInt;
+                            type = 'number';
+                            break;
+                        case 'float':
+                            conversion = parseFloat;
+                            type = 'number';
+                            break;
+                        case 'string':
+                            conversion = (val: any) => { return '' + val };
+                            type = 'string';
+                        case 'function':
+                            conversion = rule.type;
+                            type = 'function'
+                            break;
+                    }
+
+                    if (type === 'function') {
+                        try {
+                            conversionVal = conversion(value);
+                        } catch (error) {
+                            parseData.hasError = true;
+                            parseData.error.push({
+                                type: CONVER_ERROR,
+                                info: { key: key, type: type, help: rule.help }
+                            })
+                        }
+                    } else {
+                        conversionVal = conversion(value);
+                    }
+
+                    if (!rule.ignore) {
+                        if (parseData.hasError) return false;
+                        if (isNaN(conversionVal)) {
+                            parseData.hasError = true;
+                            parseData.error.push({
+                                type: CONVER_ERROR,
+                                info: { key: key, type: type, help: rule.help }
+                            })
+                            return false;
+                        }
+                    }
+                }
+
+                // 5. trim caseSensitive
+                if (typeof (value) === 'string') {
+                    if (rule.caseSensitive) value = <string>value.toLowerCase();
+                    if (rule.trim) value = <string>value.trim();
+                }
+
+                // 6. choices
+                if (rule.choices && rule.choices.indexOf(value) == -1) {
+                    parseData.hasError = true;
+                    parseData.error.push({
+                        type: CHOICES_ERROR,
+                        info: { key: key, choices: rule.choices }
+                    })
+
+                    return false;
+                }
+
+                if (rule.dset) {
+                    delete result[key];
+                    result[rule.dset] = value;
+                } else {
+                    result[key] = value;
+                }
+            })
         }
         return parseData;
     }
@@ -204,13 +307,13 @@ export class Parser extends EventEmitter {
      * @api
      */
     addParam(param: Param) {
-        let baseParam:any = {
+        let baseParam: any = {
             required: false,
             ignore: false,
             caseSensitive: false,
             nullabeld: true,
             trim: false,
-            defaultVal: null,
+            defaultVal: undefined,
             dset: null,
             type: null,
             choices: null,
@@ -228,6 +331,7 @@ export class Parser extends EventEmitter {
 
         /**
          * todo: 1. 参数中required和defaultVal同时存在时给出警告
+         * todo: 2. dset类型检测
          */
 
         this.params[name] = param;

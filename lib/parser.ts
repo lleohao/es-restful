@@ -21,7 +21,7 @@ export interface Param {
 interface Result {
     method: string
     hasError: boolean
-    error?: [ResultError]
+    error?: ResultError[]
     result: any
 }
 
@@ -61,7 +61,7 @@ export class Parser extends EventEmitter {
 
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
-            this.errCb = errCb || function () { };
+            this.errCb = errCb || function() { };
         } else {
             this.trim = false;
             this.errCb = <Function>trim;
@@ -84,7 +84,7 @@ export class Parser extends EventEmitter {
         if (!this.eventNames().length) {
             this.on('parseEnd', (result: Result) => {
                 if (!result.hasError) {
-                    process.nextTick(function () {
+                    process.nextTick(function() {
                         _emit.emit('end', { data: result['result'] });
                     })
                 } else {
@@ -111,7 +111,8 @@ export class Parser extends EventEmitter {
         let parsedData: Result = {
             method: req.method,
             hasError: false,
-            result: null
+            result: null,
+            error: []
         }
 
         if (isGet) {
@@ -294,9 +295,11 @@ export class Parser extends EventEmitter {
      * @param {[ResultError]} error
      * @param {EventEmitter} res
      */
-    private _handleError(error: [ResultError], emit: EventEmitter) {
+    private _handleError(error: ResultError[], emit: EventEmitter) {
         this.errCb();
-        emit.emit('end', { error: 'has error' });
+        process.nextTick(function() {
+            emit.emit('end', { error: error });
+        })
     }
 
     /**
@@ -320,7 +323,7 @@ export class Parser extends EventEmitter {
             choices: null,
             help: null
         };
-        
+
         if (typeof (name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string')
         }

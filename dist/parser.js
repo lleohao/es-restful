@@ -43,7 +43,8 @@ class Parser extends events_1.EventEmitter {
         let parsedData = {
             method: req.method,
             hasError: false,
-            result: null
+            result: null,
+            error: []
         };
         if (isGet) {
             let url = req.url.substr(this.baseUrl.length);
@@ -187,7 +188,9 @@ class Parser extends events_1.EventEmitter {
     }
     _handleError(error, emit) {
         this.errCb();
-        emit.emit('end', { error: 'has error' });
+        process.nextTick(function () {
+            emit.emit('end', { error: error });
+        });
     }
     addParam(name, options) {
         let baseParam = {

@@ -116,4 +116,57 @@ describe('parser 错误参数检测测试', function () {
             }).end();
         })
     })
+
+    describe('type(help) test', function () {
+        let server;
+
+        before(() => {
+            server = http.createServer((req, res) => {
+                let parser = new Parser();
+                parser.addParam('name', {
+                    type: 'string',
+                });
+                parser.addParam('age', {
+                    type: 'int',
+                    help: 'can\'t conversion'
+                });
+                parser.addParam('weight', {
+                    type: 'float'
+                });
+
+                parser.parse(req, res).on('end', (data) => {
+                    res.writeHead(200, {
+                        'Content-type': 'application/json'
+                    });
+                    res.end(JSON.stringify(data));
+                })
+            }).listen(5052);
+        })
+
+        after(() => {
+            server.close();
+        })
+
+
+        it('should return required error', (done) => {
+            http.get({
+                port: 5052,
+                path: '/?name='
+            }, (res) => {
+                var data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    data.should.containEql({
+                        error: [{
+                            type: 5,
+                            info: 'name'
+                        }]
+                    })
+                    done();
+                })
+            }).end();
+        })
+    })
 });

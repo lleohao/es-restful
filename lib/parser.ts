@@ -5,7 +5,7 @@ import * as qs from 'querystring';
 import { EventEmitter } from 'events';
 
 export interface Param {
-    name: string
+    name?: string
     caseSensitive?: boolean
     nullabeld?: boolean
     ignore?: boolean
@@ -307,7 +307,7 @@ export class Parser extends EventEmitter {
      * @memberOf Parser
      * @api
      */
-    addParam(param: Param) {
+    addParam(name: string, options: Param) {
         let baseParam: any = {
             required: false,
             ignore: false,
@@ -320,8 +320,7 @@ export class Parser extends EventEmitter {
             choices: null,
             help: null
         };
-
-        let name = param.name;
+        
         if (typeof (name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string')
         }
@@ -335,7 +334,8 @@ export class Parser extends EventEmitter {
          * todo: 2. dset类型检测
          */
 
-        this.params[name] = param;
+        options = Object.assign({ name: name }, baseParam, options);
+        this.params[name] = options;
     }
 
     /**

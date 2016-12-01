@@ -189,7 +189,7 @@ class Parser extends events_1.EventEmitter {
         this.errCb();
         emit.emit('end', { error: 'has error' });
     }
-    addParam(param) {
+    addParam(name, options) {
         let baseParam = {
             required: false,
             ignore: false,
@@ -202,14 +202,14 @@ class Parser extends events_1.EventEmitter {
             choices: null,
             help: null
         };
-        let name = param.name;
         if (typeof (name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string');
         }
         if (this.params[name]) {
             throw new TypeError(`The parameter name: ${name} already exists`);
         }
-        this.params[name] = param;
+        options = Object.assign({ name: name }, baseParam, options);
+        this.params[name] = options;
     }
     removeParams(name) {
         if (typeof (name) !== 'string' && !util_1.isArray(name)) {

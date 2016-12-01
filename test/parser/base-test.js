@@ -58,8 +58,7 @@ describe('parser api测试', function () {
 
         it('should have params', function () {
             let parser = new Parser();
-            parser.addParam({
-                name: 'sex',
+            parser.addParam('sex', {
                 required: true,
             });
 
@@ -81,9 +80,7 @@ describe('parser api测试', function () {
 
         it('should work with string', function () {
             let parser = new Parser();
-            parser.addParam({
-                name: 'sex',
-            });
+            parser.addParam('sex');
             parser.removeParams('sex');
 
             let params = parser.params;
@@ -92,12 +89,8 @@ describe('parser api测试', function () {
 
         it('should work with string array', function () {
             let parser = new Parser();
-            parser.addParam({
-                name: 'sex',
-            });
-            parser.addParam({
-                name: 'age',
-            });
+            parser.addParam('sex');
+            parser.addParam('age');
 
             let params = parser.params;
 

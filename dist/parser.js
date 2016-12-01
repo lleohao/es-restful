@@ -35,25 +35,25 @@ class Parser extends events_1.EventEmitter {
     }
     _parseReqest(req) {
         let isGet = req.method.toLowerCase() === 'get';
-        let contentType = null;
-        let result = {
-            method: req.method
+        let parsedData = {
+            method: req.method,
+            hasError: false,
+            result: null
         };
         if (isGet) {
             let url = req.url.substr(this.baseUrl.length);
             let queryStr = url.substr(url.indexOf('?') + 1);
-            result['result'] = qs.parse(queryStr);
-            this.emit('parseEnd', this._checkParams(result));
+            parsedData['result'] = qs.parse(queryStr);
+            this.emit('parseEnd', this._checkParams(parsedData));
         }
         else {
-            contentType = req.headers['content-type'];
-            let count = 0;
+            let contentType = req.headers['content-type'];
             let body = [];
             req.on('data', (chunk) => {
                 body.push(chunk);
             }).on('end', () => {
-                result['result'] = this._handleBodyData(contentType, body);
-                this.emit('parseEnd', this._checkParams(result));
+                parsedData['result'] = this._handleBodyData(contentType, body);
+                this.emit('parseEnd', this._checkParams(parsedData));
             });
         }
     }
@@ -68,19 +68,44 @@ class Parser extends events_1.EventEmitter {
                 return {
                     error: {
                         type: 1,
-                        message: 'This request method is not supported'
+                        info: 'This request method is not supported'
                     }
                 };
         }
     }
-    _checkParams(result) {
-        return result;
+    _checkParams(parseData) {
+        let error;
+        let result = parseData.result;
+        let params = this.params;
+        if (result['error']) {
+            parseData.hasError = true;
+            parseData.error = result['error'];
+        }
+        else {
+            for (let rule in params) {
+                if (rule)
+                    ;
+            }
+        }
+        return parseData;
     }
     _handleError(error, res) {
         console.log('has error');
         this.errCb();
     }
     addParam(param) {
+        let baseParam = {
+            required: false,
+            ignore: false,
+            caseSensitive: false,
+            nullabeld: true,
+            defaultVal: null,
+            dset: null,
+            type: null,
+            trim: false,
+            choices: null,
+            help: null
+        };
         let name = param.name;
         if (typeof (name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string');

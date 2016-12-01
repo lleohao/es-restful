@@ -6,31 +6,35 @@ import { EventEmitter } from 'events';
 
 export interface Param {
     name: string
+    caseSensitive?: boolean
+    nullabeld?: boolean
+    ignore?: boolean
     defaultVal?: any
     dset?: string
     required?: boolean
-    ignore?: boolean
-    type?: string
+    type?: string | Function
     trim?: boolean
+    choices?: any[]
+    help?: string
 }
 
 interface Result {
-    method: string,
-    hasError: boolean,
-    error?: [ResultError],
+    method: string
+    hasError: boolean
+    error?: [ResultError]
     result: any
 }
 
 interface ResultError {
     type: number
-    message: string
+    info: string
 }
 
 export class Parser extends EventEmitter {
-    private params: any;
-    private trim: boolean;
-    private errCb: Function;
-    public baseUrl: string = '';
+    private params: any
+    private trim: boolean
+    private errCb: Function
+    public baseUrl: string = ''
 
     /**
      * Creates an instance of Parser.
@@ -110,7 +114,7 @@ export class Parser extends EventEmitter {
         } else {
             let contentType: string = req.headers['content-type'];
             let body: any = [];
-            
+
             req.on('data', (chunk) => {
                 body.push(chunk);
             }).on('end', () => {
@@ -141,7 +145,7 @@ export class Parser extends EventEmitter {
                 return {
                     error: {
                         type: 1,
-                        message: 'This request method is not supported'
+                        info: 'This request method is not supported'
                     }
                 }
         }
@@ -154,11 +158,29 @@ export class Parser extends EventEmitter {
      * @param {*} result    解析出来的参数
      * @returns
      */
-    private _checkParams(result: Result) {
+    private _checkParams(parseData: Result) {
         let error: any;
+        let result = parseData.result;
+        let params = this.params;
+
+        // 对于请求方式的错误提前解析返回
+        if (result['error']) {
+            parseData.hasError = true;
+            parseData.error = result['error'];
+        } else {
+            for (let key in params) {
+                let rule = <Param>params[key];
+                
+                // required 检测
+                
+                // type 检测
 
 
-        return <Result>result;
+
+
+            }
+        }
+        return parseData;
     }
 
     /**
@@ -182,6 +204,19 @@ export class Parser extends EventEmitter {
      * @api
      */
     addParam(param: Param) {
+        let baseParam:any = {
+            required: false,
+            ignore: false,
+            caseSensitive: false,
+            nullabeld: true,
+            trim: false,
+            defaultVal: null,
+            dset: null,
+            type: null,
+            choices: null,
+            help: null
+        };
+
         let name = param.name;
         if (typeof (name) !== 'string') {
             throw new TypeError('The parameter type of name must be a string')
@@ -190,6 +225,10 @@ export class Parser extends EventEmitter {
         if (this.params[name]) {
             throw new TypeError(`The parameter name: ${name} already exists`)
         }
+
+        /**
+         * todo: 1. 参数中required和defaultVal同时存在时给出警告
+         */
 
         this.params[name] = param;
     }

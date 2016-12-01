@@ -294,7 +294,6 @@ export class Parser extends EventEmitter {
      * @param {EventEmitter} res
      */
     private _handleError(error: [ResultError], emit: EventEmitter) {
-        console.log('has error');
         this.errCb();
         emit.emit('end', { error: 'has error' });
     }

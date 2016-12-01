@@ -1,10 +1,10 @@
 let should = require('should');
-let Parser = require('../dist/parser').Parser;
+let Parser = require('../../dist/parser').Parser;
 let http = require('http');
 let qs = require('querystring');
 
 
-describe('Parser', function () {
+describe('parser api测试', function () {
     describe('新建parser测试', function () {
         let globalParser;
 
@@ -107,7 +107,7 @@ describe('Parser', function () {
         });
     });
 
-    describe('parse 方法简单测试', function () {
+    describe('parse 方法测试', function () {
         let server;
 
         before(function () {
@@ -137,7 +137,6 @@ describe('Parser', function () {
                     }).on('end', function () {
                         data = JSON.parse(data.toString());
                         data.should.have.property('data');
-                        console.log(data);
                         done();
                     });
 
@@ -219,7 +218,9 @@ describe('Parser', function () {
             });
 
             it('should return {data: {name: "lleohao"}}', (done) => {
-                let postData = JSON.stringify({name: 'lleohao'});
+                let postData = JSON.stringify({
+                    name: 'lleohao'
+                });
 
                 let request = http.request({
                     port: 5052,

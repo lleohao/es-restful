@@ -184,7 +184,6 @@ class Parser extends events_1.EventEmitter {
         return parseData;
     }
     _handleError(error, emit) {
-        console.log('has error');
         this.errCb();
         emit.emit('end', { error: 'has error' });
     }

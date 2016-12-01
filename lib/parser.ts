@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 export interface Param {
     name?: string
     caseSensitive?: boolean
-    nullabeld?: boolean
+    nullabled?: boolean
     ignore?: boolean
     defaultVal?: any
     dset?: string
@@ -199,7 +199,7 @@ export class Parser extends EventEmitter {
                 }
 
                 // 3. nullabeld
-                if (rule.nullabeld && !value) {
+                if (!rule.nullabled && !value) {
                     parseData.hasError = true;
                     parseData.error.push({
                         type: NULL_ERROR,
@@ -315,7 +315,7 @@ export class Parser extends EventEmitter {
             required: false,
             ignore: false,
             caseSensitive: false,
-            nullabeld: true,
+            nullabled: true,
             trim: false,
             defaultVal: undefined,
             dset: null,

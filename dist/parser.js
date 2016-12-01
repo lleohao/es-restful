@@ -102,7 +102,7 @@ class Parser extends events_1.EventEmitter {
                 if (rule.defaultVal !== undefined) {
                     value = rule.defaultVal;
                 }
-                if (rule.nullabeld && !value) {
+                if (!rule.nullabled && !value) {
                     parseData.hasError = true;
                     parseData.error.push({
                         type: NULL_ERROR,
@@ -197,7 +197,7 @@ class Parser extends events_1.EventEmitter {
             required: false,
             ignore: false,
             caseSensitive: false,
-            nullabeld: true,
+            nullabled: true,
             trim: false,
             defaultVal: undefined,
             dset: null,

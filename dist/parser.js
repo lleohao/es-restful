@@ -31,7 +31,7 @@ class Parser extends events_1.EventEmitter {
                     });
                 }
                 else {
-                    this._handleError(result.error, res);
+                    this._handleError(result.error, _emit);
                 }
             });
         }
@@ -183,9 +183,10 @@ class Parser extends events_1.EventEmitter {
         }
         return parseData;
     }
-    _handleError(error, res) {
+    _handleError(error, emit) {
         console.log('has error');
         this.errCb();
+        emit.emit('end', { error: 'has error' });
     }
     addParam(param) {
         let baseParam = {

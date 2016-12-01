@@ -88,7 +88,7 @@ export class Parser extends EventEmitter {
                         _emit.emit('end', { data: result['result'] });
                     })
                 } else {
-                    this._handleError(result.error, res);
+                    this._handleError(result.error, _emit);
                 }
             })
         }
@@ -291,11 +291,12 @@ export class Parser extends EventEmitter {
      * 
      * @private
      * @param {[ResultError]} error
-     * @param {ServerResponse} res
+     * @param {EventEmitter} res
      */
-    private _handleError(error: [ResultError], res: ServerResponse) {
+    private _handleError(error: [ResultError], emit: EventEmitter) {
         console.log('has error');
         this.errCb();
+        emit.emit('end', { error: 'has error' });
     }
 
     /**

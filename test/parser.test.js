@@ -107,7 +107,7 @@ describe('Parser', function () {
         });
     });
 
-    describe('parse 方法测试', function () {
+    describe('parse 方法简单测试', function () {
         let server;
 
         before(function () {
@@ -208,7 +208,7 @@ describe('Parser', function () {
                     res.on('data', function (chunk) {
                         data.push(chunk);
                     }).on('end', function () {
-                        data = JSON.parse(data.toString()).data;
+                        data = JSON.parse(data.toString());
                         data.should.have.property('error');
                         done();
                     });

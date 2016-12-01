@@ -94,29 +94,29 @@ export class Parser extends EventEmitter {
      */
     private _parseReqest(req: IncomingMessage) {
         let isGet = req.method.toLowerCase() === 'get';
-        let contentType: string | null = null;
-        let result: any = {
-            method: req.method
+        let parsedData: Result = {
+            method: req.method,
+            hasError: false,
+            result: null
         }
 
         if (isGet) {
             let url = req.url.substr(this.baseUrl.length);
             let queryStr = url.substr(url.indexOf('?') + 1);
 
-            result['result'] = qs.parse(queryStr);
+            parsedData['result'] = qs.parse(queryStr);
 
-            this.emit('parseEnd', this._checkParams(result))
+            this.emit('parseEnd', this._checkParams(parsedData))
         } else {
-            contentType = req.headers['content-type'];
-            let count = 0;
-
+            let contentType: string = req.headers['content-type'];
             let body: any = [];
+            
             req.on('data', (chunk) => {
                 body.push(chunk);
             }).on('end', () => {
-                result['result'] = this._handleBodyData(contentType, body);
+                parsedData['result'] = this._handleBodyData(contentType, body);
 
-                this.emit('parseEnd', this._checkParams(result))
+                this.emit('parseEnd', this._checkParams(parsedData))
             })
         }
     }
@@ -154,7 +154,10 @@ export class Parser extends EventEmitter {
      * @param {*} result    解析出来的参数
      * @returns
      */
-    private _checkParams(result: any) {
+    private _checkParams(result: Result) {
+        let error: any;
+
+
         return <Result>result;
     }
 

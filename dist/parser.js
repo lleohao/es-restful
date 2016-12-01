@@ -163,6 +163,8 @@ class Parser extends events_1.EventEmitter {
                         value = value.toLowerCase();
                     if (rule.trim)
                         value = value.trim();
+                    else if (this.trim)
+                        value = value.trim();
                 }
                 if (rule.choices && rule.choices.indexOf(value) == -1) {
                     parseData.hasError = true;

@@ -262,6 +262,7 @@ export class Parser extends EventEmitter {
                 if (typeof (value) === 'string') {
                     if (rule.caseSensitive) value = <string>value.toLowerCase();
                     if (rule.trim) value = <string>value.trim();
+                    else if (this.trim) value = <string>value.trim();
                 }
 
                 // 6. choices

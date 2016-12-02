@@ -342,4 +342,93 @@ describe('parser 错误参数检测测试', function () {
             req.end();
         })
     })
+
+    describe('choices test', function () {
+        let server;
+
+        before(() => {
+            server = http.createServer((req, res) => {
+                let parser = new Parser();
+                parser.addParam('sex', {
+                    choices: ['man', 'woman']
+                });
+                parser.parse(req, res).on('end', (data) => {
+                    res.writeHead(200, {
+                        'Content-type': 'application/json'
+                    });
+                    res.end(JSON.stringify(data));
+                })
+            }).listen(5052);
+        })
+
+        after(() => {
+            server.close();
+        })
+
+        it('should return choices error', (done) => {
+            let data = JSON.stringify({
+                sex: 'lalalal'
+            })
+
+            let req = http.request({
+                port: 5052,
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }, (res) => {
+                let data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    console.log(data);
+                    data.should.containEql({
+                        error: [{
+                            type: 4,
+                            info: {
+                                key: 'sex',
+                                choices: [
+                                    'man',
+                                    'woman'
+                                ]
+                            }
+                        }]
+                    });
+                    done();
+                })
+            });
+            req.write(data);
+            req.end();
+        })
+
+        it('should return choices ok', (done) => {
+            let data = JSON.stringify({
+                sex: 'man'
+            })
+
+            let req = http.request({
+                port: 5052,
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }, (res) => {
+                let data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    data.should.containEql({
+                        data: {
+                            sex: 'man'
+                        }
+                    });
+                    done();
+                })
+            });
+            req.write(data);
+            req.end();
+        })
+    })
 });

@@ -13,7 +13,7 @@ export interface Param {
     dset?: string
     required?: boolean
     type?: string | Function
-    trim?: boolean
+    trim?: boolean | null
     choices?: any[]
     help?: string
 }
@@ -263,8 +263,8 @@ export class Parser extends EventEmitter {
                 // 5. trim caseSensitive
                 if (typeof (value) === 'string') {
                     if (rule.caseSensitive) value = <string>value.toLowerCase();
-                    if (rule.trim) value = <string>value.trim();
-                    else if (this.trim) value = <string>value.trim();
+                    let _trim = rule.trim !== null ? rule.trim : this.trim;
+                    value = _trim ? value.trim() : value;
                 }
 
                 // 6. choices
@@ -318,7 +318,7 @@ export class Parser extends EventEmitter {
             ignore: false,
             caseSensitive: false,
             nullabled: true,
-            trim: false,
+            trim: null,
             defaultVal: undefined,
             dset: null,
             type: null,
@@ -337,6 +337,7 @@ export class Parser extends EventEmitter {
         /**
          * todo: 1. 参数中required和defaultVal同时存在时给出警告
          * todo: 2. dset类型检测
+         * todo: 3. 检测dset是否与当前已存在的参数名相同
          */
 
         options = Object.assign({ name: name }, baseParam, options);

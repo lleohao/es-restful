@@ -382,7 +382,6 @@ describe('parser 错误参数检测测试', function () {
                     data.push(chunk);
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
-                    console.log(data);
                     data.should.containEql({
                         error: [{
                             type: 4,
@@ -456,7 +455,7 @@ describe('parser 错误参数检测测试', function () {
             server.close();
         })
 
-        it('should return data {data: "man"} with no data', (done) => {
+        it('should return data {data: {sex: "man" }} with no data', (done) => {
             let data = JSON.stringify({
                 sex: ''
             })
@@ -473,7 +472,6 @@ describe('parser 错误参数检测测试', function () {
                     data.push(chunk);
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
-                    console.log(data);
                     data.should.containEql({
                         data: {
                             sex: 'man'
@@ -486,7 +484,7 @@ describe('parser 错误参数检测测试', function () {
             req.end();
         })
 
-        it('should return {data: "women"} with sent sex="WOMEN"', (done) => {
+        it('should return {data: { sex:"women" }} with sent sex="WOMEN"', (done) => {
             let data = JSON.stringify({
                 sex: 'WOMEN'
             })
@@ -506,6 +504,107 @@ describe('parser 错误参数检测测试', function () {
                     data.should.containEql({
                         data: {
                             sex: 'women'
+                        }
+                    });
+                    done();
+                })
+            });
+            req.write(data);
+            req.end();
+        })
+    })
+
+    describe('trim dset test', function () {
+        let server_1;
+        let server_2;
+
+        before(() => {
+            server_1 = http.createServer((req, res) => {
+                let parser = new Parser(true);
+                parser.addParam('trim_test_false', {
+                    trim: false,
+                    dset: 'trim'
+                })
+                parser.addParam('trim_test_normal')
+
+                parser.parse(req, res).on('end', (data) => {
+                    res.writeHead(200, {
+                        'Content-type': 'application/json'
+                    });
+                    res.end(JSON.stringify(data));
+                })
+            }).listen(5052);
+            server_2 = http.createServer((req, res) => {
+                let parser = new Parser();
+                 parser.addParam('trim', {
+                    trim: true
+                })
+
+                parser.parse(req, res).on('end', (data) => {
+                    res.writeHead(200, {
+                        'Content-type': 'application/json'
+                    });
+                    res.end(JSON.stringify(data));
+                })
+            }).listen(5053);
+        })
+
+        after(() => {
+            server_1.close();
+            server_2.close();
+        })
+
+        it('should return {data: {trim: " lleohao ", trim_test_normal: "lleohao"}}', (done) => {
+            let data = JSON.stringify({
+                trim_test_false: ' lleohao ',
+                trim_test_normal: ' lleohao '
+            })
+
+            let req = http.request({
+                port: 5052,
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }, (res) => {
+                let data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    data.should.containEql({
+                        data: {
+                            trim: ' lleohao ',
+                            trim_test_normal: 'lleohao'
+                        }
+                    });
+                    done();
+                })
+            });
+            req.write(data);
+            req.end();
+        })
+
+        it('should return {data: {trim: "lleohao"}}', (done) => {
+            let data = JSON.stringify({
+                trim: '   lleohao     ',
+            })
+
+            let req = http.request({
+                port: 5053,
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }, (res) => {
+                let data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    data.should.containEql({
+                        data: {
+                            trim: 'lleohao'
                         }
                     });
                     done();

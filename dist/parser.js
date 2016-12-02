@@ -163,10 +163,8 @@ class Parser extends events_1.EventEmitter {
                 if (typeof (value) === 'string') {
                     if (rule.caseSensitive)
                         value = value.toLowerCase();
-                    if (rule.trim)
-                        value = value.trim();
-                    else if (this.trim)
-                        value = value.trim();
+                    let _trim = rule.trim !== null ? rule.trim : this.trim;
+                    value = _trim ? value.trim() : value;
                 }
                 if (rule.choices && rule.choices.indexOf(value) == -1) {
                     parseData.hasError = true;
@@ -200,7 +198,7 @@ class Parser extends events_1.EventEmitter {
             ignore: false,
             caseSensitive: false,
             nullabled: true,
-            trim: false,
+            trim: null,
             defaultVal: undefined,
             dset: null,
             type: null,

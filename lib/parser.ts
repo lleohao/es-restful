@@ -61,7 +61,7 @@ export class Parser extends EventEmitter {
 
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
-            this.errCb = errCb || function() { };
+            this.errCb = errCb || function () { };
         } else {
             this.trim = false;
             this.errCb = <Function>trim;
@@ -84,7 +84,7 @@ export class Parser extends EventEmitter {
         if (!this.eventNames().length) {
             this.on('parseEnd', (result: Result) => {
                 if (!result.hasError) {
-                    process.nextTick(function() {
+                    process.nextTick(function () {
                         _emit.emit('end', { data: result['result'] });
                     })
                 } else {
@@ -214,7 +214,7 @@ export class Parser extends EventEmitter {
                     let conversion: any;
                     let type: string;
                     let conversionVal: any;
-                    switch (typeof (rule.type)) {
+                    switch (rule.type) {
                         case 'int':
                             conversion = parseInt;
                             type = 'number';
@@ -226,7 +226,7 @@ export class Parser extends EventEmitter {
                         case 'string':
                             conversion = (val: any) => { return '' + val };
                             type = 'string';
-                        case 'function':
+                        default:
                             conversion = rule.type;
                             type = 'function'
                             break;
@@ -248,7 +248,7 @@ export class Parser extends EventEmitter {
 
                     if (!rule.ignore) {
                         if (parseData.hasError) return false;
-                        if (isNaN(conversionVal)) {
+                        if (type === 'number' && isNaN(conversionVal)) {
                             parseData.hasError = true;
                             parseData.error.push({
                                 type: CONVER_ERROR,
@@ -257,6 +257,7 @@ export class Parser extends EventEmitter {
                             return false;
                         }
                     }
+                    value = conversionVal;
                 }
 
                 // 5. trim caseSensitive
@@ -297,7 +298,7 @@ export class Parser extends EventEmitter {
      */
     private _handleError(error: ResultError[], emit: EventEmitter) {
         this.errCb();
-        process.nextTick(function() {
+        process.nextTick(function () {
             emit.emit('end', { error: error });
         })
     }

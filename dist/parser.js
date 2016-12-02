@@ -114,7 +114,7 @@ class Parser extends events_1.EventEmitter {
                     let conversion;
                     let type;
                     let conversionVal;
-                    switch (typeof (rule.type)) {
+                    switch (rule.type) {
                         case 'int':
                             conversion = parseInt;
                             type = 'number';
@@ -126,7 +126,7 @@ class Parser extends events_1.EventEmitter {
                         case 'string':
                             conversion = (val) => { return '' + val; };
                             type = 'string';
-                        case 'function':
+                        default:
                             conversion = rule.type;
                             type = 'function';
                             break;
@@ -149,7 +149,7 @@ class Parser extends events_1.EventEmitter {
                     if (!rule.ignore) {
                         if (parseData.hasError)
                             return false;
-                        if (isNaN(conversionVal)) {
+                        if (type === 'number' && isNaN(conversionVal)) {
                             parseData.hasError = true;
                             parseData.error.push({
                                 type: CONVER_ERROR,
@@ -158,6 +158,7 @@ class Parser extends events_1.EventEmitter {
                             return false;
                         }
                     }
+                    value = conversionVal;
                 }
                 if (typeof (value) === 'string') {
                     if (rule.caseSensitive)

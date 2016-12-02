@@ -1,10 +1,10 @@
 let should = require('should');
-let Parser = require('../dist/parser').Parser;
+let Parser = require('../../dist/parser').Parser;
 let http = require('http');
 let qs = require('querystring');
 
 
-describe('Parser', function () {
+describe('parser api测试', function () {
     describe('新建parser测试', function () {
         let globalParser;
 
@@ -58,8 +58,7 @@ describe('Parser', function () {
 
         it('should have params', function () {
             let parser = new Parser();
-            parser.addParam({
-                name: 'sex',
+            parser.addParam('sex', {
                 required: true,
             });
 
@@ -81,9 +80,7 @@ describe('Parser', function () {
 
         it('should work with string', function () {
             let parser = new Parser();
-            parser.addParam({
-                name: 'sex',
-            });
+            parser.addParam('sex');
             parser.removeParams('sex');
 
             let params = parser.params;
@@ -92,12 +89,8 @@ describe('Parser', function () {
 
         it('should work with string array', function () {
             let parser = new Parser();
-            parser.addParam({
-                name: 'sex',
-            });
-            parser.addParam({
-                name: 'age',
-            });
+            parser.addParam('sex');
+            parser.addParam('age');
 
             let params = parser.params;
 
@@ -137,7 +130,6 @@ describe('Parser', function () {
                     }).on('end', function () {
                         data = JSON.parse(data.toString());
                         data.should.have.property('data');
-                        console.log(data);
                         done();
                     });
 
@@ -208,7 +200,7 @@ describe('Parser', function () {
                     res.on('data', function (chunk) {
                         data.push(chunk);
                     }).on('end', function () {
-                        data = JSON.parse(data.toString()).data;
+                        data = JSON.parse(data.toString());
                         data.should.have.property('error');
                         done();
                     });
@@ -219,7 +211,9 @@ describe('Parser', function () {
             });
 
             it('should return {data: {name: "lleohao"}}', (done) => {
-                let postData = JSON.stringify({name: 'lleohao'});
+                let postData = JSON.stringify({
+                    name: 'lleohao'
+                });
 
                 let request = http.request({
                     port: 5052,

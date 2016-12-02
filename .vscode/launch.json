@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\lib\\index.ts",
+            "program": "${workspaceRoot}\\lib\\test.ts",
             "cwd": "${workspaceRoot}",
             "sourceMaps": true,
             "outDir": "${workspaceRoot}/dist"

@@ -11,7 +11,7 @@
         "outDir": "./dist",
         
         "declaration": true,
-        "declarationDir": "./lib/@type"
+        "declarationDir": "./lib/@types"
     },
     "exclude": [
         "node_modules"

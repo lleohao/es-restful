@@ -99,7 +99,7 @@ class Parser extends events_1.EventEmitter {
                     });
                     return false;
                 }
-                if (rule.defaultVal !== undefined) {
+                if (rule.defaultVal !== undefined && !value) {
                     value = rule.defaultVal;
                 }
                 if (!rule.nullabled && !value) {
@@ -183,6 +183,7 @@ class Parser extends events_1.EventEmitter {
                 else {
                     result[key] = value;
                 }
+                return true;
             });
         }
         return parseData;

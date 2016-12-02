@@ -182,7 +182,7 @@ export class Parser extends EventEmitter {
             Object.keys(params).every((key: string) => {
                 let rule = <Param>params[key];
                 let value = result[key];
-                // 1. required defaultVal
+                // 1. required
                 if (rule.required && value === undefined) {
                     parseData.hasError = true;
                     parseData.error.push({
@@ -194,7 +194,7 @@ export class Parser extends EventEmitter {
                 }
 
                 // 2. defaultVal
-                if (rule.defaultVal !== undefined) {
+                if (rule.defaultVal !== undefined && !value) {
                     value = rule.defaultVal;
                 }
 
@@ -284,6 +284,7 @@ export class Parser extends EventEmitter {
                 } else {
                     result[key] = value;
                 }
+                return true;
             })
         }
         return parseData;

@@ -431,4 +431,88 @@ describe('parser 错误参数检测测试', function () {
             req.end();
         })
     })
+
+    describe('caseSensitive defaultVal test', function () {
+        let server;
+
+        before(() => {
+            server = http.createServer((req, res) => {
+                let parser = new Parser();
+                parser.addParam('sex', {
+                    defaultVal: 'man',
+                    caseSensitive: true
+                });
+
+                parser.parse(req, res).on('end', (data) => {
+                    res.writeHead(200, {
+                        'Content-type': 'application/json'
+                    });
+                    res.end(JSON.stringify(data));
+                })
+            }).listen(5052);
+        })
+
+        after(() => {
+            server.close();
+        })
+
+        it('should return data {data: "man"} with no data', (done) => {
+            let data = JSON.stringify({
+                sex: ''
+            })
+
+            let req = http.request({
+                port: 5052,
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }, (res) => {
+                let data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    console.log(data);
+                    data.should.containEql({
+                        data: {
+                            sex: 'man'
+                        }
+                    });
+                    done();
+                })
+            });
+            req.write(data);
+            req.end();
+        })
+
+        it('should return {data: "women"} with sent sex="WOMEN"', (done) => {
+            let data = JSON.stringify({
+                sex: 'WOMEN'
+            })
+
+            let req = http.request({
+                port: 5052,
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }, (res) => {
+                let data = [];
+                res.on('data', chunk => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    data = JSON.parse(data.toString());
+                    data.should.containEql({
+                        data: {
+                            sex: 'women'
+                        }
+                    });
+                    done();
+                })
+            });
+            req.write(data);
+            req.end();
+        })
+    })
 });

@@ -7,6 +7,13 @@ const REQUIRED_ERROR = 2;
 const CONVER_ERROR = 3;
 const CHOICES_ERROR = 4;
 const NULL_ERROR = 5;
+const errorMessages = {
+    1: 'Unable to parse this request.',
+    2: 'Missing request parameters.',
+    3: 'Parameter type conversion error.',
+    4: 'The parameter is not in the selection range.',
+    5: 'Parameters are not allowed to be null.'
+};
 class Parser extends events_1.EventEmitter {
     constructor(trim = false, errCb) {
         super();
@@ -85,7 +92,7 @@ class Parser extends events_1.EventEmitter {
         let params = this.params;
         if (result['error']) {
             parseData.hasError = true;
-            parseData.error = result['error'];
+            parseData.error.push(result['error']);
         }
         else {
             Object.keys(params).every((key) => {
@@ -170,7 +177,7 @@ class Parser extends events_1.EventEmitter {
                     parseData.hasError = true;
                     parseData.error.push({
                         type: CHOICES_ERROR,
-                        info: { key: key, choices: rule.choices }
+                        info: { key: key, value: value, choices: rule.choices }
                     });
                     return false;
                 }
@@ -186,10 +193,37 @@ class Parser extends events_1.EventEmitter {
         }
         return parseData;
     }
-    _handleError(error, emit) {
-        this.errCb();
+    _handleError(errors, emit) {
+        let error = errors[0];
+        let message = errorMessages[error.type];
+        let resCode = error.type === REQUEST_ERROR ? 400 : 403;
+        errors.forEach((error) => {
+            switch (error.type) {
+                case REQUEST_ERROR:
+                    error['message'] = error.info;
+                    break;
+                case REQUIRED_ERROR:
+                    error['message'] = `The ${error.info} are required.`;
+                    break;
+                case CONVER_ERROR:
+                    error['message'] =
+                        error.info['help'] === null ?
+                            `Can not convert a ${error.info['key']} to a ${error.info['type']} type`
+                            : error.info['help'];
+                    break;
+                case CHOICES_ERROR:
+                    error['message'] = `The ${error.info['key']}:${error.info['value']} is not in ${error.info['key'].toString()}`;
+                case NULL_ERROR:
+                    error['message'] = `The ${error.info} does not allow null values`;
+            }
+            ;
+        });
         process.nextTick(function () {
-            emit.emit('end', { error: error });
+            emit.emit('end', {
+                code: resCode,
+                message: message,
+                errors: errors
+            });
         });
     }
     addParam(name, options) {

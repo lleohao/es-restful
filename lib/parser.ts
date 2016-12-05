@@ -320,18 +320,20 @@ export class Parser extends EventEmitter {
                     error['message'] = <string>error.info;
                     break;
                 case REQUIRED_ERROR:
-                    error['message'] = `The ${error.info} are required.`;
+                    error['message'] = `The "${error.info}" are required.`;
                     break;
                 case CONVER_ERROR:
                     error['message'] =
                         error.info['help'] === null ?
-                            `Can not convert a ${error.info['key']} to a ${error.info['type']} type`
+                            `Can not convert "${error.info['key']}" to ${error.info['type']} type`
                             : error.info['help'];
                     break;
                 case CHOICES_ERROR:
-                    error['message'] = `The ${error.info['key']}:${error.info['value']} is not in ${error.info['key'].toString()}`;
+                    error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
+                    break;
                 case NULL_ERROR:
-                    error['message'] = `The ${error.info} does not allow null values`
+                    error['message'] = `The "${error.info}" does not allow null values`
+                    break;
             };
         })
 

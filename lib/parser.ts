@@ -26,8 +26,9 @@ interface Result {
 }
 
 interface ResultError {
-    type: number
-    info: string | Object
+    type?: number
+    info?: any
+    message?: string
 }
 
 /**
@@ -39,6 +40,17 @@ const CONVER_ERROR = 3;
 const CHOICES_ERROR = 4;
 const NULL_ERROR = 5;
 
+
+/**
+ * error message
+ */
+const errorMessages: any = {
+    1: 'Unable to parse this request.',
+    2: 'Missing request parameters.',
+    3: 'Parameter type conversion error.',
+    4: 'The parameter is not in the selection range.',
+    5: 'Parameters are not allowed to be null.'
+}
 
 export class Parser extends EventEmitter {
     private params: any
@@ -177,7 +189,7 @@ export class Parser extends EventEmitter {
         // 对于请求方式的错误提前解析返回
         if (result['error']) {
             parseData.hasError = true;
-            parseData.error = result['error'];
+            parseData.error.push(result['error']);
         } else {
             Object.keys(params).every((key: string) => {
                 let rule = <Param>params[key];
@@ -272,7 +284,7 @@ export class Parser extends EventEmitter {
                     parseData.hasError = true;
                     parseData.error.push({
                         type: CHOICES_ERROR,
-                        info: { key: key, choices: rule.choices }
+                        info: { key: key, value: value, choices: rule.choices }
                     })
 
                     return false;
@@ -297,10 +309,45 @@ export class Parser extends EventEmitter {
      * @param {[ResultError]} error
      * @param {EventEmitter} res
      */
-    private _handleError(error: ResultError[], emit: EventEmitter) {
-        this.errCb();
+    private _handleError(errors: ResultError[], emit: EventEmitter) {
+        let error = errors[0];
+        let message: string = errorMessages[error.type];
+        let resCode = error.type === REQUEST_ERROR ? 400 : 403;
+
+        errors.forEach((error) => {
+            switch (error.type) {
+                case REQUEST_ERROR:
+                    error['message'] = <string>error.info;
+                    break;
+                case REQUIRED_ERROR:
+                    error['message'] = `The "${error.info}" are required.`;
+                    break;
+                case CONVER_ERROR:
+                    error['message'] =
+                        error.info['help'] === null ?
+                            `Can not convert "${error.info['key']}" to ${error.info['type']} type`
+                            : error.info['help'];
+                    break;
+                case CHOICES_ERROR:
+                    error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
+                    break;
+                case NULL_ERROR:
+                    error['message'] = `The "${error.info}" does not allow null values`
+                    break;
+            };
+        })
+
+        /**
+         * fixme: 待开发
+         * this.errCb();
+         */
+        
         process.nextTick(function () {
-            emit.emit('end', { error: error });
+            emit.emit('end', {
+                code: resCode,
+                message: message,
+                errors: errors
+            });
         })
     }
 

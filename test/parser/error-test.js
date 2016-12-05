@@ -39,9 +39,12 @@ describe('parser 错误参数检测测试', function () {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     data.should.containEql({
-                        error: [{
+                        code: 403,
+                        message: 'Missing request parameters.',
+                        errors: [{
                             type: 2,
-                            info: 'name'
+                            info: 'name',
+                            message: 'The "name" are required.'
                         }]
                     })
                     done();
@@ -105,9 +108,12 @@ describe('parser 错误参数检测测试', function () {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     data.should.containEql({
-                        error: [{
+                        code: 403,
+                        message: 'Parameters are not allowed to be null.',
+                        errors: [{
                             type: 5,
-                            info: 'name'
+                            info: 'name',
+                            message: 'The "name" does not allow null values'
                         }]
                     })
                     done();
@@ -150,13 +156,16 @@ describe('parser 错误参数检测测试', function () {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     data.should.containEql({
-                        error: [{
+                        code: 403,
+                        message: 'Parameter type conversion error.',
+                        errors: [{
                             type: 3,
                             info: {
                                 key: 'age',
                                 type: 'number',
                                 help: null
-                            }
+                            },
+                            message: 'Can not convert "age" to number type'
                         }]
                     })
                     done();
@@ -219,13 +228,16 @@ describe('parser 错误参数检测测试', function () {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     data.should.containEql({
-                        error: [{
+                        code: 403,
+                        message: 'Parameter type conversion error.',
+                        errors: [{
                             type: 3,
                             info: {
                                 key: 'weight',
                                 type: 'number',
                                 help: null
-                            }
+                            },
+                            message: 'Can not convert "weight" to number type'
                         }]
                     });
                     done();
@@ -297,13 +309,16 @@ describe('parser 错误参数检测测试', function () {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     data.should.containEql({
-                        error: [{
+                        code: 403,
+                        message: 'Parameter type conversion error.',
+                        errors: [{
                             type: 3,
                             info: {
                                 key: 'join',
                                 type: 'function',
                                 help: 'haha'
-                            }
+                            },
+                            message: 'haha'
                         }]
                     });
                     done();
@@ -383,16 +398,18 @@ describe('parser 错误参数检测测试', function () {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     data.should.containEql({
-                        error: [{
+                        code: 403,
+                        message: 'The parameter is not in the selection range.',
+                        errors: [{
                             type: 4,
                             info: {
                                 key: 'sex',
-                                choices: [
-                                    'man',
-                                    'woman'
-                                ]
-                            }
+                                value: 'lalalal',
+                                choices: ['man', 'woman']
+                            },
+                            message: 'The sex: "lalalal" is not in [man,woman]'
                         }]
+
                     });
                     done();
                 })

@@ -4,9 +4,9 @@
   "description": "nodejs restful api",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --recursive",
     "coverage": "istanbul cover .\\node_modules\\mocha\\bin\\_mocha",
-    "report": "mocha --reporter mochawesome",
+    "report": "mocha --recursive --reporter mochawesome",
     "dev": "gulp"
   },
   "repository": {

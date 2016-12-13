@@ -1,8 +1,9 @@
 import { parse } from 'url';
-import { Resource } from './resource';
 import { IncomingMessage, createServer, Server } from 'http';
 
-class Api {
+abstract class Resource{}
+
+export class Restful {
     private resourceMap: Map<string, Resource>;
     private port: number;
     private hostname: string;

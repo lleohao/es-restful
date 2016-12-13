@@ -1,6 +1,13 @@
 "use strict";
+const url_1 = require('url');
 const http_1 = require('http');
-class Api {
+function addParser(parser) {
+    return function (target, propertyKey, descriptor) {
+        console.log(target, propertyKey, descriptor);
+    };
+}
+exports.addParser = addParser;
+class Restful {
     constructor(port = 5050, hostname = 'localhost') {
         this.port = port;
         this.hostname = hostname;
@@ -9,7 +16,7 @@ class Api {
     addSource(path, resource) {
         let resourceMap = this.resourceMap;
         if (resourceMap.has(path)) {
-            throw SyntaxError(`The path:${path} already exists`);
+            throw SyntaxError(`The path:${path} already exists.`);
         }
         resourceMap.set(path, resource);
     }
@@ -17,9 +24,21 @@ class Api {
         if (this.resourceMap.size === 0) {
             console.warn('There can not be any proxied resources');
         }
-        this.server = http_1.createServer((req, res) => {
+        let server = this.server;
+        let resoureMap = this.resourceMap;
+        server = http_1.createServer((req, res) => {
+            let path = url_1.parse(req.url).pathname;
+            if (resoureMap.has(path)) {
+            }
+            else {
+                res.writeHead(404, { 'Content-type': 'application/json' });
+                res.end(JSON.stringify({
+                    code: 404,
+                    message: 'The requested connection does not exist.'
+                }));
+            }
         });
-        this.server.listen(this.port, this.hostname);
+        server.listen(this.port, this.hostname);
     }
     stop() {
         if (this.server !== undefined) {
@@ -27,4 +46,5 @@ class Api {
         }
     }
 }
+exports.Restful = Restful;
 //# sourceMappingURL=restful.js.map

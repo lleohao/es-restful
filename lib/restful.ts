@@ -1,7 +1,13 @@
 import { parse } from 'url';
 import { IncomingMessage, createServer, Server } from 'http';
+import { Parser } from './parser'
 
-abstract class Resource{}
+export interface Resource { }
+export function addParser(parser: Parser) {
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        console.log(target, propertyKey, descriptor);
+    }
+}
 
 export class Restful {
     private resourceMap: Map<string, Resource>;

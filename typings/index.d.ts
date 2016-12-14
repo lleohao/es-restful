@@ -1,2 +1,3 @@
-export { Restful, addParser } from './restful';
-export { Parser } from './parser';
+/// <reference path="./lib/index.d.ts" />
+/// <reference path="./lib/parser.d.ts" />
+/// <reference path="./lib/restful.d.ts" />

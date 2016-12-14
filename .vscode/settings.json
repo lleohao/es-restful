@@ -1,6 +1,14 @@
 // Place your settings in this file to overwrite default and user settings.
 {
     "eslint.enable": false,
-    "**/*.js": { "when": "$(basename).ts"},
-    "**/*.js.map": { "when": "$(basename).ts"}
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/*.js": {
+            "when": "$(basename).ts"
+        },
+        "**/*.js.map": true
+    }
 }

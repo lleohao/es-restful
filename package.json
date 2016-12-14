@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "nodejs restful api",
   "main": "./lib/index.js",
+  "typings": "",
   "scripts": {
     "test": "mocha --recursive",
     "coverage": "istanbul cover .\\node_modules\\mocha\\bin\\_mocha",

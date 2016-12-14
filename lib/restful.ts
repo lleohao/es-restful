@@ -108,6 +108,8 @@ export class Restful {
                 this._handleRes(res, 404);
             }
         });
+
+        console.log(`The server is running ${this.hostname}:${this.port}`);
         server.listen(this.port, this.hostname);
     }
 

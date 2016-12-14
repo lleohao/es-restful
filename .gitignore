@@ -36,13 +36,10 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
-# Test files
-mochawesome-reports
-coverage
-lib/test.ts
-lib/@types/test.ts
-dist/test.js
-dist/test.js.map
-
 # Sourcemap files
 **/*.js.map
+
+# Build filse
+/lib/@types
+/lib/**/*.js
+/example/**/*.js

@@ -9,13 +9,13 @@
         "removeComments": true,
         
         "sourceMap": true,
-        "outDir": "./dist",
+        "inlineSources": true,
+        "inlineSourceMap": true,
         
         "declaration": true,
-        "declarationDir": "./lib/@types"
+        "declarationDir": "./typings"
     },
     "exclude": [
-        "node_modules",
-        "example"
+        "node_modules"
     ]
 }

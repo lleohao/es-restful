@@ -32,9 +32,9 @@ export class Restful {
         this.resourceMap = new Map();
     }
 
-    _handleRes(res: ServerResponse, code: number, data?: Object | string) {
+    _handleRes(res: ServerResponse, code: number, data: Object | string = {}) {
         if (this.errorMessage[code]) {
-            let data = {
+            data = {
                 code: code,
                 message: this.errorMessage[code]
             }
@@ -89,15 +89,15 @@ export class Restful {
             if (resoureMap.has(path)) {
                 let resource = resoureMap.get(path);
                 let result: string | Object = null;
-                let handle = resource[req.method];
+                let handle = resource[req.method.toLowerCase()];
 
                 // 存在当前请求类型的处理函数
                 if (handle) {
                     if (handle.parser === undefined) {
-                        this._handleRes(res, 200, handle());
+                        this._handleRes(res, 200, handle.call(resource));
                     } else {
                         handle.parser.on('end', (data) => {
-                            this._handleRes(res, 200, handle(result));
+                            this._handleRes(res, 200, handle.call(resource, result));
                         })
                     }
 

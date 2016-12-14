@@ -97,7 +97,7 @@ export class Parser extends EventEmitter {
             this.on('parseEnd', (result: Result) => {
                 if (!result.hasError) {
                     process.nextTick(function () {
-                        _emit.emit('end', { data: result['result'] });
+                        _emit.emit('end', result['result']);
                     })
                 } else {
                     this._handleError(result.error, _emit);
@@ -238,6 +238,7 @@ export class Parser extends EventEmitter {
                         case 'string':
                             conversion = (val: any) => { return '' + val };
                             type = 'string';
+                            break;
                         default:
                             conversion = rule.type;
                             type = 'function'
@@ -341,7 +342,7 @@ export class Parser extends EventEmitter {
          * fixme: 待开发
          * this.errCb();
          */
-        
+
         process.nextTick(function () {
             emit.emit('end', {
                 code: resCode,

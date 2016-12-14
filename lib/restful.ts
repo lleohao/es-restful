@@ -32,22 +32,30 @@ export class Restful {
         this.resourceMap = new Map();
     }
 
-    _handleRes(res: ServerResponse, code: number, data: Object | string = {}) {
-        if (this.errorMessage[code]) {
+    _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
+        if (typeof code === 'number') {
             data = {
                 code: code,
                 message: this.errorMessage[code]
             }
         } else {
-            data = {
-                code: code,
-                data: data
-            }
+            data = code;
+            code = data['code'];
+        }
+
+        res.writeHead(<number>code, { 'Content-type': 'application/json' });
+        res.write(JSON.stringify(data));
+        res.end();
+    }
+
+    _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
+        data = {
+            code: code,
+            data: data
         }
 
         res.writeHead(code, { 'Content-type': 'application/json' });
-        res.write(JSON.stringify(data));
-        res.end();
+        res.end(JSON.stringify(data));
     }
 
     /**
@@ -94,18 +102,24 @@ export class Restful {
                 // 存在当前请求类型的处理函数
                 if (handle) {
                     if (handle.parser === undefined) {
-                        this._handleRes(res, 200, handle.call(resource));
+                        this._handleSuccess(res, 200, handle.call(resource));
                     } else {
-                        handle.parser.on('end', (data) => {
-                            this._handleRes(res, 200, handle.call(resource, result));
-                        })
+                        (<Parser>handle.parser)
+                            .parse(req, res)
+                            .on('end', (data) => {
+                                if (data.code >= 400) {
+                                    this._handleError(res, data)
+                                } else {
+                                    this._handleSuccess(res, 200, handle.call(resource, data));
+                                }
+                            })
                     }
 
                 } else {
-                    this._handleRes(res, 400);
+                    this._handleError(res, 400);
                 }
             } else {
-                this._handleRes(res, 404);
+                this._handleError(res, 404);
             }
         });
 

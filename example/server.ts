@@ -10,6 +10,12 @@ interface todoItem {
     updateData?: number;
 }
 
+let postParser = new Parser();
+postParser.addParam('title', {
+    required: true,
+    type: 'string'
+})
+
 class TodoListResource {
     private todoList: todoItem[];
     private todoId: number;
@@ -26,6 +32,19 @@ class TodoListResource {
 
     get() {
         return this.todoList;
+    }
+
+    @addParser(postParser)
+    post(params) {
+        let todoItem: todoItem = {
+            id: this.todoId++,
+            title: params.title,
+            completed: false,
+            createDate: Date.now()
+        }
+        this.todoList.push(todoItem);
+
+        return 'success';
     }
 }
 

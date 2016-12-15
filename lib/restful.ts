@@ -103,11 +103,11 @@ export class Restful {
                     } else {
                         let parser = handle.parser;
 
-                        parser.parse(req, res).on('parsrEnd', (data: ParamData) => {
+                        parser.parse(req, res).on('parseEnd', (data: ParamData) => {
                             if (data.errorData !== undefined) {
                                 this._handleError(res, data.errorData);
                             } else {
-                                this._handleSuccess(res, 200, handle.call(resource, data.data));
+                                this._handleSuccess(res, 200, handle.call(resource, data));
                             }
                         });
                     }

@@ -224,7 +224,7 @@ export class Parser extends EventEmitter {
             let queryStr = url.substr(url.indexOf('?') + 1);
 
             parsedData['result'] = qs.parse(queryStr);
-            this.emit('endParse', this._checkParams(parsedData));
+            this.emit('_endParse', this._checkParams(parsedData));
         } else {
             let contentType: string = req.headers['content-type'];
             let body: any = [];
@@ -233,9 +233,14 @@ export class Parser extends EventEmitter {
                 body.push(chunk);
             }).on('end', () => {
                 body = body.toString();
-                parsedData['result'] = this._handleBodyData(contentType, body);
+                let bodyData = this._handleBodyData(contentType, body);
+                if (bodyData['error']) {
+                    parsedData['error'] = bodyData;
+                } else {
+                    parsedData['result'] = bodyData;
+                }
 
-                this.emit('endParse', this._checkParams(parsedData));
+                this.emit('_endParse', this._checkParams(parsedData));
             });
         }
     }
@@ -255,8 +260,10 @@ export class Parser extends EventEmitter {
             switch (type) {
                 case 'application/x-www-form-urlencoded':
                     data = qs.parse(body);
+                    break;
                 case 'application/json':
                     data = JSON.parse(body);
+                    break;
                 default:
                     data = {
                         error: {
@@ -289,10 +296,7 @@ export class Parser extends EventEmitter {
         let params = this.params;
 
         // 对于请求方式的错误提前解析返回
-        if (result['error']) {
-            parseData.error = result['error'];
-            return parseData;
-        }
+        if (parseData['error']) return parseData;
 
         // 检测参数是否正确
         Object.keys(params).every((key: string) => {
@@ -407,33 +411,32 @@ export class Parser extends EventEmitter {
     /**
      * 根据错误信息生成错误响应数据
      * 
-     * @param {ParamsResultError} errors
+     * @param {ParamsResultError} error
      * @returns
      * 
      * @memberOf Parser
      */
-    private _getErrorMessage(errors: ParamsResultError) {
-        let error = errors[0];
+    private _getErrorMessage(error: ParamsResultError) {
         let message: string = errorMessages[error.type];
         let resCode = error.type === errorMessages[errorCode.REQUEST_ERROR] ? 400 : 403;
 
         switch (error.type) {
-            case errorMessages[errorCode.REQUEST_ERROR]:
+            case errorCode.REQUEST_ERROR:
                 error['message'] = <string>error.info;
                 break;
-            case errorMessages[errorCode.REQUIRED_ERROR]:
+            case errorCode.REQUIRED_ERROR:
                 error['message'] = `The "${error.info}" are required.`;
                 break;
-            case errorMessages[errorCode.CONVER_ERROR]:
+            case errorCode.CONVER_ERROR:
                 error['message'] =
                     error.info['help'] === null ?
                         `Can not convert "${error.info['key']}" to ${error.info['type']} type`
                         : error.info['help'];
                 break;
-            case errorMessages[errorCode.CHOICES_ERROR]:
+            case errorCode.CHOICES_ERROR:
                 error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
                 break;
-            case errorMessages[errorCode.NULL_ERROR]:
+            case errorCode.NULL_ERROR:
                 error['message'] = `The "${error.info}" does not allow null values`;
                 break;
         };
@@ -441,7 +444,7 @@ export class Parser extends EventEmitter {
         return {
             code: resCode,
             message: message,
-            errors: errors
+            error: error
         };
     }
 
@@ -461,7 +464,7 @@ export class Parser extends EventEmitter {
 
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
-            this.errCb = errCb || function () { };
+            this.errCb = errCb || function() { };
         } else {
             this.trim = false;
             this.errCb = <Function>trim;
@@ -552,14 +555,16 @@ export class Parser extends EventEmitter {
 
         // 只绑定一次处理事件
         if (this.eventNames().length === 0) {
-            this.on('endParse', (result: ParamResult) => {
-                let data: ParamData;
+            this.on('_endParse', (result: ParamResult) => {
+                let data = {};
                 if (result.error !== null) {
-                    data = this._getErrorMessage(result.error);
+                    data['errorData'] = this._getErrorMessage(result.error);
                 } else {
                     data = result.result;
                 }
-                this.emit('parseEnd', data);
+                process.nextTick(() => {
+                    this.emit('parseEnd', data);
+                });
             });
         }
 

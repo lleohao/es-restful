@@ -142,19 +142,12 @@ interface ParamResult {
      */
     method: string;
     /**
-     * 是否存在错误
-     * 
-     * @type {boolean}
-     * @memberOf Result
-     */
-    hasError: boolean;
-    /**
-     * 错误信息数组
+     * 错误信息数据
      * 
      * @type {ResultError[]}
      * @memberOf Result
      */
-    error?: ParamsResultError[];
+    error?: ParamsResultError;
     /**
      * 解析参数内容
      * 
@@ -221,9 +214,8 @@ export class Parser extends EventEmitter {
         let isGet = req.method.toLowerCase() === 'get';
         let parsedData: ParamResult = {
             method: req.method,
-            hasError: false,
             result: null,
-            error: []
+            error: null
         };
 
         if (isGet) {
@@ -298,8 +290,7 @@ export class Parser extends EventEmitter {
 
         // 对于请求方式的错误提前解析返回
         if (result['error']) {
-            parseData.hasError = true;
-            parseData.error.push(result['error']);
+            parseData.error = result['error'];
             return parseData;
         }
 
@@ -309,11 +300,10 @@ export class Parser extends EventEmitter {
             let value = result[key];
             // 1. required
             if (rule.required && value === undefined) {
-                parseData.hasError = true;
-                parseData.error.push({
+                parseData.error = {
                     type: errorCode.REQUIRED_ERROR,
                     info: key
-                });
+                };
 
                 return false;
             }
@@ -325,11 +315,10 @@ export class Parser extends EventEmitter {
 
             // 3. nullabeld
             if (!rule.nullabled && !value) {
-                parseData.hasError = true;
-                parseData.error.push({
+                parseData.error = {
                     type: errorCode.NULL_ERROR,
                     info: key
-                });
+                };
 
                 return false;
             }
@@ -364,24 +353,22 @@ export class Parser extends EventEmitter {
                     try {
                         conversionVal = conversion(value);
                     } catch (error) {
-                        parseData.hasError = true;
-                        parseData.error.push({
+                        parseData.error = {
                             type: errorCode.CONVER_ERROR,
                             info: { key: key, type: type, help: rule.help }
-                        });
+                        };
                     }
                 } else {
                     conversionVal = conversion(value);
                 }
 
                 if (!rule.ignore) {
-                    if (parseData.hasError) return false;
+                    if (parseData.error !== null) return false;
                     if (type === 'number' && isNaN(conversionVal)) {
-                        parseData.hasError = true;
-                        parseData.error.push({
+                        parseData.error = {
                             type: errorCode.CONVER_ERROR,
                             info: { key: key, type: type, help: rule.help }
-                        });
+                        };
                         return false;
                     }
                 }
@@ -397,11 +384,10 @@ export class Parser extends EventEmitter {
 
             // 6. choices
             if (rule.choices && rule.choices.indexOf(value) === -1) {
-                parseData.hasError = true;
-                parseData.error.push({
+                parseData.error = {
                     type: errorCode.CHOICES_ERROR,
                     info: { key: key, value: value, choices: rule.choices }
-                });
+                };
 
                 return false;
             }
@@ -421,38 +407,36 @@ export class Parser extends EventEmitter {
     /**
      * 根据错误信息生成错误响应数据
      * 
-     * @param {ParamsResultError[]} errors
+     * @param {ParamsResultError} errors
      * @returns
      * 
      * @memberOf Parser
      */
-    private _getErrorMessage(errors: ParamsResultError[]) {
+    private _getErrorMessage(errors: ParamsResultError) {
         let error = errors[0];
         let message: string = errorMessages[error.type];
         let resCode = error.type === errorMessages[errorCode.REQUEST_ERROR] ? 400 : 403;
 
-        errors.forEach((error) => {
-            switch (error.type) {
-                case errorMessages[errorCode.REQUEST_ERROR]:
-                    error['message'] = <string>error.info;
-                    break;
-                case errorMessages[errorCode.REQUIRED_ERROR]:
-                    error['message'] = `The "${error.info}" are required.`;
-                    break;
-                case errorMessages[errorCode.CONVER_ERROR]:
-                    error['message'] =
-                        error.info['help'] === null ?
-                            `Can not convert "${error.info['key']}" to ${error.info['type']} type`
-                            : error.info['help'];
-                    break;
-                case errorMessages[errorCode.CHOICES_ERROR]:
-                    error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
-                    break;
-                case errorMessages[errorCode.NULL_ERROR]:
-                    error['message'] = `The "${error.info}" does not allow null values`;
-                    break;
-            };
-        });
+        switch (error.type) {
+            case errorMessages[errorCode.REQUEST_ERROR]:
+                error['message'] = <string>error.info;
+                break;
+            case errorMessages[errorCode.REQUIRED_ERROR]:
+                error['message'] = `The "${error.info}" are required.`;
+                break;
+            case errorMessages[errorCode.CONVER_ERROR]:
+                error['message'] =
+                    error.info['help'] === null ?
+                        `Can not convert "${error.info['key']}" to ${error.info['type']} type`
+                        : error.info['help'];
+                break;
+            case errorMessages[errorCode.CHOICES_ERROR]:
+                error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
+                break;
+            case errorMessages[errorCode.NULL_ERROR]:
+                error['message'] = `The "${error.info}" does not allow null values`;
+                break;
+        };
 
         return {
             code: resCode,
@@ -570,7 +554,7 @@ export class Parser extends EventEmitter {
         if (this.eventNames().length === 0) {
             this.on('endParse', (result: ParamResult) => {
                 let data: ParamData;
-                if (result.hasError) {
+                if (result.error !== null) {
                     data = this._getErrorMessage(result.error);
                 } else {
                     data = result.result;

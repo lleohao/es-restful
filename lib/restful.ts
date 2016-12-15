@@ -30,6 +30,9 @@ export class Restful {
         this.resourceMap = new Map();
     }
 
+    /**
+     * 错误响应处理函数
+     */
     _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
         if (typeof code === 'number') {
             data = {
@@ -45,6 +48,9 @@ export class Restful {
         res.end(JSON.stringify(data));
     }
 
+    /**
+     * 正确响应处理函数
+     */
     _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
         data = {
             code: code,
@@ -54,6 +60,38 @@ export class Restful {
 
         res.writeHead(code, { 'Content-type': 'application/json' });
         res.end(JSON.stringify(data));
+    }
+
+    _route(req, res) {
+        let resoureMap = this.resourceMap;
+        let path = parse(req.url).pathname;
+
+        if (resoureMap.has(path)) {
+            let resource = resoureMap.get(path);
+            let handle = resource[req.method.toLowerCase()];
+
+            // 存在当前请求类型的处理函数
+            if (handle) {
+                if (handle.parser === undefined) {
+                    this._handleSuccess(res, 200, handle.call(resource));
+                } else {
+                    let parser = handle.parser;
+
+                    parser.parse(req, res).on('parseEnd', (data: ParamData) => {
+                        if (data.errorData !== undefined) {
+                            this._handleError(res, data.errorData);
+                        } else {
+                            this._handleSuccess(res, 200, handle.call(resource, data));
+                        }
+                    });
+                }
+
+            } else {
+                this._handleError(res, 400);
+            }
+        } else {
+            this._handleError(res, 404);
+        }
     }
 
     /**
@@ -88,37 +126,9 @@ export class Restful {
             console.warn('There can not be any proxied resources');
         }
         let server = this.server;
-        let resoureMap = this.resourceMap;
 
-        server = createServer((req, res) => {
-            let path = parse(req.url).pathname;
-            if (resoureMap.has(path)) {
-                let resource = resoureMap.get(path);
-                let handle = resource[req.method.toLowerCase()];
-
-                // 存在当前请求类型的处理函数
-                if (handle) {
-                    if (handle.parser === undefined) {
-                        this._handleSuccess(res, 200, handle.call(resource));
-                    } else {
-                        let parser = handle.parser;
-
-                        parser.parse(req, res).on('parseEnd', (data: ParamData) => {
-                            if (data.errorData !== undefined) {
-                                this._handleError(res, data.errorData);
-                            } else {
-                                this._handleSuccess(res, 200, handle.call(resource, data));
-                            }
-                        });
-                    }
-
-                } else {
-                    this._handleError(res, 400);
-                }
-            } else {
-                this._handleError(res, 404);
-            }
-        });
+        server = createServer();
+        server.on('request', this._route);
 
         console.log(`The server is running ${this.hostname}:${this.port}`);
         server.listen(this.port, this.hostname);

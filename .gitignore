@@ -43,3 +43,6 @@ jspm_packages
 /lib/@types
 /lib/**/*.js
 /example/**/*.js
+
+# webstorm
+.idea

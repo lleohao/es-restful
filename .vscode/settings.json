@@ -9,6 +9,7 @@
         "**/*.js": {
             "when": "$(basename).ts"
         },
-        "**/*.js.map": true
+        "**/*.js.map": true,
+        ".idea": true
     }
 }

@@ -16,3 +16,26 @@ export const errorMessages = {
     4: 'The parameter is not in the selection range.',
     5: 'Parameters are not allowed to be null.'
 };
+
+
+/**
+ * 简单的路由参数处理
+ */
+export function getRuleRegx(path: string) {
+    let ruleRe = /([^<]*)<([a-zA-Z_][a-zA-Z0-9_]*)>/g;
+    let result = [];
+    let length = path.length;
+    let index = 0;
+
+    while (index < length) {
+        // 获取参数名称
+        result.push(ruleRe.exec(path)[2]);
+        index = ruleRe.lastIndex;
+    }
+
+    result.forEach((name) => {
+        path = path.replace(`<${name}>`, '(\\w+)');
+    });
+
+    return new RegExp(path, 'g');
+}

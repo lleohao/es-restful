@@ -1,34 +1,33 @@
 import { isArray } from 'util';
-import { IncomingMessage, ServerResponse } from 'http';
-import { parse } from 'url';
+import { IncomingMessage } from 'http';
 import * as qs from 'querystring';
 import { EventEmitter } from 'events';
 
 export interface Param {
-    name?: string
-    caseSensitive?: boolean
-    nullabled?: boolean
-    ignore?: boolean
-    defaultVal?: any
-    dset?: string
-    required?: boolean
-    type?: string | Function
-    trim?: boolean | null
-    choices?: any[]
-    help?: string
+    name?: string;
+    caseSensitive?: boolean;
+    nullabled?: boolean;
+    ignore?: boolean;
+    defaultVal?: any;
+    dset?: string;
+    required?: boolean;
+    type?: string | Function;
+    trim?: boolean | null;
+    choices?: any[];
+    help?: string;
 }
 
 interface Result {
-    method: string
-    hasError: boolean
-    error?: ResultError[]
-    result: any
+    method: string;
+    hasError: boolean;
+    error?: ResultError[];
+    result: any;
 }
 
 interface ResultError {
-    type?: number
-    info?: any
-    message?: string
+    type?: number;
+    info?: any;
+    message?: string;
 }
 
 /**
@@ -44,25 +43,26 @@ const NULL_ERROR = 5;
 /**
  * error message
  */
-const errorMessages: any = {
-    1: 'Unable to parse this request.',
-    2: 'Missing request parameters.',
-    3: 'Parameter type conversion error.',
-    4: 'The parameter is not in the selection range.',
-    5: 'Parameters are not allowed to be null.'
-}
+// const errorMessages: any = {
+//     1: 'Unable to parse this request.',
+//     2: 'Missing request parameters.',
+//     3: 'Parameter type conversion error.',
+//     4: 'The parameter is not in the selection range.',
+//     5: 'Parameters are not allowed to be null.'
+// };
 
 export class Parser extends EventEmitter {
-    private params: any
-    private trim: boolean
-    private errCb: Function
-    public baseUrl: string = ''
+    private params: any;
+    private trim: boolean;
+    private errCb: Function;
+    public baseUrl: string = '';
 
     /**
      * Creates an instance of Parser.
      * 
-     * @param {boolean} [trim=false]
-     * @param {Function} [errCb]
+     * 
+     * @param {(boolean | Function)} [trim=false]       是否自动清除参数两端的空白, 可以被参数的单独设置的属性覆盖
+     * @param {Function} [errCb]                        错误处理函数
      * 
      * @memberOf Parser
      */
@@ -81,51 +81,40 @@ export class Parser extends EventEmitter {
     }
 
     /**
-     * parse params
+     * 解析请求参数
      * 
-     * @param {IncomingMessage} req  http request
-     * @param {ServerResponse} res   http response
-     * @returns
+     * @param {IncomingMessage} req
+     * @returns {Result}
      * 
      * @memberOf Parser
-     * @api
      */
-    parse(req: IncomingMessage, res: ServerResponse) {
-        let _emit = new EventEmitter();
+    parse(req: IncomingMessage) {
+        this._parseRequest(req);
 
         if (!this.eventNames().length) {
             this.on('parseEnd', (result: Result) => {
-                if (!result.hasError) {
-                    process.nextTick(function () {
-                        _emit.emit('end', result['result']);
-                    })
-                } else {
-                    this._handleError(result.error, _emit);
-                }
-            })
+                return result;
+            });
         }
-
-        this._parseReqest(req);
-        return _emit;
     }
 
     /**
      * parse request
-     * 
+     *
      * @private
      * @param {IncomingMessage} req   http request
      * @returns
-     * 
+     *
      * @memberOf Parser
      */
-    private _parseReqest(req: IncomingMessage) {
+    private _parseRequest(req: IncomingMessage) {
         let isGet = req.method.toLowerCase() === 'get';
         let parsedData: Result = {
             method: req.method,
             hasError: false,
             result: null,
             error: []
-        }
+        };
 
         if (isGet) {
             let url = req.url.substr(this.baseUrl.length);
@@ -133,7 +122,7 @@ export class Parser extends EventEmitter {
 
             parsedData['result'] = qs.parse(queryStr);
 
-            this.emit('parseEnd', this._checkParams(parsedData))
+            this.emit('parseEnd', this._checkParams(parsedData));
         } else {
             let contentType: string = req.headers['content-type'];
             let body: any = [];
@@ -143,14 +132,14 @@ export class Parser extends EventEmitter {
             }).on('end', () => {
                 parsedData['result'] = this._handleBodyData(contentType, body);
 
-                this.emit('parseEnd', this._checkParams(parsedData))
-            })
+                this.emit('parseEnd', this._checkParams(parsedData));
+            });
         }
     }
 
     /**
      * 处理请求中的body数据
-     * 
+     *
      * @private
      * @param {string} type     请求类型
      * @param {*} body          请求数据主体
@@ -170,19 +159,18 @@ export class Parser extends EventEmitter {
                         type: REQUEST_ERROR,
                         info: 'This request method is not supported'
                     }
-                }
+                };
         }
     }
 
     /**
      * 检测参数是否正确
-     * 
+     *
      * @private
      * @param {*} result    解析出来的参数
      * @returns
      */
     private _checkParams(parseData: Result) {
-        let error: any;
         let result = parseData.result;
         let params = this.params;
 
@@ -200,7 +188,7 @@ export class Parser extends EventEmitter {
                     parseData.error.push({
                         type: REQUIRED_ERROR,
                         info: key
-                    })
+                    });
 
                     return false;
                 }
@@ -216,7 +204,7 @@ export class Parser extends EventEmitter {
                     parseData.error.push({
                         type: NULL_ERROR,
                         info: key
-                    })
+                    });
 
                     return false;
                 }
@@ -236,12 +224,14 @@ export class Parser extends EventEmitter {
                             type = 'number';
                             break;
                         case 'string':
-                            conversion = (val: any) => { return '' + val };
+                            conversion = (val: any) => {
+                                return '' + val;
+                            };
                             type = 'string';
                             break;
                         default:
                             conversion = rule.type;
-                            type = 'function'
+                            type = 'function';
                             break;
                     }
 
@@ -253,7 +243,7 @@ export class Parser extends EventEmitter {
                             parseData.error.push({
                                 type: CONVER_ERROR,
                                 info: { key: key, type: type, help: rule.help }
-                            })
+                            });
                         }
                     } else {
                         conversionVal = conversion(value);
@@ -266,7 +256,7 @@ export class Parser extends EventEmitter {
                             parseData.error.push({
                                 type: CONVER_ERROR,
                                 info: { key: key, type: type, help: rule.help }
-                            })
+                            });
                             return false;
                         }
                     }
@@ -281,12 +271,12 @@ export class Parser extends EventEmitter {
                 }
 
                 // 6. choices
-                if (rule.choices && rule.choices.indexOf(value) == -1) {
+                if (rule.choices && rule.choices.indexOf(value) === -1) {
                     parseData.hasError = true;
                     parseData.error.push({
                         type: CHOICES_ERROR,
                         info: { key: key, value: value, choices: rule.choices }
-                    })
+                    });
 
                     return false;
                 }
@@ -298,67 +288,69 @@ export class Parser extends EventEmitter {
                     result[key] = value;
                 }
                 return true;
-            })
+            });
         }
         return parseData;
     }
 
     /**
      * 错误处理函数
-     * 
+     *
      * @private
      * @param {[ResultError]} error
      * @param {EventEmitter} res
      */
-    private _handleError(errors: ResultError[], emit: EventEmitter) {
-        let error = errors[0];
-        let message: string = errorMessages[error.type];
-        let resCode = error.type === REQUEST_ERROR ? 400 : 403;
+    // private _handleError(errors: ResultError[], emit: EventEmitter) {
+    //     let error = errors[0];
+    //     let message: string = errorMessages[error.type];
+    //     let resCode = error.type === REQUEST_ERROR ? 400 : 403;
 
-        errors.forEach((error) => {
-            switch (error.type) {
-                case REQUEST_ERROR:
-                    error['message'] = <string>error.info;
-                    break;
-                case REQUIRED_ERROR:
-                    error['message'] = `The "${error.info}" are required.`;
-                    break;
-                case CONVER_ERROR:
-                    error['message'] =
-                        error.info['help'] === null ?
-                            `Can not convert "${error.info['key']}" to ${error.info['type']} type`
-                            : error.info['help'];
-                    break;
-                case CHOICES_ERROR:
-                    error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
-                    break;
-                case NULL_ERROR:
-                    error['message'] = `The "${error.info}" does not allow null values`
-                    break;
-            };
-        })
+    //     errors.forEach((error) => {
+    //         switch (error.type) {
+    //             case REQUEST_ERROR:
+    //                 error['message'] = <string>error.info;
+    //                 break;
+    //             case REQUIRED_ERROR:
+    //                 error['message'] = `The "${error.info}" are required.`;
+    //                 break;
+    //             case CONVER_ERROR:
+    //                 error['message'] =
+    //                     error.info['help'] === null ?
+    //                         `Can not convert "${error.info['key']}" to ${error.info['type']} type`
+    //                         : error.info['help'];
+    //                 break;
+    //             case CHOICES_ERROR:
+    //                 error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
+    //                 break;
+    //             case NULL_ERROR:
+    //                 error['message'] = `The "${error.info}" does not allow null values`;
+    //                 break;
+    //         }
+    //         ;
+    //     });
 
-        /**
-         * fixme: 待开发
-         * this.errCb();
-         */
+    //     /**
+    //      * fixme: 待开发
+    //      * this.errCb();
+    //      */
 
-        process.nextTick(function () {
-            emit.emit('end', {
-                code: resCode,
-                message: message,
-                errors: errors
-            });
-        })
-    }
+    //     process.nextTick(function () {
+    //         emit.emit('end', {
+    //             code: resCode,
+    //             message: message,
+    //             errors: errors
+    //         });
+    //     });
+    // }
 
     /**
-     * add param
-     * 
-     * @param {Param} param param optins
-     * 
+     * 添加参数信息
+     *
+     *
      * @memberOf Parser
      * @api
+     * @param name          参数名称
+     * @param options       参数配置
      */
     addParam(name: string, options: Param) {
         let baseParam: any = {
@@ -375,11 +367,11 @@ export class Parser extends EventEmitter {
         };
 
         if (typeof (name) !== 'string') {
-            throw new TypeError('The parameter type of name must be a string')
+            throw new TypeError('The parameter type of name must be a string');
         }
 
         if (this.params[name]) {
-            throw new TypeError(`The parameter name: ${name} already exists`)
+            throw new TypeError(`The parameter name: ${name} already exists`);
         }
 
         /**
@@ -394,7 +386,7 @@ export class Parser extends EventEmitter {
 
     /**
      * delete params
-     * 
+     *
      * @param {((string | string[]))} name params name
      */
     removeParams(name: (string | string[])) {
@@ -407,13 +399,13 @@ export class Parser extends EventEmitter {
             if (this.params[name]) {
                 delete this.params[name];
             }
-        })
+        });
     }
 
     /**
      * 设置基本url
-     * 当从url中解析数据时会自动取消baseUrl中的内容
-     * 
+     * 当从url中解析数据时会自动去掉baseUrl中的内容
+     *
      * @param {string} baseUrl
      */
     setBaseUrl(baseUrl: string) {

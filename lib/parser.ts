@@ -209,54 +209,6 @@ export class Parser extends EventEmitter {
     public baseUrl: string = '';
 
     /**
-     * Creates an instance of Parser.
-     * 
-     * 
-     * @param {(boolean | Function)} [trim=false]       是否自动清除参数两端的空白, 可以被参数的单独设置的属性覆盖
-     * @param {Function} [errCb]                        错误处理函数
-     * 
-     * @memberOf Parser
-     */
-    constructor(trim: boolean | Function = false, errCb?: Function) {
-        super();
-
-        this.params = {};
-
-        if (typeof (trim) !== 'function') {
-            this.trim = !!trim;
-            this.errCb = errCb || function () { };
-        } else {
-            this.trim = false;
-            this.errCb = <Function>trim;
-        }
-    }
-
-    /**
-     * 解析请求参数
-     * 
-     * @param {IncomingMessage} req
-     * @returns {ParamData}
-     * 
-     * @memberOf Parser
-     */
-    parse(req: IncomingMessage) {
-        this._parseRequest(req);
-
-        // 只绑定一次处理事件
-        if (this.eventNames().length === 0) {
-            this.on('endParse', (result: ParamResult) => {
-                let data: ParamData;
-                if (result.hasError) {
-                    data = this._getErrorMessage(result.error);
-                } else {
-                    data = result.result;
-                }
-                this.emit('parseEnd', data);
-            });
-        }
-    }
-
-    /**
      * parse request
      *
      * @private
@@ -499,8 +451,7 @@ export class Parser extends EventEmitter {
                 case errorMessages[errorCode.NULL_ERROR]:
                     error['message'] = `The "${error.info}" does not allow null values`;
                     break;
-            }
-            ;
+            };
         });
 
         return {
@@ -508,6 +459,29 @@ export class Parser extends EventEmitter {
             message: message,
             errors: errors
         };
+    }
+
+    /**
+     * Creates an instance of Parser.
+     * 
+     * 
+     * @param {(boolean | Function)} [trim=false]       是否自动清除参数两端的空白, 可以被参数的单独设置的属性覆盖
+     * @param {Function} [errCb]                        错误处理函数
+     * 
+     * @memberOf Parser
+     */
+    constructor(trim: boolean | Function = false, errCb?: Function) {
+        super();
+
+        this.params = {};
+
+        if (typeof (trim) !== 'function') {
+            this.trim = !!trim;
+            this.errCb = errCb || function () { };
+        } else {
+            this.trim = false;
+            this.errCb = <Function>trim;
+        }
     }
 
     /**
@@ -580,4 +554,31 @@ export class Parser extends EventEmitter {
     setBaseUrl(baseUrl: string) {
         this.baseUrl = baseUrl;
     }
+
+    /**
+     * 解析请求参数
+     * 
+     * @param {IncomingMessage} req
+     * 
+     * @memberOf Parser
+     * @api
+     */
+    parse(req: IncomingMessage) {
+        this._parseRequest(req);
+
+        // 只绑定一次处理事件
+        if (this.eventNames().length === 0) {
+            this.on('endParse', (result: ParamResult) => {
+                let data: ParamData;
+                if (result.hasError) {
+                    data = this._getErrorMessage(result.error);
+                } else {
+                    data = result.result;
+                }
+                this.emit('parseEnd', data);
+            });
+        }
+    }
+
+
 }

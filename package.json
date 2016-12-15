@@ -3,11 +3,11 @@
   "version": "0.2.0",
   "description": "nodejs restful api",
   "main": "./lib/index.js",
+  "typings": "./typings/index.d.ts",
   "scripts": {
     "test": "mocha --recursive",
     "coverage": "istanbul cover .\\node_modules\\mocha\\bin\\_mocha",
-    "report": "mocha --recursive --reporter mochawesome",
-    "dev": "gulp"
+    "report": "mocha --recursive --reporter mochawesome"
   },
   "repository": {
     "type": "git",

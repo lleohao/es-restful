@@ -4,13 +4,13 @@ import { EventEmitter } from 'events';
 export interface Param {
     name?: string;
     caseSensitive?: boolean;
-    nullabeld?: boolean;
+    nullabled?: boolean;
     ignore?: boolean;
     defaultVal?: any;
     dset?: string;
     required?: boolean;
     type?: string | Function;
-    trim?: boolean;
+    trim?: boolean | null;
     choices?: any[];
     help?: string;
 }
@@ -24,7 +24,7 @@ export declare class Parser extends EventEmitter {
     private _parseReqest(req);
     private _handleBodyData(type, body);
     private _checkParams(parseData);
-    private _handleError(error, emit);
+    private _handleError(errors, emit);
     addParam(name: string, options: Param): void;
     removeParams(name: (string | string[])): void;
     setBaseUrl(baseUrl: string): void;

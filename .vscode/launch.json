@@ -8,10 +8,17 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\lib\\test.ts",
+            "program": "${workspaceRoot}\\example\\server.ts",
             "cwd": "${workspaceRoot}",
-            "sourceMaps": true,
-            "outDir": "${workspaceRoot}/dist"
+            "sourceMaps": true
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to Process",
+            "port": 5858,
+            "outFiles": [],
+            "sourceMaps": true
         }
     ]
 }

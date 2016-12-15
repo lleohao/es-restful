@@ -3,54 +3,174 @@ import { IncomingMessage } from 'http';
 import * as qs from 'querystring';
 import { EventEmitter } from 'events';
 
+import {errorCode} from './utils';
+
+/**
+ * 参数配置信息
+ * 
+ * @export
+ * @interface Param
+ */
 export interface Param {
+    /**
+     * 参数名称
+     * 
+     * @type {string}
+     * @memberOf Param
+     */
     name?: string;
+    /**
+     * 是否忽略大小写, 设置为 true 则统一转换为小写
+     * 
+     * @type {boolean}
+     * @default false
+     * @memberOf Param
+     */
     caseSensitive?: boolean;
+    /**
+     * 是否允许传递空值
+     * 
+     * @type {boolean}
+     * @default true
+     * @memberOf Param
+     */
     nullabled?: boolean;
+    /**
+     * 是否忽略参数自动转换类型发生的错误
+     * 
+     * @type {boolean}
+     * @default false
+     * @memberOf Param
+     */
     ignore?: boolean;
+    /**
+     * 当参数为空时的默认值
+     * 
+     * @type {*}
+     * @memberOf Param
+     */
     defaultVal?: any;
+    /**
+     * 参数的别名, 返回的解析值将使用这个名称代替请求中的名称
+     * 
+     * @type {string}
+     * @memberOf Param
+     */
     dset?: string;
+    /**
+     * 是否是必填的值
+     * 
+     * @type {boolean}
+     * @default false
+     * @memberOf Param
+     */
     required?: boolean;
+    /**
+     * 指定将参数转换为什么类型的值, 可以传递函数
+     * 
+     * @type {(['string', 'float', 'int'] | Function)}
+     * @memberOf Param
+     */
     type?: string | Function;
+    /**
+     * 是否自动清除参数两端的空白
+     * 
+     * @type {(boolean |)}
+     * @default false
+     * @memberOf Param
+     */
     trim?: boolean | null;
+    /**
+     * 参数的可选范围
+     * 
+     * @type {any[]}
+     * @memberOf Param
+     */
     choices?: any[];
+    /**
+     * 当类型转换错误时,指定的返回错误信息
+     * 
+     * @type {string}
+     * @memberOf Param
+     */
     help?: string;
 }
 
-interface Result {
+/**
+ * 解析的参数信息
+ * 
+ * @export
+ * @interface Result
+ */
+export interface Result {
+    /**
+     * 请求方式
+     * 
+     * @type {string}
+     * @memberOf Result
+     */
     method: string;
+    /**
+     * 是否存在错误
+     * 
+     * @type {boolean}
+     * @memberOf Result
+     */
     hasError: boolean;
+    /**
+     * 错误信息数组
+     * 
+     * @type {ResultError[]}
+     * @memberOf Result
+     */
     error?: ResultError[];
+    /**
+     * 解析参数内容
+     * 
+     * @type {*}
+     * @memberOf Result
+     */
     result: any;
 }
 
-interface ResultError {
-    type?: number;
+/**
+ * 参数解析错误信息
+ * 
+ * @export
+ * @interface ResultError
+ */
+export interface ResultError {
+    /**
+     * 错误类型
+     * 
+     * @type {errorCode}
+     * @memberOf ResultError
+     */
+    type?: errorCode;
+    /**
+     * 错误详细信息
+     * 
+     * @type {*}
+     * @memberOf ResultError
+     */
     info?: any;
+    /**
+     * 错误简略信息
+     * 
+     * @type {string}
+     * @memberOf ResultError
+     */
     message?: string;
 }
 
 /**
- * error code
+ * 参数解析类, 自动解析 过滤请求中的参数
+ * 
+ * @export
+ * @class Parser
+ * @extends {EventEmitter}
+ * @version 0.1
  */
-const REQUEST_ERROR = 1;
-const REQUIRED_ERROR = 2;
-const CONVER_ERROR = 3;
-const CHOICES_ERROR = 4;
-const NULL_ERROR = 5;
-
-
-/**
- * error message
- */
-// const errorMessages: any = {
-//     1: 'Unable to parse this request.',
-//     2: 'Missing request parameters.',
-//     3: 'Parameter type conversion error.',
-//     4: 'The parameter is not in the selection range.',
-//     5: 'Parameters are not allowed to be null.'
-// };
-
 export class Parser extends EventEmitter {
     private params: any;
     private trim: boolean;
@@ -91,6 +211,7 @@ export class Parser extends EventEmitter {
     parse(req: IncomingMessage) {
         this._parseRequest(req);
 
+        // 只绑定一次
         if (!this.eventNames().length) {
             this.on('parseEnd', (result: Result) => {
                 return result;
@@ -156,7 +277,7 @@ export class Parser extends EventEmitter {
             default:
                 return {
                     error: {
-                        type: REQUEST_ERROR,
+                        type: errorCode.REQUEST_ERROR,
                         info: 'This request method is not supported'
                     }
                 };
@@ -186,7 +307,7 @@ export class Parser extends EventEmitter {
                 if (rule.required && value === undefined) {
                     parseData.hasError = true;
                     parseData.error.push({
-                        type: REQUIRED_ERROR,
+                        type: errorCode.REQUIRED_ERROR,
                         info: key
                     });
 
@@ -202,7 +323,7 @@ export class Parser extends EventEmitter {
                 if (!rule.nullabled && !value) {
                     parseData.hasError = true;
                     parseData.error.push({
-                        type: NULL_ERROR,
+                        type: errorCode.NULL_ERROR,
                         info: key
                     });
 
@@ -241,7 +362,7 @@ export class Parser extends EventEmitter {
                         } catch (error) {
                             parseData.hasError = true;
                             parseData.error.push({
-                                type: CONVER_ERROR,
+                                type: errorCode.CONVER_ERROR,
                                 info: { key: key, type: type, help: rule.help }
                             });
                         }
@@ -254,7 +375,7 @@ export class Parser extends EventEmitter {
                         if (type === 'number' && isNaN(conversionVal)) {
                             parseData.hasError = true;
                             parseData.error.push({
-                                type: CONVER_ERROR,
+                                type: errorCode.CONVER_ERROR,
                                 info: { key: key, type: type, help: rule.help }
                             });
                             return false;
@@ -274,7 +395,7 @@ export class Parser extends EventEmitter {
                 if (rule.choices && rule.choices.indexOf(value) === -1) {
                     parseData.hasError = true;
                     parseData.error.push({
-                        type: CHOICES_ERROR,
+                        type: errorCode.CHOICES_ERROR,
                         info: { key: key, value: value, choices: rule.choices }
                     });
 

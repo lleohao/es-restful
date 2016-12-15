@@ -1,11 +1,13 @@
 import { parse } from 'url';
-import { IncomingMessage, createServer, Server, ServerResponse } from 'http';
-import { Parser } from './parser'
+import { createServer, Server, ServerResponse } from 'http';
+
+import { Parser, ParamData } from './parser';
+import { errorMessages } from './utils';
 
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         descriptor.value.parser = parser;
-    }
+    };
 }
 
 export class Restful {
@@ -13,10 +15,6 @@ export class Restful {
     private port: number;
     private hostname: string;
     private server: Server;
-    private errorMessage: Object = {
-        400: 'There is no function corresponding to the request method.',
-        404: 'The requested connection does not exist.'
-    }
 
     /**
      * Creates an instance of Api.
@@ -36,23 +34,23 @@ export class Restful {
         if (typeof code === 'number') {
             data = {
                 code: code,
-                message: this.errorMessage[code]
-            }
+                message: errorMessages[code]
+            };
         } else {
             data = code;
             code = data['code'];
         }
 
         res.writeHead(<number>code, { 'Content-type': 'application/json' });
-        res.write(JSON.stringify(data));
-        res.end();
+        res.end(JSON.stringify(data));
     }
 
     _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
         data = {
             code: code,
+            message: 'success',
             data: data
-        }
+        };
 
         res.writeHead(code, { 'Content-type': 'application/json' });
         res.end(JSON.stringify(data));
@@ -69,7 +67,7 @@ export class Restful {
     addSource(path: string, resource: any) {
         let resourceMap = this.resourceMap;
         if (resourceMap.has(path)) {
-            throw SyntaxError(`The path:${path} already exists.`)
+            throw SyntaxError(`The path:${path} already exists.`);
         }
         try {
             resource = new resource();
@@ -87,7 +85,7 @@ export class Restful {
      */
     start() {
         if (this.resourceMap.size === 0) {
-            console.warn('There can not be any proxied resources')
+            console.warn('There can not be any proxied resources');
         }
         let server = this.server;
         let resoureMap = this.resourceMap;
@@ -96,7 +94,6 @@ export class Restful {
             let path = parse(req.url).pathname;
             if (resoureMap.has(path)) {
                 let resource = resoureMap.get(path);
-                let result: string | Object = null;
                 let handle = resource[req.method.toLowerCase()];
 
                 // 存在当前请求类型的处理函数
@@ -104,15 +101,15 @@ export class Restful {
                     if (handle.parser === undefined) {
                         this._handleSuccess(res, 200, handle.call(resource));
                     } else {
-                        (<Parser>handle.parser)
-                            .parse(req, res)
-                            .on('end', (data) => {
-                                if (data.code >= 400) {
-                                    this._handleError(res, data)
-                                } else {
-                                    this._handleSuccess(res, 200, handle.call(resource, data));
-                                }
-                            })
+                        let parser = handle.parser;
+
+                        parser.parse(req, res).on('parsrEnd', (data: ParamData) => {
+                            if (data.errorData !== undefined) {
+                                this._handleError(res, data.errorData);
+                            } else {
+                                this._handleSuccess(res, 200, handle.call(resource, data.data));
+                            }
+                        });
                     }
 
                 } else {
@@ -135,7 +132,7 @@ export class Restful {
      */
     stop() {
         if (this.server !== undefined) {
-            this.server.close()
+            this.server.close();
         }
     }
 }

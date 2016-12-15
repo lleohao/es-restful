@@ -562,7 +562,7 @@ export class Parser extends EventEmitter {
                 this.emit('parseEnd', data);
             });
         }
+
+        return this;
     }
-
-
 }

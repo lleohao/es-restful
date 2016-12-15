@@ -244,15 +244,14 @@ export class Parser extends EventEmitter {
 
         // 只绑定一次处理事件
         if (this.eventNames().length === 0) {
-            this.on('parseEnd', (result: ParamResult) => {
+            this.on('endParse', (result: ParamResult) => {
                 let data: ParamData;
                 if (result.hasError) {
                     data = this._getErrorMessage(result.error);
                 } else {
                     data = result.result;
                 }
-
-                return data;
+                this.emit('parseEnd', data);
             });
         }
     }
@@ -281,7 +280,7 @@ export class Parser extends EventEmitter {
             let queryStr = url.substr(url.indexOf('?') + 1);
 
             parsedData['result'] = qs.parse(queryStr);
-            this.emit('parseEnd', this._checkParams(parsedData));
+            this.emit('endParse', this._checkParams(parsedData));
         } else {
             let contentType: string = req.headers['content-type'];
             let body: any = [];
@@ -292,7 +291,7 @@ export class Parser extends EventEmitter {
                 body = body.toString();
                 parsedData['result'] = this._handleBodyData(contentType, body);
 
-                this.emit('parseEnd', this._checkParams(parsedData));
+                this.emit('endParse', this._checkParams(parsedData));
             });
         }
     }

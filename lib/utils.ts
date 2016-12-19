@@ -23,21 +23,24 @@ export const errorMessages = {
  */
 export function getRuleRegx(path: string) {
     let ruleRe = /([^<]*)<([a-zA-Z_][a-zA-Z0-9_]*)>/g;
-    let result = [];
+    let params = [];
     let length = path.length;
     let index = 0;
 
     while (index < length) {
         // 获取参数名称
-        result.push(ruleRe.exec(path)[2]);
+        params.push(ruleRe.exec(path)[2]);
         index = ruleRe.lastIndex;
     }
 
-    result.forEach((name) => {
+    params.forEach((name) => {
         path = path.replace(`<${name}>`, '(\\w+)');
     });
 
-    return new RegExp(path, 'g');
+    return {
+        rule: new RegExp(path, 'g'),
+        params: params
+    };
 }
 
 

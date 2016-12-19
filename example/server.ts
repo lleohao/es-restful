@@ -1,8 +1,8 @@
 import { addParser, Parser, Restful } from '../lib/index';
 
-const Api = new Restful();
+const api = new Restful();
 
-interface todoItem {
+interface TodoItem {
     id: number,
     title: string;
     completed: boolean;
@@ -10,44 +10,39 @@ interface todoItem {
     updateData?: number;
 }
 
-let postParser = new Parser();
-postParser.addParam('title', {
-    required: true,
-    type: 'string'
-})
+let TODOS: TodoItem[] = [{
+    id: 0,
+    title: 'init todo',
+    completed: false,
+    createDate: 1482144872002,
+}];
 
-class TodoListResource {
-    private todoList: todoItem[];
-    private todoId: number;
 
-    constructor() {
-        this.todoId = 0;
-        this.todoList = [{
-            id: this.todoId++,
-            title: 'first todo',
-            completed: false,
-            createDate: Date.now()
-        }];
+class Todo {
+    get({todoId}) {
+       return todoId;
     }
 
-    get() {
-        return this.todoList;
+    delete(args) {
+        return args;
     }
 
-    @addParser(postParser)
-    post(params) {
-        let todoItem: todoItem = {
-            id: this.todoId++,
-            title: params.title,
-            completed: false,
-            createDate: Date.now()
-        }
-        this.todoList.push(todoItem);
-
-        return 'success';
+    put(args, params) {
+        return [args, params];
     }
 }
 
+class TodoList {
+    get() {
+        return TODOS;
+    }
 
-Api.addSource('/todo', TodoListResource);
-Api.start()
+    post(params) {
+        return params;
+    }
+}
+
+api.addSource(TodoList, '/todos')
+api.addSource(Todo, '/todos/<todoId>')
+
+api.start();

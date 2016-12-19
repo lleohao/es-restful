@@ -39,3 +39,13 @@ export function getRuleRegx(path: string) {
 
     return new RegExp(path, 'g');
 }
+
+
+/**
+ * 判断对象数组中是否存在指定值
+ */
+export function arrHas(arr: Object[], key: string, value: any) {
+    return arr.some((item) => {
+        return item[key] === value;
+    });
+}

@@ -1,8 +1,7 @@
-import { parse } from 'url';
 import { createServer, Server, ServerResponse } from 'http';
 
-import { Parser, ParamData } from './parser';
-import { errorMessages } from './utils';
+import { Parser } from './parser';
+import { errorMessages, getRuleRegx } from './utils';
 
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -10,8 +9,15 @@ export function addParser(parser: Parser) {
     };
 }
 
+interface Resource {
+    path: string;
+    rule: RegExp;
+    params: string[];
+    resource: any;
+}
+
 export class Restful {
-    private resourceMap: Map<string, Object>;
+    private resourceList: Resource[];
     private port: number;
     private hostname: string;
     private server: Server;
@@ -27,7 +33,7 @@ export class Restful {
     constructor(port: number = 5050, hostname: string = 'localhost') {
         this.port = port;
         this.hostname = hostname;
-        this.resourceMap = new Map();
+        this.resourceList = [];
     }
 
     /**
@@ -63,35 +69,35 @@ export class Restful {
     }
 
     _route(req, res) {
-        let resoureMap = this.resourceMap;
-        let path = parse(req.url).pathname;
+        // let resoureMap = this.resourceList;
+        // let path = parse(req.url).pathname;
 
-        if (resoureMap.has(path)) {
-            let resource = resoureMap.get(path);
-            let handle = resource[req.method.toLowerCase()];
+        // if (resoureMap.has(path)) {
+        //     let resource = resoureMap.get(path);
+        //     let handle = resource[req.method.toLowerCase()];
 
-            // 存在当前请求类型的处理函数
-            if (handle) {
-                if (handle.parser === undefined) {
-                    this._handleSuccess(res, 200, handle.call(resource));
-                } else {
-                    let parser = handle.parser;
+        //     // 存在当前请求类型的处理函数
+        //     if (handle) {
+        //         if (handle.parser === undefined) {
+        //             this._handleSuccess(res, 200, handle.call(resource));
+        //         } else {
+        //             let parser = handle.parser;
 
-                    parser.parse(req, res).on('parseEnd', (data: ParamData) => {
-                        if (data.errorData !== undefined) {
-                            this._handleError(res, data.errorData);
-                        } else {
-                            this._handleSuccess(res, 200, handle.call(resource, data));
-                        }
-                    });
-                }
+        //             parser.parse(req, res).on('parseEnd', (data: ParamData) => {
+        //                 if (data.errorData !== undefined) {
+        //                     this._handleError(res, data.errorData);
+        //                 } else {
+        //                     this._handleSuccess(res, 200, handle.call(resource, data));
+        //                 }
+        //             });
+        //         }
 
-            } else {
-                this._handleError(res, 400);
-            }
-        } else {
-            this._handleError(res, 404);
-        }
+        //     } else {
+        //         this._handleError(res, 400);
+        //     }
+        // } else {
+        //     this._handleError(res, 404);
+        // }
     }
 
     /**
@@ -103,16 +109,18 @@ export class Restful {
      * @memberOf Api
      */
     addSource(path: string, resource: any) {
-        let resourceMap = this.resourceMap;
-        if (resourceMap.has(path)) {
-            throw SyntaxError(`The path:${path} already exists.`);
-        }
-        try {
-            resource = new resource();
-            resourceMap.set(path, resource);
-        } catch (error) {
-            throw error;
-        }
+        let resourceList = this.resourceList;
+
+
+        // if (resourceMap.has(path)) {
+        //     throw SyntaxError(`The path:${path} already exists.`);
+        // }
+        // try {
+        //     resource = new resource();
+        //     resourceMap.set(path, resource);
+        // } catch (error) {
+        //     throw error;
+        // }
     }
 
     /**
@@ -122,7 +130,7 @@ export class Restful {
      * @memberOf Api
      */
     start() {
-        if (this.resourceMap.size === 0) {
+        if (this.resourceList.size === 0) {
             console.warn('There can not be any proxied resources');
         }
         let server = this.server;

@@ -12,4 +12,6 @@
         "**/*.js.map": true,
         ".idea": true
     }
+,
+"typescript.check.workspaceVersion": false
 }

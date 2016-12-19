@@ -1,8 +1,8 @@
+import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
-import { createServer, Server, ServerResponse } from 'http';
 
 import { Parser, ParamData } from './parser';
-import { errorMessages } from './utils';
+import { errorMessages, getRuleRegx, arrHas } from './utils';
 
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -10,8 +10,15 @@ export function addParser(parser: Parser) {
     };
 }
 
+interface Resource {
+    path: string;
+    rule: RegExp;
+    params: string[];
+    resource: any;
+}
+
 export class Restful {
-    private resourceMap: Map<string, Object>;
+    private resourceList: Resource[];
     private port: number;
     private hostname: string;
     private server: Server;
@@ -27,10 +34,19 @@ export class Restful {
     constructor(port: number = 5050, hostname: string = 'localhost') {
         this.port = port;
         this.hostname = hostname;
-        this.resourceMap = new Map();
+        this.resourceList = [];
     }
 
-    _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
+    /**
+     * 响应错误处理
+     * 
+     * @param {ServerResponse} res
+     * @param {(number | Object)} code          http code 或者错误信息对象
+     * @param {(Object | string)} [data={}]     错误信息对象
+     * 
+     * @memberOf Restful
+     */
+    private _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
         if (typeof code === 'number') {
             data = {
                 code: code,
@@ -45,7 +61,16 @@ export class Restful {
         res.end(JSON.stringify(data));
     }
 
-    _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
+    /**
+     * 
+     * 
+     * @param {ServerResponse} res
+     * @param {number} code                     http code
+     * @param {(Object | string)} data          需要返回的数据
+     * 
+     * @memberOf Restful
+     */
+    private _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
         data = {
             code: code,
             message: 'success',
@@ -57,21 +82,63 @@ export class Restful {
     }
 
     /**
+     * e
+     * 
+     * @param {IncomingMessage} req
+     * @returns
+     * 
+     * @memberOf Restful
+     */
+    private _route(req: IncomingMessage) {
+        let resourceList = this.resourceList;
+        let pathname = parse(req.url).pathname;
+
+        for (let i = 0, len = resourceList.length; i < len; i++) {
+            let resource = resourceList[i];
+            let _params: RegExpExecArray = resource.rule.exec(pathname);
+            let params = {};
+
+            if (_params !== null) {
+                resource.params.forEach((key, index) => {
+                    params[key] = _params[index + 1]
+                })
+                return {
+                    params: params,
+                    resource: resource.resource
+                }
+            }
+        }
+
+        return {
+            params: null,
+            resource: null
+        };
+    }
+
+    /**
      * add Resource
      * 
-     * @param {string} path
      * @param {Resource} resource
+     * @param {string} path
      * 
      * @memberOf Api
      */
-    addSource(path: string, resource: any) {
-        let resourceMap = this.resourceMap;
-        if (resourceMap.has(path)) {
+    addSource(resource: any, path: string) {
+        let resourceList = this.resourceList;
+
+        if (arrHas(resourceList, 'path', path)) {
             throw SyntaxError(`The path:${path} already exists.`);
         }
         try {
             resource = new resource();
-            resourceMap.set(path, resource);
+            let {rule, params} = getRuleRegx(path);
+
+            resourceList.push({
+                path: path,
+                rule: rule,
+                params: params,
+                resource: resource
+            });
         } catch (error) {
             throw error;
         }
@@ -84,22 +151,25 @@ export class Restful {
      * @memberOf Api
      */
     start() {
-        if (this.resourceMap.size === 0) {
+        if (this.resourceList.length === 0) {
             console.warn('There can not be any proxied resources');
         }
         let server = this.server;
-        let resoureMap = this.resourceMap;
 
-        server = createServer((req, res) => {
-            let path = parse(req.url).pathname;
-            if (resoureMap.has(path)) {
-                let resource = resoureMap.get(path);
+        server = createServer();
+        server.on('request', (req, res) => {
+            let {params, resource} = this._route(req);
+
+            // 存在处理当前数据的 resource
+            if (resource === null) {
+                this._handleError(res, 404);
+            } else {
                 let handle = resource[req.method.toLowerCase()];
 
                 // 存在当前请求类型的处理函数
                 if (handle) {
                     if (handle.parser === undefined) {
-                        this._handleSuccess(res, 200, handle.call(resource));
+                        this._handleSuccess(res, 200, handle.call(resource, params));
                     } else {
                         let parser = handle.parser;
 
@@ -107,7 +177,7 @@ export class Restful {
                             if (data.errorData !== undefined) {
                                 this._handleError(res, data.errorData);
                             } else {
-                                this._handleSuccess(res, 200, handle.call(resource, data));
+                                this._handleSuccess(res, 200, handle.call(resource, params, data));
                             }
                         });
                     }
@@ -115,8 +185,6 @@ export class Restful {
                 } else {
                     this._handleError(res, 400);
                 }
-            } else {
-                this._handleError(res, 404);
             }
         });
 

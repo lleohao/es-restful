@@ -11,13 +11,7 @@
         ],
         "no-duplicate-variable": true,
         "no-eval": true,
-        "no-trailing-whitespace": true,
         "no-unsafe-finally": true,
-        "one-line": [
-            true,
-            "check-open-brace",
-            "check-whitespace"
-        ],
         "quotemark": [
             true,
             "single"
@@ -55,29 +49,23 @@
         ],
         "no-eval": true,
         "no-internal-module": true,
-        "no-trailing-whitespace": true,
         "no-unsafe-finally": true,
         "no-var-keyword": true,
-        "one-line": [
-            true,
-            "check-open-brace",
-            "check-whitespace"
-        ],
         "quotemark": [
             true,
             "single"
         ],
         "semicolon": [
             true,
-            "always"
+            "ignore-interfaces",
+            "ignore-bound-class-methods"
         ],
         "triple-equals": [
             true,
             "allow-null-check"
         ],
         "typedef-whitespace": [
-            true,
-            {
+            true, {
                 "call-signature": "nospace",
                 "index-signature": "nospace",
                 "parameter": "nospace",

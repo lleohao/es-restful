@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { IncomingMessage, ServerResponse } from 'http';
+import { IncomingMessage } from 'http';
 import { EventEmitter } from 'events';
 export interface Param {
     name?: string;
@@ -14,18 +14,26 @@ export interface Param {
     choices?: any[];
     help?: string;
 }
+export interface ParamData {
+    errorData?: {
+        code: number;
+        message: string;
+        erros: any[];
+    };
+    data?: Object;
+}
 export declare class Parser extends EventEmitter {
     private params;
     private trim;
     private errCb;
     baseUrl: string;
-    constructor(trim?: boolean | Function, errCb?: Function);
-    parse(req: IncomingMessage, res: ServerResponse): EventEmitter;
-    private _parseReqest(req);
+    private _parseRequest(req);
     private _handleBodyData(type, body);
     private _checkParams(parseData);
-    private _handleError(errors, emit);
+    private _getErrorMessage(error);
+    constructor(trim?: boolean | Function, errCb?: Function);
     addParam(name: string, options: Param): void;
     removeParams(name: (string | string[])): void;
     setBaseUrl(baseUrl: string): void;
+    parse(req: IncomingMessage): this;
 }

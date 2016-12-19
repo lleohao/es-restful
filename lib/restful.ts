@@ -1,7 +1,8 @@
 import { createServer, Server, ServerResponse } from 'http';
+import { parse } from 'url';
 
-import { Parser } from './parser';
-import { errorMessages, getRuleRegx } from './utils';
+import { Parser, ParamData } from './parser';
+import { errorMessages, getRuleRegx, arrHas } from './utils';
 
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -37,9 +38,15 @@ export class Restful {
     }
 
     /**
-     * 错误响应处理函数
+     * 响应错误处理
+     * 
+     * @param {ServerResponse} res
+     * @param {(number | Object)} code          http code 或者错误信息对象
+     * @param {(Object | string)} [data={}]     错误信息对象
+     * 
+     * @memberOf Restful
      */
-    _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
+    private _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
         if (typeof code === 'number') {
             data = {
                 code: code,
@@ -55,9 +62,15 @@ export class Restful {
     }
 
     /**
-     * 正确响应处理函数
+     * 
+     * 
+     * @param {ServerResponse} res
+     * @param {number} code                     http code
+     * @param {(Object | string)} data          需要返回的数据
+     * 
+     * @memberOf Restful
      */
-    _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
+    private _handleSuccess(res: ServerResponse, code: number, data: Object | string) {
         data = {
             code: code,
             message: 'success',
@@ -68,36 +81,34 @@ export class Restful {
         res.end(JSON.stringify(data));
     }
 
-    _route(req, res) {
-        // let resoureMap = this.resourceList;
-        // let path = parse(req.url).pathname;
+    /**
+     * 
+     * 
+     * @param {any} req
+     * @returns
+     * 
+     * @memberOf Restful
+     */
+    private _route(req) {
+        let resourceList = this.resourceList;
+        let path = parse(req.url).pathname;
 
-        // if (resoureMap.has(path)) {
-        //     let resource = resoureMap.get(path);
-        //     let handle = resource[req.method.toLowerCase()];
+        for (let i = 0, len = resourceList.length; i < len; i++) {
+            let resource = resourceList[i];
+            let params: RegExpExecArray = null;
+            params = resource.rule.exec(path);
+            if (params !== null) {
+                return {
+                    params: params,
+                    resource: resource
+                }
+            }
+        }
 
-        //     // 存在当前请求类型的处理函数
-        //     if (handle) {
-        //         if (handle.parser === undefined) {
-        //             this._handleSuccess(res, 200, handle.call(resource));
-        //         } else {
-        //             let parser = handle.parser;
-
-        //             parser.parse(req, res).on('parseEnd', (data: ParamData) => {
-        //                 if (data.errorData !== undefined) {
-        //                     this._handleError(res, data.errorData);
-        //                 } else {
-        //                     this._handleSuccess(res, 200, handle.call(resource, data));
-        //                 }
-        //             });
-        //         }
-
-        //     } else {
-        //         this._handleError(res, 400);
-        //     }
-        // } else {
-        //     this._handleError(res, 404);
-        // }
+        return {
+            params: null,
+            resource: null
+        };
     }
 
     /**
@@ -111,16 +122,22 @@ export class Restful {
     addSource(path: string, resource: any) {
         let resourceList = this.resourceList;
 
+        if (arrHas(resourceList, 'path', path)) {
+            throw SyntaxError(`The path:${path} already exists.`);
+        }
+        try {
+            resource = new resource();
+            let {rule, params} = getRuleRegx(path);
 
-        // if (resourceMap.has(path)) {
-        //     throw SyntaxError(`The path:${path} already exists.`);
-        // }
-        // try {
-        //     resource = new resource();
-        //     resourceMap.set(path, resource);
-        // } catch (error) {
-        //     throw error;
-        // }
+            resourceList.push({
+                path: path,
+                rule: rule,
+                params: params,
+                resource: resource
+            });
+        } catch (error) {
+            throw error;
+        }
     }
 
     /**
@@ -130,13 +147,42 @@ export class Restful {
      * @memberOf Api
      */
     start() {
-        if (this.resourceList.size === 0) {
+        if (this.resourceList.length === 0) {
             console.warn('There can not be any proxied resources');
         }
         let server = this.server;
 
         server = createServer();
-        server.on('request', this._route);
+        server.on('request', (req, res) => {
+            let {params, resource} = this._route(req);
+
+            // 存在处理当前数据的 resource
+            if (resource === null) {
+                this._handleError(res, 404);
+            } else {
+                let handle = resource[req.method.toLowerCase()];
+
+                // 存在当前请求类型的处理函数
+                if (handle) {
+                    if (handle.parser === undefined) {
+                        this._handleSuccess(res, 200, handle.call(resource, params));
+                    } else {
+                        let parser = handle.parser;
+
+                        parser.parse(req, res).on('parseEnd', (data: ParamData) => {
+                            if (data.errorData !== undefined) {
+                                this._handleError(res, data.errorData);
+                            } else {
+                                this._handleSuccess(res, 200, handle.call(resource, params, data));
+                            }
+                        });
+                    }
+
+                } else {
+                    this._handleError(res, 400);
+                }
+            }
+        });
 
         console.log(`The server is running ${this.hostname}:${this.port}`);
         server.listen(this.port, this.hostname);

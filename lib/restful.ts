@@ -1,4 +1,4 @@
-import { createServer, Server, ServerResponse } from 'http';
+import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Parser, ParamData } from './parser';
@@ -82,25 +82,29 @@ export class Restful {
     }
 
     /**
+     * e
      * 
-     * 
-     * @param {any} req
+     * @param {IncomingMessage} req
      * @returns
      * 
      * @memberOf Restful
      */
-    private _route(req) {
+    private _route(req: IncomingMessage) {
         let resourceList = this.resourceList;
-        let path = parse(req.url).pathname;
+        let pathname = parse(req.url).pathname;
 
         for (let i = 0, len = resourceList.length; i < len; i++) {
             let resource = resourceList[i];
-            let params: RegExpExecArray = null;
-            params = resource.rule.exec(path);
-            if (params !== null) {
+            let _params: RegExpExecArray = resource.rule.exec(pathname);
+            let params = {};
+
+            if (_params !== null) {
+                resource.params.forEach((key, index) => {
+                    params[key] = _params[index + 1]
+                })
                 return {
                     params: params,
-                    resource: resource
+                    resource: resource.resource
                 }
             }
         }
@@ -114,12 +118,12 @@ export class Restful {
     /**
      * add Resource
      * 
-     * @param {string} path
      * @param {Resource} resource
+     * @param {string} path
      * 
      * @memberOf Api
      */
-    addSource(path: string, resource: any) {
+    addSource(resource: any, path: string) {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {

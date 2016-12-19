@@ -29,13 +29,19 @@ export function getRuleRegx(path: string) {
 
     while (index < length) {
         // 获取参数名称
-        params.push(ruleRe.exec(path)[2]);
-        index = ruleRe.lastIndex;
+        let result: RegExpExecArray = ruleRe.exec(path);
+        if (result !== null) {
+            params.push(result[2]);
+            index = ruleRe.lastIndex;
+        } else {
+            break;
+        }
     }
 
     params.forEach((name) => {
         path = path.replace(`<${name}>`, '(\\w+)');
     });
+    path = '^' + path + '$';
 
     return {
         rule: new RegExp(path, 'g'),

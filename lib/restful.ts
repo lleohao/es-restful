@@ -177,7 +177,7 @@ export class Restful {
                             if (data.errorData !== undefined) {
                                 this._handleError(res, data.errorData);
                             } else {
-                                this._handleSuccess(res, 200, handle.call(resource, params, data));
+                                this._handleSuccess(res, 200, handle.call(resource, Object.assign(params, data)));
                             }
                         });
                     }

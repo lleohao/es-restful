@@ -6,8 +6,10 @@
         "experimentalDecorators": true,
 
         "noImplicitAny": false,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+
         "removeComments": true,
-        
         "sourceMap": true,
         
         "declaration": true,

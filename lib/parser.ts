@@ -418,7 +418,7 @@ export class Parser extends EventEmitter {
      */
     private _getErrorMessage(error: ParamsResultError) {
         let message: string = errorMessages[error.type];
-        let resCode = error.type === errorMessages[errorCode.REQUEST_ERROR] ? 400 : 403;
+        let resCode = error.type === errorCode.REQUEST_ERROR ? 400 : 403;
 
         switch (error.type) {
             case errorCode.REQUEST_ERROR:

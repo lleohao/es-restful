@@ -51,7 +51,7 @@ class Todo {
         })
 
         if (item.length === 0) {
-            return `The item for the ${todoId} does not exist`
+            return `The item for the id:${todoId} does not exist`
         } else {
             return item[0];
         }
@@ -62,7 +62,7 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the ${todoId} does not exist`
+            return `The item for the id:${todoId} does not exist`
         } else {
             TODOS.splice(index, 1);
             return 'success';
@@ -74,7 +74,7 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the ${todoId} does not exist`
+            return `The item for the id:${todoId} does not exist`
         } else {
             TODOS[index].completed = !TODOS[index].completed;
             return 'success';
@@ -90,6 +90,7 @@ class TodoList {
 
     @addParser(parser)
     post({title}) {
+        console.log('title');
         let item = {
             id: ++COUNT_ID,
             title: title,

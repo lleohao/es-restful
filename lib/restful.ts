@@ -6,6 +6,7 @@ import { errorMessages, getRuleRegx, arrHas } from './utils';
 
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        console.log(`${target}[${propertyKey}] add parser`);
         descriptor.value.parser = parser;
     };
 }
@@ -95,7 +96,10 @@ export class Restful {
 
         for (let i = 0, len = resourceList.length; i < len; i++) {
             let resource = resourceList[i];
-            let _params: RegExpExecArray = resource.rule.exec(pathname);
+            let rule = resource.rule;
+            rule.lastIndex = 0;
+
+            let _params: RegExpExecArray = rule.exec(pathname);
             let params = {};
 
             if (_params !== null) {
@@ -173,7 +177,7 @@ export class Restful {
                     } else {
                         let parser = handle.parser;
 
-                        parser.parse(req, res).on('parseEnd', (data: ParamData) => {
+                        parser.parse(req, res).once('parseEnd', (data: ParamData) => {
                             if (data.errorData !== undefined) {
                                 this._handleError(res, data.errorData);
                             } else {

@@ -12,7 +12,7 @@ export declare const errorMessages: {
     4: string;
     5: string;
 };
-export declare function getRuleRegx(path: string): {
+export declare function getRuleReg(path: string): {
     rule: RegExp;
     params: any[];
 };

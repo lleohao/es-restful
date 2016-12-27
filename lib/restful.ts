@@ -2,7 +2,7 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Parser, ParamData } from './parser';
-import { errorMessages, getRuleRegx, arrHas } from './utils';
+import { errorMessages, getRuleReg, arrHas } from './utils';
 
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -135,7 +135,7 @@ export class Restful {
         }
         try {
             resource = new resource();
-            let {rule, params} = getRuleRegx(path);
+            let {rule, params} = getRuleReg(path);
 
             resourceList.push({
                 path: path,

@@ -4,25 +4,66 @@ import { parse } from 'url';
 import { Parser, ParamData } from './parser';
 import { errorMessages, getRuleReg, arrHas } from './utils';
 
+/**
+ * 资源类型
+ * 
+ * @interface Resource
+ */
+interface Resource {
+    /**
+     * 资源对应路径
+     * 
+     * @type {string}
+     * @memberOf Resource
+     */
+    path: string;
+    /**
+     * 资源对应路径的解析表达式
+     * 
+     * @type {RegExp}
+     * @memberOf Resource
+     */
+    rule: RegExp;
+    /**
+     * 解析返回的参数信息
+     * 
+     * @type {string[]}
+     * @memberOf Resource
+     */
+    params: string[];
+    /**
+     * 
+     * 
+     * @type {*}
+     * @memberOf Resource
+     */
+    resource: any;
+}
+
+/**
+ * (装饰器)给指定请求绑定参数解析
+ * 
+ * @export
+ * @param {Parser} parser
+ * @returns
+ */
 export function addParser(parser: Parser) {
     return function (target: any, propertyKey: string) {
         target[propertyKey].parser = parser;
     };
 }
 
-interface Resource {
-    path: string;
-    rule: RegExp;
-    params: string[];
-    resource: any;
-}
-
+/**
+ * Restful Server class
+ * 
+ * @export
+ * @class Restful
+ */
 export class Restful {
     private resourceList: Resource[];
     private port: number;
     private hostname: string;
     private server: Server;
-    private debug: boolean;
 
     /**
      * Creates an instance of Api.
@@ -32,11 +73,10 @@ export class Restful {
      * 
      * @memberOf Api
      */
-    constructor(port: number = 5050, hostname: string = 'localhost', debug: boolean = false) {
+    constructor(port: number = 5050, hostname: string = 'localhost') {
         this.port = port;
         this.hostname = hostname;
         this.resourceList = [];
-        this.debug = debug;
     }
 
     /**
@@ -150,12 +190,12 @@ export class Restful {
     }
 
     /**
-     * start server
+     * Start server
      * 
      * 
      * @memberOf Api
      */
-    start() {
+    start({debug}) {
         if (this.resourceList.length === 0) {
             console.warn('There can not be any proxied resources');
         }
@@ -186,22 +226,22 @@ export class Restful {
                             }
                         });
                     }
-
                 } else {
                     this._handleError(res, 400);
                 }
             }
         });
 
-        this.debug && console.log(`The server is running ${this.hostname}:${this.port}`);
+        debug && console.log(`The server is running ${this.hostname}:${this.port}`);
         server.listen(this.port, this.hostname);
     }
 
+
     /**
-     * stop server
+     * Stop server
      * 
      * 
-     * @memberOf Api
+     * @memberOf Restful
      */
     stop() {
         if (this.server !== undefined) {

@@ -158,7 +158,7 @@ interface ParamResult {
 }
 
 /**
- * 参数解析错误信息
+ * 参数解析错误信息(内部使用)
  * 
  * @export
  * @interface ParamsResultError
@@ -188,7 +188,9 @@ interface ParamsResultError {
 }
 
 /**
- * 参数解析类, 自动解析 过滤请求中的参数
+ * 参数解析类
+ * 1. 自动处理请求数据中的参数
+ * 2. 处理参数中的错误
  * 
  * @export
  * @class Parser
@@ -530,16 +532,6 @@ export class Parser extends EventEmitter {
                 delete this.params[name];
             }
         });
-    }
-
-    /**
-     * 设置基本url
-     * 当从url中解析数据时会自动去掉baseUrl中的内容
-     *
-     * @param {string} baseUrl
-     */
-    setBaseUrl(baseUrl: string) {
-        this.baseUrl = baseUrl;
     }
 
     /**

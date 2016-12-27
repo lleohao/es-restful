@@ -104,4 +104,4 @@ class TodoList {
 api.addSource(TodoList, '/todos')
 api.addSource(Todo, '/todos/<todoId>')
 
-api.start();
+api.start({ debug: true });

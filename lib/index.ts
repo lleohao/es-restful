@@ -1,2 +1,2 @@
 export { Restful, addParser } from './restful';
-export { Parser } from './parser';
+export { Parser, Param } from './parser';

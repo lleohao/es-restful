@@ -90,7 +90,6 @@ class TodoList {
 
     @addParser(parser)
     post({title}) {
-        console.log('title');
         let item = {
             id: ++COUNT_ID,
             title: title,

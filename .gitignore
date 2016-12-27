@@ -40,9 +40,7 @@ jspm_packages
 **/*.js.map
 
 # Build filse
-/lib/@types
-/lib/**/*.js
-/example/**/*.js
+**/*.js
 
 # webstorm
 .idea

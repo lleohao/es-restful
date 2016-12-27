@@ -5,9 +5,8 @@ import { Parser, ParamData } from './parser';
 import { errorMessages, getRuleReg, arrHas } from './utils';
 
 export function addParser(parser: Parser) {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        console.log(`${target}[${propertyKey}] add parser`);
-        descriptor.value.parser = parser;
+    return function (target: any, propertyKey: string) {
+        target[propertyKey].parser = parser;
     };
 }
 
@@ -23,6 +22,7 @@ export class Restful {
     private port: number;
     private hostname: string;
     private server: Server;
+    private debug: boolean;
 
     /**
      * Creates an instance of Api.
@@ -32,10 +32,11 @@ export class Restful {
      * 
      * @memberOf Api
      */
-    constructor(port: number = 5050, hostname: string = 'localhost') {
+    constructor(port: number = 5050, hostname: string = 'localhost', debug: boolean = false) {
         this.port = port;
         this.hostname = hostname;
         this.resourceList = [];
+        this.debug = debug;
     }
 
     /**
@@ -192,7 +193,7 @@ export class Restful {
             }
         });
 
-        console.log(`The server is running ${this.hostname}:${this.port}`);
+        this.debug && console.log(`The server is running ${this.hostname}:${this.port}`);
         server.listen(this.port, this.hostname);
     }
 

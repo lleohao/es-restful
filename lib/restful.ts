@@ -221,9 +221,9 @@ export class Restful {
                     if (handle.parser === undefined) {
                         this._handleSuccess(res, 200, handle.call(resource, params));
                     } else {
-                        let parser = handle.parser;
+                        let parser = <Parser>handle.parser;
 
-                        parser.parse(req, res).once('parseEnd', (data: ParamData) => {
+                        parser.parse(req).once('parseEnd', (data: ParamData) => {
                             if (data.errorData !== undefined) {
                                 this._handleError(res, data.errorData);
                             } else {

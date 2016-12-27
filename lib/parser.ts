@@ -1,4 +1,3 @@
-import { isArray } from 'util';
 import { IncomingMessage } from 'http';
 import * as qs from 'querystring';
 import { EventEmitter } from 'events';
@@ -221,9 +220,9 @@ export class Parser extends EventEmitter {
         };
 
         if (isGet) {
-            // 去掉基础url
-            let url = req.url.substr(this.baseUrl.length);
-            let queryStr = url.substr(url.indexOf('?') + 1);
+            let url = req.url;
+            let index = url.indexOf('?');
+            let queryStr = index === -1 ? '' : url.substr(index + 1);
 
             parsedData['result'] = qs.parse(queryStr);
             this.emit('_endParse', this._checkParams(parsedData));
@@ -466,7 +465,7 @@ export class Parser extends EventEmitter {
 
         if (typeof (trim) !== 'function') {
             this.trim = !!trim;
-            this.errCb = errCb || function() { };
+            this.errCb = errCb || function () { };
         } else {
             this.trim = false;
             this.errCb = <Function>trim;
@@ -482,7 +481,7 @@ export class Parser extends EventEmitter {
      * @param name          参数名称
      * @param options       参数配置  
      */
-    addParam(name: string, options: Param) {
+    addParam(name: string, options?: Param) {
         let baseParam: Param = {
             required: false,
             ignore: false,
@@ -496,19 +495,17 @@ export class Parser extends EventEmitter {
             help: null
         };
 
-        if (typeof (name) !== 'string') {
-            throw new TypeError('The parameter type of name must be a string');
-        }
-
         if (this.params[name]) {
-            throw new TypeError(`The parameter name: ${name} already exists`);
+            throw new Error(`The parameter name: ${name} already exists`);
         }
 
-        /**
-         * todo: 1. 参数中required和defaultVal同时存在时给出警告
-         * todo: 2. dset类型检测
-         * todo: 3. 检测dset是否与当前已存在的参数名相同
-         */
+        if (options.dset && this.params[options.dset]) {
+            throw new Error(`The parameter dtet: ${name} already exists`);
+        }
+
+        if (options.defaultVal !== undefined && options.required) {
+            console.warn('Setting both the required and defaultVal attributes invalidates the required attribute')
+        }
 
         options = Object.assign({ name: name }, baseParam, options);
         this.params[name] = options;
@@ -522,9 +519,6 @@ export class Parser extends EventEmitter {
      * @memberOf Parser
      */
     removeParams(name: (string | string[])) {
-        if (typeof (name) !== 'string' && !isArray(name)) {
-            throw new TypeError('The parameter type of name must be a string or string array');
-        }
         let names = [].concat(name);
 
         names.forEach(name => {
@@ -543,8 +537,6 @@ export class Parser extends EventEmitter {
      * @api
      */
     parse(req: IncomingMessage) {
-        this._parseRequest(req);
-
         // 只绑定一次处理事件
         if (this.eventNames().length === 0) {
             this.on('_endParse', (result: ParamResult) => {
@@ -560,6 +552,7 @@ export class Parser extends EventEmitter {
             });
         }
 
+        this._parseRequest(req);
         return this;
     }
 }

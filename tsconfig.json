@@ -8,16 +8,10 @@
         "noImplicitAny": false,
         "noUnusedParameters": true,
         "noUnusedLocals": true,
-
-        "removeComments": true,
-        "sourceMap": true,
-        
-        "declaration": true,
-        "declarationDir": "./typings"
+        "sourceMap": true
     },
     "exclude": [
         "node_modules",
-        "test",
         "typings"
     ]
 }

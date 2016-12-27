@@ -13,7 +13,7 @@ interface TodoItem {
 }
 
 
-describe('Restful tets', () => {
+describe('Example tets', () => {
     const api = new Restful(5051);
 
     before(() => {

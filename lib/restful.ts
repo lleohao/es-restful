@@ -40,6 +40,8 @@ interface Resource {
     resource: any;
 }
 
+class RestfulError extends Error { }
+
 /**
  * (装饰器)给指定请求绑定参数解析
  * 
@@ -48,6 +50,10 @@ interface Resource {
  * @returns
  */
 export function addParser(parser: Parser) {
+    if (!(parser instanceof Parser)) {
+        throw new RestfulError('params:parser is not Parser instance.')
+    }
+
     return function (target: any, propertyKey: string) {
         target[propertyKey].parser = parser;
     };
@@ -172,7 +178,7 @@ export class Restful {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {
-            throw SyntaxError(`The path:${path} already exists.`);
+            throw new RestfulError(`The path:${path} already exists.`);
         }
         try {
             resource = new resource();
@@ -195,14 +201,13 @@ export class Restful {
      * 
      * @memberOf Api
      */
-    start({debug}) {
+    start(options?: {}) {
         if (this.resourceList.length === 0) {
-            console.warn('There can not be any proxied resources');
+            throw new RestfulError('There can not be any proxied resources');
         }
-        let server = this.server;
-
-        server = createServer();
-        server.on('request', (req, res) => {
+        this.server = createServer();
+        
+        this.server.on('request', (req, res) => {
             let {params, resource} = this._route(req);
 
             // 存在处理当前数据的 resource
@@ -227,13 +232,18 @@ export class Restful {
                         });
                     }
                 } else {
-                    this._handleError(res, 400);
+                    this._handleError(res, {
+                        code: 400,
+                        error: {
+                            message: `${req.method.toLowerCase()} method is undefined.`
+                        }
+                    });
                 }
             }
         });
 
-        debug && console.log(`The server is running ${this.hostname}:${this.port}`);
-        server.listen(this.port, this.hostname);
+        options && options['debug'] && console.log(`The server is running ${this.hostname}:${this.port}`);
+        this.server.listen(this.port, this.hostname);
     }
 
 

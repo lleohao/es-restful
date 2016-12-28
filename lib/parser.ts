@@ -406,6 +406,13 @@ export class Parser extends EventEmitter {
             return true;
         });
 
+        // 删除不在params中的参数
+        let _tmpData = {};
+        Object.keys(params).forEach((key) => {
+            _tmpData[key] = parseData.result[key];
+        })
+
+        parseData.result = _tmpData;
         return parseData;
     }
 
@@ -499,12 +506,14 @@ export class Parser extends EventEmitter {
             throw new Error(`The parameter name: ${name} already exists`);
         }
 
-        if (options.dset && this.params[options.dset]) {
-            throw new Error(`The parameter dtet: ${name} already exists`);
-        }
+        if (options) {
+            if (options.dset && this.params[options.dset]) {
+                throw new Error(`The parameter dtet: ${name} already exists`);
+            }
 
-        if (options.defaultVal !== undefined && options.required) {
-            console.warn('Setting both the required and defaultVal attributes invalidates the required attribute')
+            if (options.defaultVal !== undefined && options.required) {
+                console.warn('Setting both the required and defaultVal attributes invalidates the required attribute')
+            }
         }
 
         options = Object.assign({ name: name }, baseParam, options);

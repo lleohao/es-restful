@@ -67,6 +67,7 @@ describe('Restful tets', () => {
 
         it('正确添加 parser 实例', (done) => {
             let parser = new Parser();
+            parser.addParam('title');
             class Demo {
                 @addParser(parser)
                 post({title}) {

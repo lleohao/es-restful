@@ -2,22 +2,69 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Parser, ParamData } from './parser';
-import { errorMessages, getRuleRegx, arrHas } from './utils';
+import { errorMessages, getRuleReg, arrHas } from './utils';
 
-export function addParser(parser: Parser) {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        console.log(`${target}[${propertyKey}] add parser`);
-        descriptor.value.parser = parser;
-    };
-}
-
+/**
+ * 资源类型
+ * 
+ * @interface Resource
+ */
 interface Resource {
+    /**
+     * 资源对应路径
+     * 
+     * @type {string}
+     * @memberOf Resource
+     */
     path: string;
+    /**
+     * 资源对应路径的解析表达式
+     * 
+     * @type {RegExp}
+     * @memberOf Resource
+     */
     rule: RegExp;
+    /**
+     * 解析返回的参数信息
+     * 
+     * @type {string[]}
+     * @memberOf Resource
+     */
     params: string[];
+    /**
+     * 
+     * 
+     * @type {*}
+     * @memberOf Resource
+     */
     resource: any;
 }
 
+class RestfulError extends Error { }
+
+/**
+ * (装饰器)给指定请求绑定参数解析
+ * 
+ * @export
+ * @param {Parser} parser
+ * @returns
+ */
+export function addParser(parser: Parser) {
+    if (!(parser instanceof Parser)) {
+        throw new RestfulError('params:parser is not Parser instance.')
+    }
+
+    return function (target: any, propertyKey: string) {
+        target[propertyKey].parser = parser;
+    };
+}
+
+/**
+ * Restful Server class
+ * 
+ * @export
+ * @class Restful
+ */
 export class Restful {
     private resourceList: Resource[];
     private port: number;
@@ -131,11 +178,11 @@ export class Restful {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {
-            throw SyntaxError(`The path:${path} already exists.`);
+            throw new RestfulError(`The path:${path} already exists.`);
         }
         try {
             resource = new resource();
-            let {rule, params} = getRuleRegx(path);
+            let {rule, params} = getRuleReg(path);
 
             resourceList.push({
                 path: path,
@@ -149,19 +196,18 @@ export class Restful {
     }
 
     /**
-     * start server
+     * Start server
      * 
      * 
      * @memberOf Api
      */
-    start() {
+    start(options?: {}) {
         if (this.resourceList.length === 0) {
-            console.warn('There can not be any proxied resources');
+            throw new RestfulError('There can not be any proxied resources');
         }
-        let server = this.server;
-
-        server = createServer();
-        server.on('request', (req, res) => {
+        this.server = createServer();
+        
+        this.server.on('request', (req, res) => {
             let {params, resource} = this._route(req);
 
             // 存在处理当前数据的 resource
@@ -175,9 +221,9 @@ export class Restful {
                     if (handle.parser === undefined) {
                         this._handleSuccess(res, 200, handle.call(resource, params));
                     } else {
-                        let parser = handle.parser;
+                        let parser = <Parser>handle.parser;
 
-                        parser.parse(req, res).once('parseEnd', (data: ParamData) => {
+                        parser.parse(req).once('parseEnd', (data: ParamData) => {
                             if (data.errorData !== undefined) {
                                 this._handleError(res, data.errorData);
                             } else {
@@ -185,22 +231,27 @@ export class Restful {
                             }
                         });
                     }
-
                 } else {
-                    this._handleError(res, 400);
+                    this._handleError(res, {
+                        code: 400,
+                        error: {
+                            message: `${req.method.toLowerCase()} method is undefined.`
+                        }
+                    });
                 }
             }
         });
 
-        console.log(`The server is running ${this.hostname}:${this.port}`);
-        server.listen(this.port, this.hostname);
+        options && options['debug'] && console.log(`The server is running ${this.hostname}:${this.port}`);
+        this.server.listen(this.port, this.hostname);
     }
 
+
     /**
-     * stop server
+     * Stop server
      * 
      * 
-     * @memberOf Api
+     * @memberOf Restful
      */
     stop() {
         if (this.server !== undefined) {

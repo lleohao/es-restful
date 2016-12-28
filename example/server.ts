@@ -90,7 +90,6 @@ class TodoList {
 
     @addParser(parser)
     post({title}) {
-        console.log('title');
         let item = {
             id: ++COUNT_ID,
             title: title,
@@ -105,4 +104,4 @@ class TodoList {
 api.addSource(TodoList, '/todos')
 api.addSource(Todo, '/todos/<todoId>')
 
-api.start();
+api.start({ debug: true });

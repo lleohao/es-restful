@@ -7,7 +7,7 @@ export enum errorCode {
     CONVER_ERROR = 3,
     CHOICES_ERROR = 4,
     NULL_ERROR = 5
-};
+}
 
 export const errorMessages = {
     1: 'Unable to parse this request.',
@@ -21,7 +21,7 @@ export const errorMessages = {
 /**
  * 简单的路由参数处理
  */
-export function getRuleRegx(path: string) {
+export function getRuleReg(path: string) {
     let ruleRe = /([^<]*)<([a-zA-Z_][a-zA-Z0-9_]*)>/g;
     let params = [];
     let length = path.length;

@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 /// <reference path="../node_modules/@types/should/index.d.ts" />
 import * as should from 'should';
-import { arrHas, getRuleRegx } from '../lib/utils';
+import { arrHas, getRuleReg } from '../lib/utils';
 
 
 describe('utils.ts test', () => {
@@ -18,15 +18,24 @@ describe('utils.ts test', () => {
         });
     });
 
-    describe('getRuleRegx test', () => {
+    describe('getRuleReg test: 包含参数', () => {
         let path = '/books/<name>/page/<page>';
-        let {rule, params} = getRuleRegx(path);
+        let {rule, params} = getRuleReg(path);
 
         it('rule test', () => {
-            should(rule).be.eql(/\/books\/(\w+)\/page\/(\w+)/g);
+            should(rule).be.eql(/^\/books\/(\w+)\/page\/(\w+)$/g);
         })
         it('params test', () => {
             should(params).be.eql(['name', 'page']);
+        })
+    });
+
+    describe('getRuleReg test: 不包含参数', () => {
+        let path = '/books';
+        let {rule} = getRuleReg(path);
+
+        it('rule test', () => {
+            should(rule).be.eql(/^\/books$/g);
         })
     });
 });

@@ -3,7 +3,7 @@ import { addParser, Parser, Restful } from '../lib/index';
 const api = new Restful();
 
 interface TodoItem {
-    id: number,
+    id: number;
     title: string;
     completed: boolean;
 }
@@ -19,7 +19,7 @@ let parser = new Parser();
 parser.addParam('title', {
     required: true,
     type: 'string'
-})
+});
 
 
 /**
@@ -40,7 +40,7 @@ let indexOf = function (todoId: number) {
     } else {
         return index;
     }
-}
+};
 
 
 class Todo {
@@ -48,10 +48,10 @@ class Todo {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
             return item.id === todoId;
-        })
+        });
 
         if (item.length === 0) {
-            return `The item for the id:${todoId} does not exist`
+            return `The item for the id:${todoId} does not exist`;
         } else {
             return item[0];
         }
@@ -62,7 +62,7 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the id:${todoId} does not exist`
+            return `The item for the id:${todoId} does not exist`;
         } else {
             TODOS.splice(index, 1);
             return 'success';
@@ -74,7 +74,7 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the id:${todoId} does not exist`
+            return `The item for the id:${todoId} does not exist`;
         } else {
             TODOS[index].completed = !TODOS[index].completed;
             return 'success';
@@ -95,13 +95,13 @@ class TodoList {
             title: title,
             completed: false
 
-        }
+        };
         TODOS.push(item);
         return item;
     }
 }
 
-api.addSource(TodoList, '/todos')
-api.addSource(Todo, '/todos/<todoId>')
+api.addSource(TodoList, '/todos');
+api.addSource(Todo, '/todos/<todoId>');
 
 api.start({ debug: true });

@@ -50,10 +50,6 @@ class RestfulError extends Error { }
  * @returns
  */
 export function addParser(parser: Parser) {
-    if (!(parser instanceof Parser)) {
-        throw new RestfulError('params:parser is not Parser instance.')
-    }
-
     return function (target: any, propertyKey: string) {
         target[propertyKey].parser = parser;
     };

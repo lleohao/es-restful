@@ -1,9 +1,8 @@
 {
-  "name": "restful",
-  "version": "0.3.1",
+  "name": "simple-restful",
+  "version": "1.0.0",
   "description": "nodejs restful api",
-  "main": "./lib/index.js",
-  "typings": "./typings/index.d.ts",
+  "main": "./lib/index.ts",
   "scripts": {
     "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./test/**/*.ts",
     "coverage": "istanbul cover .\\node_modules\\mocha\\bin\\_mocha",
@@ -15,8 +14,10 @@
   },
   "keywords": [
     "nodejs",
-    "resultful",
-    "api"
+    "typescript",
+    "restful",
+    "web",
+    "framework"
   ],
   "author": "lleohao",
   "license": "MIT",

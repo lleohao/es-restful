@@ -409,8 +409,9 @@ export class Parser extends EventEmitter {
         // 删除不在params中的参数
         let _tmpData = {};
         Object.keys(params).forEach((key) => {
+            key = params[key].dset || key;
             _tmpData[key] = parseData.result[key];
-        })
+        });
 
         parseData.result = _tmpData;
         return parseData;
@@ -512,7 +513,7 @@ export class Parser extends EventEmitter {
             }
 
             if (options.defaultVal !== undefined && options.required) {
-                console.warn('Setting both the required and defaultVal attributes invalidates the required attribute')
+                console.warn('Setting both the required and defaultVal attributes invalidates the required attribute');
             }
         }
 

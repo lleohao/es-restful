@@ -12,13 +12,6 @@ import { errorCode, errorMessages } from './utils';
  */
 export interface Param {
     /**
-     * 参数名称
-     * 
-     * @type {string}
-     * @memberOf Param
-     */
-    name?: string;
-    /**
      * 是否忽略大小写, 设置为 true 则统一转换为小写
      * 
      * @type {boolean}
@@ -74,7 +67,7 @@ export interface Param {
     /**
      * 是否自动清除参数两端的空白
      * 
-     * @type {(boolean |)}
+     * @type {boolean}
      * @default false
      * @memberOf Param
      */

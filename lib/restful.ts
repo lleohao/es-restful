@@ -202,7 +202,7 @@ export class Restful {
             throw new RestfulError('There can not be any proxied resources');
         }
         this.server = createServer();
-        
+
         this.server.on('request', (req, res) => {
             let {params, resource} = this._route(req);
 
@@ -253,5 +253,50 @@ export class Restful {
         if (this.server !== undefined) {
             this.server.close();
         }
+    }
+
+    /**
+     * 绑定外部服务器
+     * 
+     * @param {Server} server
+     * 
+     * @memberOf Restful
+     * @api
+     */
+    bindServer(server: Server) {
+        server.on('request', (req, res) => {
+            let {params, resource} = this._route(req);
+
+            // 存在处理当前数据的 resource
+            if (resource === null) {
+                return;
+            } else {
+                let handle = resource[req.method.toLowerCase()];
+
+                // 存在当前请求类型的处理函数
+                if (handle) {
+                    if (handle.parser === undefined) {
+                        this._handleSuccess(res, 200, handle.call(resource, params));
+                    } else {
+                        let parser = <Parser>handle.parser;
+
+                        parser.parse(req).once('parseEnd', (data: ParamData) => {
+                            if (data.errorData !== undefined) {
+                                this._handleError(res, data.errorData);
+                            } else {
+                                this._handleSuccess(res, 200, handle.call(resource, Object.assign(params, data)));
+                            }
+                        });
+                    }
+                } else {
+                    this._handleError(res, {
+                        code: 400,
+                        error: {
+                            message: `${req.method.toLowerCase()} method is undefined.`
+                        }
+                    });
+                }
+            }
+        })
     }
 }

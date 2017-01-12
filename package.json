@@ -1,8 +1,8 @@
 {
   "name": "es-restful",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "easy & simple nodejs restful server framework",
-  "main": "./lib/index.ts",
+  "main": "lib",
   "scripts": {
     "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./test/**/*.ts",
     "coverage": "istanbul cover .\\node_modules\\mocha\\bin\\_mocha",

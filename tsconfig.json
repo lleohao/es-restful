@@ -6,7 +6,6 @@
         "experimentalDecorators": true,
 
         "noImplicitAny": false,
-        "noUnusedParameters": true,
         "noUnusedLocals": true,
         "sourceMap": true
     },

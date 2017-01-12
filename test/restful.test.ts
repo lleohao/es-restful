@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 /// <reference path="../node_modules/@types/node/index.d.ts" />
 /// <reference path="../node_modules/@types/should/index.d.ts" />
-import { get, request } from 'http';
+import { get, request, createServer, Server } from 'http';
 import * as should from 'should';
 import { Restful, addParser, Parser } from '../lib/index';
 
@@ -249,6 +249,49 @@ describe('Restful tets', () => {
             })
             req.write(JSON.stringify({ id: 1, page: 22 }))
             req.end();
+        })
+    })
+
+    describe('bindServer test', () => {
+        let server: Server;
+        let api;
+
+        class Resource {
+            get() {
+                return 'restful request';
+            }
+        }
+
+        before(() => {
+            server = <Server>createServer();
+            api = new Restful();
+            api.addSource(Resource, '/api');
+            api.bindServer(server);
+            
+            server.listen(5052);
+        })
+
+        after(() => {
+            server.close();
+        })
+
+        it('正确响应API请求', (done) => {
+            get({
+                port: 5052,
+                path: '/api'
+            }, (res) => {
+                let data = [];
+                res.on('data', (chunk) => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    should(JSON.parse(data.toString())).be.eql({
+                        code: 200,
+                        data: 'restful request',
+                        message: 'success'
+                    })
+                    done();
+                })
+            })
         })
     })
 }) 

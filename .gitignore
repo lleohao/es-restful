@@ -40,8 +40,13 @@ jspm_packages
 # Sourcemap files
 **/*.js.map
 
-# Build filse
-**/*.js
+# test js
+test/**/*.js
+example/*.js
+
+#other typings
+typings/example
+typings/test
 
 # webstorm
 .idea

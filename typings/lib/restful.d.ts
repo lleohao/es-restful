@@ -75,13 +75,6 @@ export declare class Restful {
      */
     start(options?: {}): void;
     /**
-     * Stop server
-     *
-     *
-     * @memberOf Restful
-     */
-    stop(): void;
-    /**
      * 绑定外部服务器
      *
      * @param {Server} server
@@ -90,4 +83,11 @@ export declare class Restful {
      * @api
      */
     bindServer(server: Server): void;
+    /**
+     * Stop server
+     *
+     *
+     * @memberOf Restful
+     */
+    stop(): void;
 }

@@ -27,6 +27,12 @@ export interface ResourceResult {
     code?: number;
 }
 
+export function async() {
+    return function (target: any, propertyKey: string) {
+        target[propertyKey].async = true;
+    };
+}
+
 /**
  * Resource 基类
  * 
@@ -35,9 +41,16 @@ export interface ResourceResult {
  * @extends {EventEmitter}
  */
 export class Resource {
-
-
-    _getResponse(req: IncomingMessage, routeParams: {}) {
+    /**
+     * 获取乡音数据
+     * 
+     * @param {IncomingMessage} req             请求数据
+     * @param {Object}          routeParams     路由参数
+     * @returns Promise
+     * 
+     * @memberOf Resource
+     */
+    _getResponse(req: IncomingMessage, routeParams: Object) {
         let method = req.method.toLowerCase();
 
         return new Promise((reslove, reject) => {
@@ -45,17 +58,23 @@ export class Resource {
 
             // 存在当前请求类型的处理函数
             if (handle) {
-                if (handle.parser === undefined) {
-                    reslove(handle(routeParams))
-                    // this._handleSuccess(res, 200, handle.call(resource, routeParams));
+                let parser = <Parser>handle.parser;
+                if (parser === undefined) {
+                    if (handle['async']) {
+                        handle(routeParams, reslove)
+                    } else {
+                        reslove(handle(routeParams));
+                    }
                 } else {
-                    let parser = <Parser>handle.parser;
-
                     parser.parse(req).once('parseEnd', (data: ParamData) => {
                         if (data.errorData !== undefined) {
                             reject(data.errorData)
                         } else {
-                            reslove(handle(Object.assign(data, routeParams)));
+                            if (handle['async']) {
+                                handle(routeParams, reslove)
+                            } else {
+                                reslove(handle(Object.assign(data, routeParams)));
+                            }  
                         }
                     });
                 }
@@ -68,17 +87,5 @@ export class Resource {
                 })
             }
         });
-    }
-
-
-    /**
-     * 返回处理数据
-     * 
-     * @param {ResourceResult} {data, code = 200}
-     * 
-     * @memberOf Resource
-     */
-    return({data, code = 200}: ResourceResult) {
-
     }
 }

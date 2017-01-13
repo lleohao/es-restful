@@ -25,6 +25,7 @@ export interface ResourceResult {
      */
     code?: number;
 }
+export declare function async(): (target: any, propertyKey: string) => void;
 /**
  * Resource 基类
  *
@@ -33,13 +34,14 @@ export interface ResourceResult {
  * @extends {EventEmitter}
  */
 export declare class Resource {
-    _getResponse(req: IncomingMessage, routeParams: {}): Promise<{}>;
     /**
-     * 返回处理数据
+     * 获取乡音数据
      *
-     * @param {ResourceResult} {data, code = 200}
+     * @param {IncomingMessage} req             请求数据
+     * @param {Object}          routeParams     路由参数
+     * @returns Promise
      *
      * @memberOf Resource
      */
-    return({data, code}: ResourceResult): void;
+    _getResponse(req: IncomingMessage, routeParams: Object): Promise<{}>;
 }

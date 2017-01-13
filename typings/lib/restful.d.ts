@@ -40,15 +40,15 @@ export declare class Restful {
      */
     private _handleError(res, code, data?);
     /**
+     * 响应正确数据
      *
-     *
-     * @param {ServerResponse} res
-     * @param {number} code                     http code
-     * @param {(Object | string)} data          需要返回的数据
+     * @param {ServerResponse}  res
+     * @param {any}             data                 需要返回的数据
+     * @param {number}          code                 http code
      *
      * @memberOf Restful
      */
-    private _handleSuccess(res, code, data);
+    private _handleSuccess(res, data, code?);
     /**
      * e
      *

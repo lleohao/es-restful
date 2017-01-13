@@ -2,8 +2,8 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Resource, ResourceResult } from './resource';
-import { Parser } from './parser';
-import { errorMessages, getRuleReg, arrHas } from './utils';
+import { Parser, ErrorData } from './parser';
+import { getRuleReg, arrHas } from './utils';
 
 /**
  * 资源类型
@@ -91,19 +91,9 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    private _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
-        if (typeof code === 'number') {
-            data = {
-                code: code,
-                message: errorMessages[code]
-            };
-        } else {
-            data = code;
-            code = data['code'];
-        }
-
-        res.writeHead(<number>code, { 'Content-type': 'application/json' });
-        res.end(JSON.stringify(data));
+    private _handleError(res: ServerResponse, errorData: ErrorData) {
+        res.writeHead(errorData.code, { 'Content-type': 'application/json' });
+        res.end(JSON.stringify(errorData));
     }
 
     /**
@@ -209,7 +199,7 @@ export class Restful {
 
             // 存在处理当前数据的 resource
             if (resource === null) {
-                this._handleError(res, 404);
+                this._handleError(res, {code: 404, message: 'This url does not have a corresponding resource'});
             } else {
                 resource._getResponse(req, params)
                     .then(({data, code}: ResourceResult) => {

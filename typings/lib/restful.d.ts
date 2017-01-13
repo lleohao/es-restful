@@ -38,7 +38,7 @@ export declare class Restful {
      *
      * @memberOf Restful
      */
-    private _handleError(res, code, data?);
+    private _handleError(res, errorData);
     /**
      * 响应正确数据
      *

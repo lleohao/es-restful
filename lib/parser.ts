@@ -108,10 +108,10 @@ export interface ErrorData {
     /**
      * 详细错误信息 
      * 
-     * @type {any[]}
+     * @type {any}
      * @memberOf ErrorData
      */
-    errors: any[]
+    error?: any
 }
 
 /**
@@ -435,7 +435,7 @@ export class Parser extends EventEmitter {
      * 
      * @memberOf Parser
      */
-    private _getErrorMessage(error: ParamsResultError) {
+    private _getErrorMessage(error: ParamsResultError): ErrorData {
         let message: string = errorMessages[error.type];
         let resCode = error.type === errorCode.REQUEST_ERROR ? 400 : 403;
 
@@ -482,7 +482,7 @@ export class Parser extends EventEmitter {
                 data = result.result;
             }
             process.nextTick(() => {
-                this.emit('parseEnd', data);
+                this.emit('parseEnd', <ParamData>data);
             });
         });
     }

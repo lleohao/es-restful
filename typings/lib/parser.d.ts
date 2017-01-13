@@ -102,10 +102,10 @@ export interface ErrorData {
     /**
      * 详细错误信息
      *
-     * @type {any[]}
+     * @type {any}
      * @memberOf ErrorData
      */
-    errors: any[];
+    error?: any;
 }
 /**
  * 解析的参数数据

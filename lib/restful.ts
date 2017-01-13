@@ -199,13 +199,13 @@ export class Restful {
 
             // 存在处理当前数据的 resource
             if (resource === null) {
-                this._handleError(res, {code: 404, message: 'This url does not have a corresponding resource'});
+                this._handleError(res, { code: 404, message: 'This url does not have a corresponding resource' });
             } else {
                 resource._getResponse(req, params)
                     .then(({data, code}: ResourceResult) => {
                         this._handleSuccess(res, data, code);
                     })
-                    .catch((errorData) => {
+                    .catch((errorData: ErrorData) => {
                         this._handleError(res, errorData)
                     });
             }
@@ -213,19 +213,6 @@ export class Restful {
 
         options && options['debug'] && console.log(`The server is running ${this.hostname}:${this.port}`);
         this.server.listen(this.port, this.hostname);
-    }
-
-
-    /**
-     * Stop server
-     * 
-     * 
-     * @memberOf Restful
-     */
-    stop() {
-        if (this.server !== undefined) {
-            this.server.close();
-        }
     }
 
     /**
@@ -248,10 +235,22 @@ export class Restful {
                     .then(({data, code}: ResourceResult) => {
                         this._handleSuccess(res, data, code);
                     })
-                    .catch((errorData) => {
+                    .catch((errorData: ErrorData) => {
                         this._handleError(res, errorData)
                     });
             }
         })
+    }
+
+    /**
+     * Stop server
+     * 
+     * 
+     * @memberOf Restful
+     */
+    stop() {
+        if (this.server !== undefined) {
+            this.server.close();
+        }
     }
 }

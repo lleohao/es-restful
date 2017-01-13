@@ -46,7 +46,6 @@ export class Resource {
             // 存在当前请求类型的处理函数
             if (handle) {
                 if (handle.parser === undefined) {
-                    console.log(handle(routeParams));
                     reslove(handle(routeParams))
                     // this._handleSuccess(res, 200, handle.call(resource, routeParams));
                 } else {

@@ -1,4 +1,4 @@
-import { addParser, Parser, Restful } from '../lib/index';
+import { addParser, Parser, Restful, Resource } from '../lib/index';
 
 const api = new Restful();
 
@@ -43,7 +43,7 @@ let indexOf = function (todoId: number) {
 };
 
 
-class Todo {
+class Todo extends Resource {
     get({todoId}) {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
@@ -51,9 +51,14 @@ class Todo {
         });
 
         if (item.length === 0) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
-            return item[0];
+            return {
+                data: item[0]
+            }
         }
     }
 
@@ -62,10 +67,15 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
             TODOS.splice(index, 1);
-            return 'success';
+            return {
+                data: 'success'
+            }
         }
     }
 
@@ -74,17 +84,24 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
             TODOS[index].completed = !TODOS[index].completed;
-            return 'success';
+            return {
+                data: 'success'
+            }
         }
     }
 }
 
-class TodoList {
+class TodoList extends Resource {
     get() {
-        return TODOS;
+        return {
+            data: TODOS
+        };
     }
 
 
@@ -97,7 +114,9 @@ class TodoList {
 
         };
         TODOS.push(item);
-        return item;
+        return {
+            data: item
+        };
     }
 }
 

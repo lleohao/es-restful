@@ -1,4 +1,4 @@
-import { addParser, Parser, Restful, Resource } from '../lib/index';
+import { async, addParser, Parser, Restful, Resource } from '../lib/index';
 
 const api = new Restful();
 
@@ -104,19 +104,21 @@ class TodoList extends Resource {
         };
     }
 
-
+    @async()
     @addParser(parser)
-    post({title}) {
-        let item = {
-            id: ++COUNT_ID,
-            title: title,
-            completed: false
+    post({title}, _return) {
+        setTimeout(() => {
+            let item = {
+                id: ++COUNT_ID,
+                title: title,
+                completed: false
 
-        };
-        TODOS.push(item);
-        return {
-            data: item
-        };
+            };
+            TODOS.push(item);
+            _return({
+                data: item
+            });
+        }, 1000)
     }
 }
 

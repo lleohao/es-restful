@@ -71,10 +71,10 @@ export class Resource {
                             reject(data.errorData)
                         } else {
                             if (handle['async']) {
-                                handle(routeParams, reslove)
+                                handle(Object.assign(data, routeParams), reslove)
                             } else {
                                 reslove(handle(Object.assign(data, routeParams)));
-                            }  
+                            }
                         }
                     });
                 }

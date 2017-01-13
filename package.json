@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/lleohao/restful#readme",
   "devDependencies": {
+    "@types/bluebird": "^3.0.37",
     "@types/mocha": "^2.2.33",
     "@types/node": "^6.0.51",
     "@types/should": "^8.1.30",
@@ -43,5 +44,8 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "dependencies": {
+    "bluebird": "^3.4.7"
   }
 }

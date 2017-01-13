@@ -3,7 +3,7 @@
 /// <reference path="../node_modules/@types/should/index.d.ts" />
 import { get, request, createServer, Server } from 'http';
 import * as should from 'should';
-import { Restful, addParser, Parser } from '../lib/index';
+import { Restful, addParser, Parser, Resource } from '../lib/index';
 
 
 describe('Restful tets', () => {
@@ -31,9 +31,11 @@ describe('Restful tets', () => {
         })
 
         it('添加重复路径 resource 抛出 RestfulError', () => {
-            class Todos {
+            class Todos extends Resource {
                 get() {
-                    return 'ok';
+                    return {
+                        data: 'ok'
+                    };
                 }
             }
             api.addSource(Todos, '/todos');
@@ -43,9 +45,11 @@ describe('Restful tets', () => {
         })
 
         it('正确开启服务器', (done) => {
-            class Todos {
+            class Todos extends Resource {
                 get() {
-                    return 'ok';
+                    return {
+                        data: 'ok'
+                    };
                 }
             }
             api.addSource(Todos, '/todos');
@@ -75,10 +79,10 @@ describe('Restful tets', () => {
         it('正确添加 parser 实例', (done) => {
             let parser = new Parser();
             parser.addParam('title');
-            class Demo {
+            class Demo extends Resource {
                 @addParser(parser)
                 post({title}) {
-                    return title
+                    return { data: title }
                 }
             }
             api.addSource(Demo, '/demo');
@@ -111,11 +115,13 @@ describe('Restful tets', () => {
         });
 
         it('正确解析路由参数', (done) => {
-            class Books {
+            class Books extends Resource {
                 get({id, page}) {
                     return {
-                        id: id,
-                        page: page
+                        data: {
+                            id: id,
+                            page: page
+                        }
                     }
                 }
             }
@@ -146,11 +152,13 @@ describe('Restful tets', () => {
         })
 
         it('错误路径测试', (done) => {
-            class Books {
+            class Books extends Resource {
                 get({id, page}) {
                     return {
-                        id: id,
-                        page: page
+                        data: {
+                            id: id,
+                            page: page
+                        }
                     }
                 }
             }
@@ -167,7 +175,8 @@ describe('Restful tets', () => {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        code: 404
+                        code: 404,
+                        message: 'This url does not have a corresponding resource'
                     });
                     api.stop();
                     done();
@@ -176,11 +185,13 @@ describe('Restful tets', () => {
         })
 
         it('访问未定义方法测试', (done) => {
-            class Books {
+            class Books extends Resource {
                 get({id, page}) {
                     return {
-                        id: id,
-                        page: page
+                        data: {
+                            id: id,
+                            page: page
+                        }
                     }
                 }
             }
@@ -214,12 +225,14 @@ describe('Restful tets', () => {
             let parser = new Parser();
             parser.addParam('id');
             parser.addParam('page');
-            class Books {
+            class Books extends Resource {
                 @addParser(parser)
                 post({id, page}) {
                     return {
-                        id: id,
-                        page: page
+                        data: {
+                            id: id,
+                            page: page
+                        }
                     }
                 }
             }
@@ -256,18 +269,20 @@ describe('Restful tets', () => {
         let server: Server;
         let api;
 
-        class Resource {
+        class Test extends Resource {
             get() {
-                return 'restful request';
+                return {
+                    data: 'restful request'
+                };
             }
         }
 
         before(() => {
             server = <Server>createServer();
             api = new Restful();
-            api.addSource(Resource, '/api');
+            api.addSource(Test, '/api');
             api.bindServer(server);
-            
+
             server.listen(5052);
         })
 

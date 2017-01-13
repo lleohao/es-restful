@@ -1,7 +1,8 @@
 import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
-import { Parser, ParamData } from './parser';
+import { Resource, ResourceResult } from './resource';
+import { Parser } from './parser';
 import { errorMessages, getRuleReg, arrHas } from './utils';
 
 /**
@@ -37,7 +38,7 @@ interface ApiResource {
      * @type {*}
      * @memberOf ApiResource
      */
-    resource: any;
+    resource: Resource;
 }
 
 class RestfulError extends Error { }
@@ -210,31 +211,13 @@ export class Restful {
             if (resource === null) {
                 this._handleError(res, 404);
             } else {
-                let handle = resource[req.method.toLowerCase()];
-
-                // 存在当前请求类型的处理函数
-                if (handle) {
-                    if (handle.parser === undefined) {
-                        this._handleSuccess(res, 200, handle.call(resource, params));
-                    } else {
-                        let parser = <Parser>handle.parser;
-
-                        parser.parse(req).once('parseEnd', (data: ParamData) => {
-                            if (data.errorData !== undefined) {
-                                this._handleError(res, data.errorData);
-                            } else {
-                                this._handleSuccess(res, 200, handle.call(resource, Object.assign(params, data)));
-                            }
-                        });
-                    }
-                } else {
-                    this._handleError(res, {
-                        code: 400,
-                        error: {
-                            message: `${req.method.toLowerCase()} method is undefined.`
-                        }
+                resource._getResponse(req, params)
+                    .then(({data, code}: ResourceResult) => {
+                        this._handleSuccess(res, data, code);
+                    })
+                    .catch((errorData) => {
+                        this._handleError(res, errorData)
                     });
-                }
             }
         });
 
@@ -271,31 +254,13 @@ export class Restful {
             if (resource === null) {
                 return;
             } else {
-                let handle = resource[req.method.toLowerCase()];
-
-                // 存在当前请求类型的处理函数
-                if (handle) {
-                    if (handle.parser === undefined) {
-                        this._handleSuccess(res, 200, handle.call(resource, params));
-                    } else {
-                        let parser = <Parser>handle.parser;
-
-                        parser.parse(req).once('parseEnd', (data: ParamData) => {
-                            if (data.errorData !== undefined) {
-                                this._handleError(res, data.errorData);
-                            } else {
-                                this._handleSuccess(res, 200, handle.call(resource, Object.assign(params, data)));
-                            }
-                        });
-                    }
-                } else {
-                    this._handleError(res, {
-                        code: 400,
-                        error: {
-                            message: `${req.method.toLowerCase()} method is undefined.`
-                        }
+                resource._getResponse(req, params)
+                    .then(({data, code}: ResourceResult) => {
+                        this._handleSuccess(res, data, code);
+                    })
+                    .catch((errorData) => {
+                        this._handleError(res, errorData)
                     });
-                }
             }
         })
     }

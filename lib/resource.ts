@@ -1,5 +1,7 @@
-import { ServerResponse } from 'http';
+import { IncomingMessage } from 'http';
 import * as Promise from 'bluebird';
+
+import { Parser, ParamData } from './parser';
 
 /**
  * 资源返回值类型
@@ -35,9 +37,37 @@ export interface ResourceResult {
 export class Resource {
 
 
-    _getResponse(req: ServerResponse) {
+    _getResponse(req: IncomingMessage, routeParams: {}) {
+        let method = req.method.toLowerCase();
+
         return new Promise((reslove, reject) => {
-            
+            let handle = this[method];
+
+            // 存在当前请求类型的处理函数
+            if (handle) {
+                if (handle.parser === undefined) {
+                    console.log(handle(routeParams));
+                    reslove(handle(routeParams))
+                    // this._handleSuccess(res, 200, handle.call(resource, routeParams));
+                } else {
+                    let parser = <Parser>handle.parser;
+
+                    parser.parse(req).once('parseEnd', (data: ParamData) => {
+                        if (data.errorData !== undefined) {
+                            reject(data.errorData)
+                        } else {
+                            reslove(handle(Object.assign(data, routeParams)));
+                        }
+                    });
+                }
+            } else {
+                reject({
+                    code: 400,
+                    error: {
+                        message: `${method} method is undefined.`
+                    }
+                })
+            }
         });
     }
 

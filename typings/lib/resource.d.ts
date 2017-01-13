@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /// <reference types="bluebird" />
-import { ServerResponse } from 'http';
+import { IncomingMessage } from 'http';
 import * as Promise from 'bluebird';
 /**
  * 资源返回值类型
@@ -33,7 +33,7 @@ export interface ResourceResult {
  * @extends {EventEmitter}
  */
 export declare class Resource {
-    _getResponse(req: ServerResponse): Promise<{}>;
+    _getResponse(req: IncomingMessage, routeParams: {}): Promise<{}>;
     /**
      * 返回处理数据
      *

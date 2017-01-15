@@ -84,6 +84,29 @@ export interface Param {
      */
     help?: string;
 }
+export interface ErrorData {
+    /**
+     * 错误对应的http code
+     *
+     * @type {number}
+     * @memberOf ErrorData
+     */
+    code: number;
+    /**
+     * 错误信息概述
+     *
+     * @type {string}
+     * @memberOf ErrorData
+     */
+    message: string;
+    /**
+     * 详细错误信息
+     *
+     * @type {any}
+     * @memberOf ErrorData
+     */
+    error?: any;
+}
 /**
  * 解析的参数数据
  *
@@ -92,22 +115,14 @@ export interface Param {
  */
 export interface ParamData {
     /**
-     * 解析错误抛出的信息
+     * 解析错误时的错误信息
      *
-     * @type {{
-     *         code: number;
-     *         message: string;
-     *         data: Object;
-     *     }}
+     * @type {ErrorData}
      * @memberOf ParamData
      */
-    errorData?: {
-        code: number;
-        message: string;
-        erros: any[];
-    };
+    errorData?: ErrorData;
     /**
-     * 解析正确抛出解析数据
+     * 解析正确时的参数
      *
      * @type {Object}
      * @memberOf ParamData
@@ -128,7 +143,6 @@ export declare class Parser extends EventEmitter {
     private params;
     private trim;
     private errCb;
-    baseUrl: string;
     /**
      * parse request
      *
@@ -165,6 +179,13 @@ export declare class Parser extends EventEmitter {
      * @memberOf Parser
      */
     private _getErrorMessage(error);
+    /**
+     * 绑定一次解析函数
+     *
+     *
+     * @memberOf Parser
+     */
+    _preParse(): void;
     /**
      * Creates an instance of Parser.
      *

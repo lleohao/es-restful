@@ -3,7 +3,7 @@
 /// <reference path="../node_modules/@types/should/index.d.ts" />
 import { get, request } from 'http';
 import * as should from 'should';
-import { Restful, addParser, Parser } from '../lib/index';
+import { Restful, Parser, Resource } from '../lib/index';
 
 
 interface TodoItem {
@@ -46,7 +46,7 @@ describe('Example tets', () => {
         }
 
 
-        class Todo {
+        class Todo extends Resource {
             get({todoId}) {
                 todoId = parseInt(todoId);
                 let item = TODOS.filter((item) => {
@@ -54,21 +54,34 @@ describe('Example tets', () => {
                 })
 
                 if (item.length === 0) {
-                    return `The item for the id:${todoId} does not exist`
+                    return {
+                        data: `The item for the id:${todoId} does not exist`,
+                        code: 404
+                    }
                 } else {
-                    return item[0];
+                    return {
+                        data: item[0]
+                    };
                 }
             }
 
-            delete({todoId}) {
+            @Resource.async()
+            delete({todoId}, _return) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
                 if (index === -1) {
-                    return `The item for the id:${todoId} does not exist`
+                    _return({
+                        data: `The item for the id:${todoId} does not exist`,
+                        code: 404
+                    });
                 } else {
-                    TODOS.splice(index, 1);
-                    return 'success';
+                    setTimeout(() => {
+                        TODOS.splice(index, 1);
+                        _return({
+                            data: 'success'
+                        });
+                    }, 10)
                 }
             }
 
@@ -77,29 +90,41 @@ describe('Example tets', () => {
                 let index = indexOf(todoId);
 
                 if (index === -1) {
-                    return `The item for the id:${todoId} does not exist`
+                    return {
+                        data: `The item for the id:${todoId} does not exist`,
+                        code: 404
+                    }
                 } else {
                     TODOS[index].completed = !TODOS[index].completed;
-                    return 'success';
+                    return {
+                        data: 'success'
+                    };
                 }
             }
         }
 
-        class TodoList {
+        class TodoList extends Resource {
             get() {
-                return TODOS;
+                return {
+                    data: TODOS
+                };
             }
 
-            @addParser(parser)
-            post({title}) {
-                let item = {
-                    id: ++COUNT_ID,
-                    title: title,
-                    completed: false
+            @Resource.async()
+            @Resource.addParser(parser)
+            post({title}, _return) {
+                setTimeout(() => {
+                    let item = {
+                        id: ++COUNT_ID,
+                        title: title,
+                        completed: false
 
-                }
-                TODOS.push(item);
-                return item;
+                    }
+                    TODOS.push(item);
+                    _return({
+                        data: item
+                    });
+                }, 10)
             }
         }
 

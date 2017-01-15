@@ -1,3 +1,3 @@
-export { Restful, addParser } from './restful';
+export { Restful } from './restful';
+export { Resource } from './resource';
 export { Parser, Param } from './parser';
-export { Resource, async } from './resource';

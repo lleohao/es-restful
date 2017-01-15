@@ -2,8 +2,8 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Resource, ResourceResult } from './resource';
-import { Parser } from './parser';
-import { errorMessages, getRuleReg, arrHas } from './utils';
+import { ErrorData } from './parser';
+import { getRuleReg, arrHas, RestfulError } from './utils';
 
 /**
  * 资源类型
@@ -41,21 +41,6 @@ interface ApiResource {
     resource: Resource;
 }
 
-class RestfulError extends Error { }
-
-/**
- * (装饰器)给指定请求绑定参数解析
- * 
- * @export
- * @param {Parser} parser
- * @returns
- */
-export function addParser(parser: Parser) {
-    return function (target: any, propertyKey: string) {
-        target[propertyKey].parser = parser;
-    };
-}
-
 /**
  * Restful Server class
  * 
@@ -91,19 +76,9 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    private _handleError(res: ServerResponse, code: number | Object, data: Object | string = {}) {
-        if (typeof code === 'number') {
-            data = {
-                code: code,
-                message: errorMessages[code]
-            };
-        } else {
-            data = code;
-            code = data['code'];
-        }
-
-        res.writeHead(<number>code, { 'Content-type': 'application/json' });
-        res.end(JSON.stringify(data));
+    private _handleError(res: ServerResponse, errorData: ErrorData) {
+        res.writeHead(errorData.code, { 'Content-type': 'application/json' });
+        res.end(JSON.stringify(errorData));
     }
 
     /**
@@ -209,13 +184,13 @@ export class Restful {
 
             // 存在处理当前数据的 resource
             if (resource === null) {
-                this._handleError(res, 404);
+                this._handleError(res, { code: 404, message: 'This url does not have a corresponding resource' });
             } else {
                 resource._getResponse(req, params)
                     .then(({data, code}: ResourceResult) => {
                         this._handleSuccess(res, data, code);
                     })
-                    .catch((errorData) => {
+                    .catch((errorData: ErrorData) => {
                         this._handleError(res, errorData)
                     });
             }
@@ -223,19 +198,6 @@ export class Restful {
 
         options && options['debug'] && console.log(`The server is running ${this.hostname}:${this.port}`);
         this.server.listen(this.port, this.hostname);
-    }
-
-
-    /**
-     * Stop server
-     * 
-     * 
-     * @memberOf Restful
-     */
-    stop() {
-        if (this.server !== undefined) {
-            this.server.close();
-        }
     }
 
     /**
@@ -258,10 +220,22 @@ export class Restful {
                     .then(({data, code}: ResourceResult) => {
                         this._handleSuccess(res, data, code);
                     })
-                    .catch((errorData) => {
+                    .catch((errorData: ErrorData) => {
                         this._handleError(res, errorData)
                     });
             }
         })
+    }
+
+    /**
+     * Stop server
+     * 
+     * 
+     * @memberOf Restful
+     */
+    stop() {
+        if (this.server !== undefined) {
+            this.server.close();
+        }
     }
 }

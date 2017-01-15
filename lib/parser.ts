@@ -88,6 +88,32 @@ export interface Param {
     help?: string;
 }
 
+export interface ErrorData {
+    /**
+     * 错误对应的http code
+     * 
+     * @type {number}
+     * @memberOf ErrorData
+     */
+    code: number;
+
+    /**
+     * 错误信息概述 
+     * 
+     * @type {string}
+     * @memberOf ErrorData
+     */
+    message: string;
+
+    /**
+     * 详细错误信息 
+     * 
+     * @type {any}
+     * @memberOf ErrorData
+     */
+    error?: any
+}
+
 /**
  * 解析的参数数据
  * 
@@ -96,22 +122,14 @@ export interface Param {
  */
 export interface ParamData {
     /**
-     * 解析错误抛出的信息
+     * 解析错误时的错误信息
      * 
-     * @type {{
-     *         code: number;
-     *         message: string;
-     *         data: Object;
-     *     }}
+     * @type {ErrorData}
      * @memberOf ParamData
      */
-    errorData?: {
-        code: number;
-        message: string;
-        erros: any[];
-    };
+    errorData?: ErrorData;
     /**
-     * 解析正确抛出解析数据
+     * 解析正确时的参数
      * 
      * @type {Object}
      * @memberOf ParamData
@@ -193,7 +211,6 @@ export class Parser extends EventEmitter {
     private params: any;
     private trim: boolean;
     private errCb: Function;
-    public baseUrl: string = '';
 
     /**
      * parse request
@@ -205,7 +222,7 @@ export class Parser extends EventEmitter {
      * @memberOf Parser
      */
     private _parseRequest(req: IncomingMessage) {
-        let isGet = req.method.toLowerCase() === 'get';
+        let isGet = req.method === 'GET';
         let parsedData: ParamResult = {
             method: req.method,
             result: null,
@@ -418,7 +435,7 @@ export class Parser extends EventEmitter {
      * 
      * @memberOf Parser
      */
-    private _getErrorMessage(error: ParamsResultError) {
+    private _getErrorMessage(error: ParamsResultError): ErrorData {
         let message: string = errorMessages[error.type];
         let resCode = error.type === errorCode.REQUEST_ERROR ? 400 : 403;
 
@@ -451,6 +468,26 @@ export class Parser extends EventEmitter {
     }
 
     /**
+     * 绑定一次解析函数
+     * 
+     * 
+     * @memberOf Parser
+     */
+    _preParse() {
+        this.on('_endParse', (result: ParamResult) => {
+            let data = {};
+            if (result.error !== null) {
+                data['errorData'] = this._getErrorMessage(result.error);
+            } else {
+                data = result.result;
+            }
+            process.nextTick(() => {
+                this.emit('parseEnd', <ParamData>data);
+            });
+        });
+    }
+
+    /**
      * Creates an instance of Parser.
      * 
      * 
@@ -471,6 +508,8 @@ export class Parser extends EventEmitter {
             this.trim = false;
             this.errCb = <Function>trim;
         }
+
+        this._preParse();
     }
 
     /**
@@ -540,21 +579,6 @@ export class Parser extends EventEmitter {
      * @api
      */
     parse(req: IncomingMessage) {
-        // 只绑定一次处理事件
-        if (this.eventNames().length === 0) {
-            this.on('_endParse', (result: ParamResult) => {
-                let data = {};
-                if (result.error !== null) {
-                    data['errorData'] = this._getErrorMessage(result.error);
-                } else {
-                    data = result.result;
-                }
-                process.nextTick(() => {
-                    this.emit('parseEnd', data);
-                });
-            });
-        }
-
         this._parseRequest(req);
         return this;
     }

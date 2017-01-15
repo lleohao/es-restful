@@ -26,3 +26,5 @@ export declare function getRuleReg(path: string): {
  * 判断对象数组中是否存在指定值
  */
 export declare function arrHas(arr: Object[], key: string, value: any): boolean;
+export declare class RestfulError extends Error {
+}

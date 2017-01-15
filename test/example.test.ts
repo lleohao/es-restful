@@ -3,7 +3,7 @@
 /// <reference path="../node_modules/@types/should/index.d.ts" />
 import { get, request } from 'http';
 import * as should from 'should';
-import { Restful, addParser, Parser, Resource, async } from '../lib/index';
+import { Restful, Parser, Resource } from '../lib/index';
 
 
 interface TodoItem {
@@ -65,7 +65,7 @@ describe('Example tets', () => {
                 }
             }
 
-            @async()
+            @Resource.async()
             delete({todoId}, _return) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
@@ -110,8 +110,8 @@ describe('Example tets', () => {
                 };
             }
 
-            @async()
-            @addParser(parser)
+            @Resource.async()
+            @Resource.addParser(parser)
             post({title}, _return) {
                 setTimeout(() => {
                     let item = {

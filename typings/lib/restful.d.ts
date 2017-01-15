@@ -1,14 +1,5 @@
 /// <reference types="node" />
 import { Server } from 'http';
-import { Parser } from './parser';
-/**
- * (装饰器)给指定请求绑定参数解析
- *
- * @export
- * @param {Parser} parser
- * @returns
- */
-export declare function addParser(parser: Parser): (target: any, propertyKey: string) => void;
 /**
  * Restful Server class
  *

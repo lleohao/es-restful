@@ -58,3 +58,5 @@ export function arrHas(arr: Object[], key: string, value: any) {
         return item[key] === value;
     });
 }
+
+export class RestfulError extends Error { }

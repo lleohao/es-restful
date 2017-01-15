@@ -2,8 +2,8 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Resource, ResourceResult } from './resource';
-import { Parser, ErrorData } from './parser';
-import { getRuleReg, arrHas } from './utils';
+import { ErrorData } from './parser';
+import { getRuleReg, arrHas, RestfulError } from './utils';
 
 /**
  * 资源类型
@@ -39,21 +39,6 @@ interface ApiResource {
      * @memberOf ApiResource
      */
     resource: Resource;
-}
-
-class RestfulError extends Error { }
-
-/**
- * (装饰器)给指定请求绑定参数解析
- * 
- * @export
- * @param {Parser} parser
- * @returns
- */
-export function addParser(parser: Parser) {
-    return function (target: any, propertyKey: string) {
-        target[propertyKey].parser = parser;
-    };
 }
 
 /**

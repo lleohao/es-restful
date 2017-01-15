@@ -3,7 +3,7 @@
 /// <reference path="../node_modules/@types/should/index.d.ts" />
 import { get, request, createServer, Server } from 'http';
 import * as should from 'should';
-import { Restful, addParser, Parser, Resource } from '../lib/index';
+import { Restful, Parser, Resource } from '../lib/index';
 
 
 describe('Restful tets', () => {
@@ -80,7 +80,7 @@ describe('Restful tets', () => {
             let parser = new Parser();
             parser.addParam('title');
             class Demo extends Resource {
-                @addParser(parser)
+                @Resource.addParser(parser)
                 post({title}) {
                     return { data: title }
                 }
@@ -226,7 +226,7 @@ describe('Restful tets', () => {
             parser.addParam('id');
             parser.addParam('page');
             class Books extends Resource {
-                @addParser(parser)
+                @Resource.addParser(parser)
                 post({id, page}) {
                     return {
                         data: {

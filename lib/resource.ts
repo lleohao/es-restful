@@ -27,12 +27,6 @@ export interface ResourceResult {
     code?: number;
 }
 
-export function async() {
-    return function (target: any, propertyKey: string) {
-        target[propertyKey].async = true;
-    };
-}
-
 /**
  * Resource 基类
  * 
@@ -41,6 +35,37 @@ export function async() {
  * @extends {EventEmitter}
  */
 export class Resource {
+    /**
+     * (装饰器)指定该函数将以异步的方式返回数据
+     * 
+     * @static
+     * @returns
+     * 
+     * @memberOf Resource
+     */
+    static async() {
+        return function (target: any, propertyKey: string) {
+            target[propertyKey].async = true;
+        };
+    }
+
+
+    /**
+     * (装饰器)给指定请求绑定参数解析
+     * 
+     * @static
+     * @param {Parser} parser
+     * @returns
+     * 
+     * @memberOf Resource
+     */
+    static addParser(parser: Parser) {
+        return function (target: any, propertyKey: string) {
+            target[propertyKey].parser = parser;
+        };
+    }
+
+
     /**
      * 获取乡音数据
      * 

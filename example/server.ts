@@ -15,12 +15,6 @@ let TODOS: TodoItem[] = [{
 }];
 let COUNT_ID = 0;
 
-let parser = new Parser();
-parser.addParam('title', {
-    required: true,
-    type: 'string'
-});
-
 
 /**
  * 
@@ -98,6 +92,17 @@ class Todo extends Resource {
 }
 
 class TodoList extends Resource {
+    parser: Parser;
+
+    constructor () {
+        super();
+        this.parser = new Parser();
+        this.parser.addParam('title', {
+            required: true,
+            type: 'string'
+        });
+    }
+
     get() {
         return {
             data: TODOS
@@ -105,7 +110,7 @@ class TodoList extends Resource {
     }
 
     @Resource.async()
-    @Resource.addParser(parser)
+    @Resource.addParser(this.parser)
     post({title}, _return) {
         setTimeout(() => {
             let item = {

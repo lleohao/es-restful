@@ -29,16 +29,16 @@ constructor(port: number = 5050, hostname: string = 'localhost'):Restful
  * 
  * @memberOf Api
  */
-addSource(resource: any, path: string): void
+addSource(resource: Resource, path: string): void
 ```
 
 > resource类示例
 
 ```javascript
-class Resource {
+class Demo extends Resource {
   get() {}
 }
-api.addSource(Resource, '/api/source')
+api.addSource(Demo, '/api/source')
 api.start();
 
 // 访问 `<host>/api/source` 的 get 请求将会有 Resource 的 get 方法处理
@@ -49,12 +49,12 @@ api.start();
 可以使用`<`和`>`包括参数名, 框架将自动解析出路由中的参数, 并会在调对应的处理函数时传入
 
 ```javascript
-class Resource {
+class Demo extends Resource {
 	get ({name, page}) {
     	// 通过对象解析获得参数
 	}
 }
-api.addSource(Resource, '/book/<name>/page/<page>');
+api.addSource(Demo, '/book/<name>/page/<page>');
 ```
 
 ### `start` 启动服务器
@@ -146,9 +146,42 @@ stop(): void
 removeParams(name: (string | string[])): void;
 ```
 
-## Decorator: addParser
 
-> 装饰器, 将处理方法与parser绑定
+
+## Class: Resource
+
+> resource 资源基类, 所有被添加的资源必须继承此类
+
+```javascript
+// resource 资源继承此类
+class BookResource extends Resource {
+    get () {
+        return {
+            data: books
+        }
+    }
+}
+
+const api = new Restful();
+api.addSource(BookResource, '/book');
+```
+
+
+
+### `Resource.addParser` 添加参数处理 
+
+```javascript
+/**
+ * (装饰器)给指定请求绑定参数解析
+ * 
+ * @static
+ * @param {Parser} parser
+ * @returns
+ * 
+ * @memberOf Resource
+*/
+@Resource.addParser(parser: Parser): Function;
+```
 
 ```javascript
 // example
@@ -159,7 +192,7 @@ parser.addParam('title', {
     type: 'string'
 });
 
-class TodoList {
+class TodoList extends Resource {
     // 通过装饰器绑定parser至处理指定的处理方式
   	// 当parser处理完成数据后会传入处理函数中
     @addParser(parser)
@@ -176,7 +209,44 @@ class TodoList {
 }
 ```
 
+### `Resource.async ` 指定数据将以异步方式返回数据
 
+> ```javascript
+> /**
+>  * (装饰器)指定该函数将以异步的方式返回数据
+>  * 
+>  * @static
+>  * @returns
+>  * 
+>  * @memberOf Resource
+>  */
+> @Resource.async(): Function;
+> ```
 
+任何使用此装饰将在处理函数的参数后面传入`_return`参数, 用于异步返回数据
 
+```javascript
+class BookResource extends Resource {
+    parser: Parser;
+    
+    constructor() {
+        // 获取title参数
+        this.parser = new Parser();
+        this.parser.addParam('title', {
+            required: true
+        })
+    }
+    
+    @Resource.async()
+    @Resource.addParser(this.parser)
+    post({title}, _return) {
+        // 模拟异步操作
+        setTimeout(() => {
+            _return {
+                data: 'success'
+            }
+        })
+    }
+}
+```
 

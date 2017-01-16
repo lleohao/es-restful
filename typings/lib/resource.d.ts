@@ -54,7 +54,7 @@ export declare class Resource {
      */
     static addParser(parser: Parser): (target: any, propertyKey: string) => void;
     /**
-     * 获取乡音数据
+     * 获取响应数据
      *
      * @param {IncomingMessage} req             请求数据
      * @param {Object}          routeParams     路由参数

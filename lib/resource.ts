@@ -67,7 +67,7 @@ export class Resource {
 
 
     /**
-     * 获取乡音数据
+     * 获取响应数据
      * 
      * @param {IncomingMessage} req             请求数据
      * @param {Object}          routeParams     路由参数

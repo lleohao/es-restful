@@ -22,13 +22,15 @@
 2. 编写服务器
 
    ```javascript
-   import { Restful } from 'es-restful';
+   import { Restful, Resource } from 'es-restful';
 
    const api = new Restful();
    // 声明一个resource类
-   class SayHello {
+   class SayHello extends Resource {
        get({name}) {
-           return `hello ${name}.`;
+         	return {
+           	    data: `hello ${name}.`
+            };
        }
    }
 
@@ -48,7 +50,7 @@
 > 代码在 example 文件夹下, 运行前需要先编译
 
 ```javascript
-import { addParser, Parser, Restful } from '../lib/index';
+import { Parser, Restful, Resource } from '../lib/index';
 
 const api = new Restful();
 
@@ -87,7 +89,7 @@ let indexOf = function (todoId: number) {
 };
 
 
-class Todo {
+class Todo extends Resource {
     get({todoId}) {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
@@ -95,43 +97,63 @@ class Todo {
         });
 
         if (item.length === 0) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+            	data: `The item for the id:${todoId} does not exist`
+			}
         } else {
-            return item[0];
+			return {
+				data: item[0]
+			}
         }
     }
+	
+	@Resource.async()
+    delete({todoId}, _return) {
+        todoId = parseInt(todoId);
+        let index = indexOf(todoId);
+		
+		setTimeout(() => {
+  			if (index === -1) {
+         	    _return {
+                    data: `The item for the id:${todoId} does not exist`
+                }
+        	} else {
+            	TODOS.splice(index, 1);
+                _return {
+                    data: 'success'
+                };
+        	}
+		})
+        
+    }
 
-    delete({todoId}) {
+    @Resource.async()
+    put({todoId}, _return) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
-        if (index === -1) {
-            return `The item for the id:${todoId} does not exist`;
-        } else {
-            TODOS.splice(index, 1);
-            return 'success';
-        }
-    }
-
-    put({todoId}) {
-        todoId = parseInt(todoId);
-        let index = indexOf(todoId);
-
-        if (index === -1) {
-            return `The item for the id:${todoId} does not exist`;
-        } else {
-            TODOS[index].completed = !TODOS[index].completed;
-            return 'success';
-        }
+        setTimeout(() => {
+            if (index === -1) {
+                _return {
+                    data: `The item for the id:${todoId} does not exist`
+                }
+            } else {
+                TODOS[index].completed = !TODOS[index].completed;
+                _return {
+                    data: 'success'
+                };
+            }
+        })
+        
     }
 }
 
-class TodoList {
+class TodoList extends Resource {
     get() {
         return TODOS;
     }
 
-    @addParser(parser)
+    @Resource.addParser(parser)
     post({title}) {
         let item = {
             id: ++COUNT_ID,

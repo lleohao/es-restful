@@ -57,6 +57,22 @@ class Demo extends Resource {
 api.addSource(Demo, '/book/<name>/page/<page>');
 ```
 
+### `bindServer` 绑定外部服务器
+
+```javascript
+/**
+ * 绑定外部服务器
+ * 
+ * @param {Server} server
+ * 
+ * @memberOf Restful
+ * @api
+ */
+bindServer(server): void;
+```
+
+通过监听`Server`的`request`事件完成绑定
+
 ### `start` 启动服务器
 
 ```javascript
@@ -166,8 +182,6 @@ const api = new Restful();
 api.addSource(BookResource, '/book');
 ```
 
-
-
 ### `Resource.addParser` 添加参数处理 
 
 ```javascript
@@ -211,17 +225,17 @@ class TodoList extends Resource {
 
 ### `Resource.async ` 指定数据将以异步方式返回数据
 
-> ```javascript
-> /**
->  * (装饰器)指定该函数将以异步的方式返回数据
->  * 
->  * @static
->  * @returns
->  * 
->  * @memberOf Resource
->  */
-> @Resource.async(): Function;
-> ```
+```javascript
+/**
+ * (装饰器)指定该函数将以异步的方式返回数据
+ * 
+ * @static
+ * @returns
+ * 
+ * @memberOf Resource
+ */
+@Resource.async(): Function;
+```
 
 任何使用此装饰将在处理函数的参数后面传入`_return`参数, 用于异步返回数据
 

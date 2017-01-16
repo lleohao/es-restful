@@ -40,7 +40,7 @@
 
 3. 测试结果
 
-   ```
+   ```curl
    curl localhost:5050/hello/lleohao ==> hello lleohao
    ```
 
@@ -67,12 +67,12 @@ let TODOS: TodoItem[] = [{
 }];
 let COUNT_ID = 0;
 
-let parser = new Parser();
-parser.addParam('title', {
-    required: true,
-    type: 'string'
-});
 
+/**
+ * 
+ * 
+ * @param {number} todoId
+ */
 let indexOf = function (todoId: number) {
     let index, len = TODOS.length;
     for (index = 0; index < len; index++) {
@@ -98,71 +98,84 @@ class Todo extends Resource {
 
         if (item.length === 0) {
             return {
-            	data: `The item for the id:${todoId} does not exist`
-			}
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
-			return {
-				data: item[0]
-			}
+            return {
+                data: item[0]
+            }
         }
     }
-	
-	@Resource.async()
-    delete({todoId}, _return) {
+
+    delete({todoId}) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
-		
-		setTimeout(() => {
-  			if (index === -1) {
-         	    _return {
-                    data: `The item for the id:${todoId} does not exist`
-                }
-        	} else {
-            	TODOS.splice(index, 1);
-                _return {
-                    data: 'success'
-                };
-        	}
-		})
-        
+
+        if (index === -1) {
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
+        } else {
+            TODOS.splice(index, 1);
+            return {
+                data: 'success'
+            }
+        }
     }
 
-    @Resource.async()
-    put({todoId}, _return) {
+    put({todoId}) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
-        setTimeout(() => {
-            if (index === -1) {
-                _return {
-                    data: `The item for the id:${todoId} does not exist`
-                }
-            } else {
-                TODOS[index].completed = !TODOS[index].completed;
-                _return {
-                    data: 'success'
-                };
+        if (index === -1) {
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
             }
-        })
-        
+        } else {
+            TODOS[index].completed = !TODOS[index].completed;
+            return {
+                data: 'success'
+            }
+        }
     }
 }
 
 class TodoList extends Resource {
-    get() {
-        return TODOS;
+    parser: Parser;
+
+    constructor () {
+        super();
+        this.parser = new Parser();
+        this.parser.addParam('title', {
+            required: true,
+            type: 'string'
+        });
     }
 
-    @Resource.addParser(parser)
-    post({title}) {
-        let item = {
-            id: ++COUNT_ID,
-            title: title,
-            completed: false
-
+    get() {
+        return {
+            data: TODOS
         };
-        TODOS.push(item);
-        return item;
+    }
+
+    @Resource.async()
+    @Resource.addParser(this.parser)
+    post({title}, _return) {
+        setTimeout(() => {
+            let item = {
+                id: ++COUNT_ID,
+                title: title,
+                completed: false
+
+            };
+            TODOS.push(item);
+            _return({
+                data: item
+            });
+        }, 1000)
     }
 }
 
@@ -198,7 +211,4 @@ curl -X PUT localhost:5050/todos/1
 
 
 
-## 后续开发
-
-- [ ] 优化请求处理代码
-- [ ] 开发中间件功能, 方便接入已有的项目中
+更详细的功能可以查阅[快速指南](//lleohao.github.io/restful/#/guide)

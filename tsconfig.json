@@ -3,21 +3,17 @@
         "target": "es6",
         "module": "commonjs",
         "moduleResolution": "node",
-
-        "outDir": "dist",
-        "inlineSources": true,
-
         "experimentalDecorators": true,
         "noImplicitAny": false,
         "noUnusedLocals": true,
         "sourceMap": true,
         "removeComments": true,
-        "declaration": true
+        "declaration": true,
+        "declarationDir": "typings"
     },
     "exclude": [
         "node_modules",
         "typings",
-        "tests",
-        "example"
+        "tests"
     ]
 }

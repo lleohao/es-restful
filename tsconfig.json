@@ -1,20 +1,23 @@
 {
     "compilerOptions": {
+        "target": "es6",
         "module": "commonjs",
         "moduleResolution": "node",
-        "target": "es6",
-        "experimentalDecorators": true,
 
+        "outDir": "dist",
+        "inlineSources": true,
+
+        "experimentalDecorators": true,
         "noImplicitAny": false,
         "noUnusedLocals": true,
         "sourceMap": true,
-
-        "declaration": true,
-        "declarationDir": "./typings"
+        "removeComments": true,
+        "declaration": true
     },
     "exclude": [
         "node_modules",
         "typings",
-        "tests"
+        "tests",
+        "example"
     ]
 }

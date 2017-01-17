@@ -45,6 +45,10 @@
    ```
 
 
+> 阅读[快速指南](//lleohao.github.io/restful/#/guide)可以更快上手
+
+
+
 ## 更完整的例子, 构建一个 todos 服务器
 
 > 代码在 example 文件夹下, 运行前需要先编译
@@ -208,7 +212,5 @@ curl -X DELETE localhost:5050/todos/0
 curl -X PUT localhost:5050/todos/1
 {"code":200,"message":"success","data":"success"}
 ```
-
-
 
 更详细的功能可以查阅[快速指南](//lleohao.github.io/restful/#/guide)

@@ -280,6 +280,25 @@ api.start();
 
 
 
+## 使用`addSourceMap()`批量添加`Resource`
+
+当我们的项目越来越大时, 手动一个个的添加`Resouce`是一件麻烦的事情.这时我们可以使用`addSourceMap()`来批量添加.
+
+```javascript
+// 我们更改下上面的添加方式
+
+api.addSourceMap({
+    '/api/todos/<todoId>': Todos,
+    '/api/todos': TodoList
+})
+```
+
+>Tips: 实际开发时我们可以将不通的`Resource`放在不同的文件中, 通过`export`导出相应的配置文件.
+>
+>在主文件使用`Object.assign()`合并配置文件导入即可.
+
+
+
 ## 绑定到已有的服务器中
 
 现在的我们是自己启动了一个新的服务器用于处理请求, 在有的情况下你可能不需要一个新的服务器, 而是绑定到一个已有的服务器上.

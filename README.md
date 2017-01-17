@@ -22,13 +22,15 @@
 2. 编写服务器
 
    ```javascript
-   import { Restful } from 'es-restful';
+   import { Restful, Resource } from 'es-restful';
 
    const api = new Restful();
    // 声明一个resource类
-   class SayHello {
+   class SayHello extends Resource {
        get({name}) {
-           return `hello ${name}.`;
+         	return {
+           	    data: `hello ${name}.`
+            };
        }
    }
 
@@ -38,9 +40,13 @@
 
 3. 测试结果
 
-   ```
+   ```curl
    curl localhost:5050/hello/lleohao ==> hello lleohao
    ```
+
+
+> 阅读[快速指南](//lleohao.github.io/restful/#/guide)可以更快上手
+
 
 
 ## 更完整的例子, 构建一个 todos 服务器
@@ -48,7 +54,7 @@
 > 代码在 example 文件夹下, 运行前需要先编译
 
 ```javascript
-import { addParser, Parser, Restful } from '../lib/index';
+import { Parser, Restful, Resource } from '../lib/index';
 
 const api = new Restful();
 
@@ -65,12 +71,12 @@ let TODOS: TodoItem[] = [{
 }];
 let COUNT_ID = 0;
 
-let parser = new Parser();
-parser.addParam('title', {
-    required: true,
-    type: 'string'
-});
 
+/**
+ * 
+ * 
+ * @param {number} todoId
+ */
 let indexOf = function (todoId: number) {
     let index, len = TODOS.length;
     for (index = 0; index < len; index++) {
@@ -87,7 +93,7 @@ let indexOf = function (todoId: number) {
 };
 
 
-class Todo {
+class Todo extends Resource {
     get({todoId}) {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
@@ -95,9 +101,14 @@ class Todo {
         });
 
         if (item.length === 0) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
-            return item[0];
+            return {
+                data: item[0]
+            }
         }
     }
 
@@ -106,10 +117,15 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
             TODOS.splice(index, 1);
-            return 'success';
+            return {
+                data: 'success'
+            }
         }
     }
 
@@ -118,29 +134,52 @@ class Todo {
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return `The item for the id:${todoId} does not exist`;
+            return {
+                data: `The item for the id:${todoId} does not exist`,
+                code: 404
+            }
         } else {
             TODOS[index].completed = !TODOS[index].completed;
-            return 'success';
+            return {
+                data: 'success'
+            }
         }
     }
 }
 
-class TodoList {
-    get() {
-        return TODOS;
+class TodoList extends Resource {
+    parser: Parser;
+
+    constructor () {
+        super();
+        this.parser = new Parser();
+        this.parser.addParam('title', {
+            required: true,
+            type: 'string'
+        });
     }
 
-    @addParser(parser)
-    post({title}) {
-        let item = {
-            id: ++COUNT_ID,
-            title: title,
-            completed: false
-
+    get() {
+        return {
+            data: TODOS
         };
-        TODOS.push(item);
-        return item;
+    }
+
+    @Resource.async()
+    @Resource.addParser(this.parser)
+    post({title}, _return) {
+        setTimeout(() => {
+            let item = {
+                id: ++COUNT_ID,
+                title: title,
+                completed: false
+
+            };
+            TODOS.push(item);
+            _return({
+                data: item
+            });
+        }, 1000)
     }
 }
 
@@ -174,9 +213,4 @@ curl -X PUT localhost:5050/todos/1
 {"code":200,"message":"success","data":"success"}
 ```
 
-
-
-## 后续开发
-
-- [ ] 优化请求处理代码
-- [ ] 开发中间件功能, 方便接入已有的项目中
+更详细的功能可以查阅[快速指南](//lleohao.github.io/restful/#/guide)

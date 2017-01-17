@@ -57,7 +57,38 @@ class Demo extends Resource {
 api.addSource(Demo, '/book/<name>/page/<page>');
 ```
 
-### `bindServer` 绑定外部服务器
+### `addSourceMap` 批量添加Resource
+
+```javascript
+/**
+ * 批量添加 Resource
+ * 
+ * @param {path: Resource} map
+ * 
+ * @memberOf Restful
+ */
+addSourceMap(map): void;
+```
+
+> 示例操作
+
+```javascript
+class Resource1 extends Resource {
+
+}
+
+class Resource2 extends Resource {
+    
+}
+
+const api = new Restful();
+api.addSourceMap({
+    '/resource1': Resource1,
+    '/resource2': Resource2,
+})
+```
+
+### bindServer` 绑定外部服务器
 
 ```javascript
 /**

@@ -5,11 +5,12 @@
   "main": "./lib/index.js",
   "types": "./typings/lib/index.d.ts",
   "scripts": {
-    "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./test/**/*.ts",
-    "cov": "istanbul cover .\\node_modules\\mocha\\bin\\_mocha",
+    "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./tests/*.ts",
+    "cov": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- tests/*.ts --report lcovonly --compilers ts:ts-node/register",
+    "cover": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- tests/*.ts --report lcovonly --compilers ts:ts-node/register",
     "report": "mocha --recursive --reporter mochawesome",
     "preexample": "npm i",
-    "example": "ts-node .\\example\\server.ts"
+    "example": "ts-node ./example/server.ts"
   },
   "repository": {
     "type": "git",

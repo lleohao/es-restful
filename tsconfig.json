@@ -14,6 +14,7 @@
     },
     "exclude": [
         "node_modules",
-        "typings"
+        "typings",
+        "tests"
     ]
 }

@@ -3,4 +3,4 @@ node_js:
     - "6"
 before_script:
     - npm install -g mocha should ts-node
-script: test
+script: npm test

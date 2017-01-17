@@ -1,6 +1,8 @@
 # es-restful
 > easy & simple nodejs restful server framework
 
+[![Build Status](https://travis-ci.org/lleohao/restful.svg?branch=master)](https://travis-ci.org/lleohao/restful)
+
 用于快速构建 restful 服务器的框架, 基于typescript开发
 
 

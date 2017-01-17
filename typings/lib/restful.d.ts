@@ -17,7 +17,7 @@ export declare class Restful {
      * @param {number} [port=5050]
      * @param {string} [hostname='localhost']
      *
-     * @memberOf Api
+     * @memberOf Restful
      */
     constructor(port?: number, hostname?: string);
     /**
@@ -55,9 +55,17 @@ export declare class Restful {
      * @param {Resource} resource
      * @param {string} path
      *
-     * @memberOf Api
+     * @memberOf Restful
      */
     addSource(resource: any, path: string): void;
+    /**
+     * 批量添加 Resource
+     *
+     * @param  map
+     *
+     * @memberOf Restful
+     */
+    addSourceMap(map: any): void;
     /**
      * Start server
      *

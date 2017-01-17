@@ -59,7 +59,7 @@ export class Restful {
      * @param {number} [port=5050]
      * @param {string} [hostname='localhost']
      * 
-     * @memberOf Api
+     * @memberOf Restful
      */
     constructor(port: number = 5050, hostname: string = 'localhost') {
         this.port = port;
@@ -144,7 +144,7 @@ export class Restful {
      * @param {Resource} resource
      * @param {string} path
      * 
-     * @memberOf Api
+     * @memberOf Restful
      */
     addSource(resource: any, path: string) {
         let resourceList = this.resourceList;
@@ -164,6 +164,20 @@ export class Restful {
             });
         } catch (error) {
             throw error;
+        }
+    }
+
+
+    /**
+     * 批量添加 Resource
+     * 
+     * @param  map
+     * 
+     * @memberOf Restful
+     */
+    addSourceMap(map) {
+        for (let key in map) {
+            this.addSource(map[key], key);
         }
     }
 

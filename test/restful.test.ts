@@ -1,6 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 /// <reference path="../node_modules/@types/node/index.d.ts" />
 /// <reference path="../node_modules/@types/should/index.d.ts" />
+
 import { get, request, createServer, Server } from 'http';
 import * as should from 'should';
 import { Restful, Parser, Resource } from '../lib/index';
@@ -302,6 +303,77 @@ describe('Restful tets', () => {
                     should(JSON.parse(data.toString())).be.eql({
                         code: 200,
                         data: 'restful request',
+                        message: 'success'
+                    })
+                    done();
+                })
+            })
+        })
+    })
+
+    describe('addSourceMap test', () => {
+        let api: Restful;
+
+        class Test1 extends Resource {
+            get() {
+                return {
+                    data: 'restful request1'
+                };
+            }
+        }
+
+        class Test2 extends Resource {
+            get() {
+                return {
+                    data: 'restful request2'
+                };
+            }
+        }
+
+        before(() => {
+            api = new Restful();
+            api.addSourceMap({
+                '/test1': Test1,
+                '/test2': Test2,
+            })
+            api.start();
+        })
+
+        after(() => {
+            api.stop();
+        })
+
+        it('正确响应test1', (done) => {
+            get({
+                port: 5050,
+                path: '/test1'
+            }, (res) => {
+                let data = [];
+                res.on('data', (chunk) => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    should(JSON.parse(data.toString())).be.eql({
+                        code: 200,
+                        data: 'restful request1',
+                        message: 'success'
+                    })
+                    done();
+                })
+            })
+        })
+
+        it('正确响应test2', (done) => {
+            get({
+                port: 5050,
+                path: '/test2'
+            }, (res) => {
+                let data = [];
+                res.on('data', (chunk) => {
+                    data.push(chunk);
+                }).on('end', () => {
+                    should(JSON.parse(data.toString())).be.eql({
+                        code: 200,
+                        data: 'restful request2',
                         message: 'success'
                     })
                     done();

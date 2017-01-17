@@ -1,12 +1,14 @@
 {
   "name": "es-restful",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "easy & simple nodejs restful server framework",
   "main": "lib/index.js",
   "types": "typings/lib/index.d.ts",
   "files": [
-    "dist",
-    "typings"
+    "typings/lib",
+    "docs",
+    "lib/*.js",
+    "lib/*.js.map"
   ],
   "scripts": {
     "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./tests/*.ts",
@@ -15,7 +17,7 @@
     "report": "mocha --recursive --reporter mochawesome",
     "preexample": "npm i",
     "example": "ts-node ./example/server.ts",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf typings",
     "tsc": "tsc",
     "build": "npm run clean && npm run tsc",
     "prepublish": "npm run build"

@@ -20,7 +20,7 @@ export declare const errorMessages: {
  */
 export declare function getRuleReg(path: string): {
     rule: RegExp;
-    params: string[];
+    params: any[];
 };
 /**
  * 判断对象数组中是否存在指定值

@@ -1,13 +1,7 @@
 .idea
 .vscode
 
-dist/
-typings/
 node_modules/
+lib
 
 npm-debug.log
-
-lib/*.js
-lib/*.js.map
-example/*.js
-example/*.js.map

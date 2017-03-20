@@ -4,16 +4,15 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "experimentalDecorators": true,
-        "noImplicitAny": false,
+        "emitDecoratorMetadata": true,
+
+        "noImplicitAny": true,
         "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        
         "sourceMap": true,
-        "removeComments": true,
         "declaration": true,
-        "declarationDir": "typings"
-    },
-    "exclude": [
-        "node_modules",
-        "typings",
-        "tests"
-    ]
+
+        "outDir": "../lib"
+    }
 }

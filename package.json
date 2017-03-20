@@ -6,9 +6,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "npm run clean && tsc -p src",
-    "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./tests/*.ts",
-    "cov": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- tests/*.ts --report lcovonly --compilers ts:ts-node/register && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "cover": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- tests/*.ts --report lcovonly --compilers ts:ts-node/register",
+    "test": "mocha --compilers ts:ts-node/register --project test -- test/*.ts ",
+    "cover": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- test/*.ts --report lcovonly --compilers ts:ts-node/register",
     "report": "mocha --recursive --reporter mochawesome",
     "preexample": "npm i",
     "example": "ts-node ./example/server.ts",

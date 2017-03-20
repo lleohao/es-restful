@@ -1,7 +1,5 @@
-/// <reference path="../node_modules/@types/mocha/index.d.ts" />
-/// <reference path="../node_modules/@types/should/index.d.ts" />
 import * as should from 'should';
-import { arrHas, getRuleReg } from '../lib/utils';
+import { arrHas, getRuleReg } from '../src/utils';
 
 
 describe('utils.ts test', () => {

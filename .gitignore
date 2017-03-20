@@ -2,6 +2,8 @@
 .vscode
 
 node_modules/
+coverage
+
 lib
 
 npm-debug.log

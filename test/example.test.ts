@@ -1,17 +1,12 @@
-/// <reference path="../node_modules/@types/mocha/index.d.ts" />
-/// <reference path="../node_modules/@types/node/index.d.ts" />
-/// <reference path="../node_modules/@types/should/index.d.ts" />
 import { get, request } from 'http';
 import * as should from 'should';
-import { Restful, Parser, Resource } from '../lib/index';
-
+import { Restful, Parser, Resource } from '../src/index';
 
 interface TodoItem {
     id: number,
     title: string;
     completed: boolean;
 }
-
 
 describe('Example tets', () => {
     const api = new Restful(5051);

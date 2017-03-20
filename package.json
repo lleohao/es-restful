@@ -3,23 +3,16 @@
   "version": "1.2.2",
   "description": "easy & simple nodejs restful server framework",
   "main": "lib/index.js",
-  "types": "typings/lib/index.d.ts",
-  "files": [
-    "typings/lib",
-    "docs",
-    "lib/*.js",
-    "lib/*.js.map"
-  ],
+  "types": "lib/index.d.ts",
   "scripts": {
+    "build": "npm run clean && tsc -p src",
     "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./tests/*.ts",
     "cov": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- tests/*.ts --report lcovonly --compilers ts:ts-node/register && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "cover": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- tests/*.ts --report lcovonly --compilers ts:ts-node/register",
     "report": "mocha --recursive --reporter mochawesome",
     "preexample": "npm i",
     "example": "ts-node ./example/server.ts",
-    "clean": "rm -rf typings",
-    "tsc": "tsc",
-    "build": "npm run clean && npm run tsc",
+    "clean": "rimraf lib/*",    
     "prepublish": "npm run build"
   },
   "repository": {
@@ -50,6 +43,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "mochawesome": "^1.5.4",
+    "rimraf": "^2.6.1",
     "should": "^11.1.1",
     "ts-node": "^1.7.2",
     "typescript": "^2.0.10"

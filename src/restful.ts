@@ -33,13 +33,40 @@ interface ApiResource {
      */
     params: string[];
     /**
+     * 对应Resource类
      * 
-     * 
-     * @type {*}
+     * @type {Resource}
      * @memberOf ApiResource
      */
     resource: Resource;
 }
+
+/**
+ * Reousrce map
+ * 
+ * @export
+ * @interface ResourceMap
+ */
+export interface ResourceMap {
+    [path: string]: Resource
+}
+
+/**
+ * 启动配置项
+ * 
+ * @export
+ * @interface StartOption
+ */
+export interface StartOption {
+    /**
+     * open debug
+     * 
+     * @type {boolean}
+     * @memberOf StartOption
+     */
+    debug?: boolean
+}
+
 
 /**
  * Restful Server class
@@ -57,7 +84,7 @@ export class Restful {
      * Creates an instance of Api.
      * 
      * @param {number} [port=5050]
-     * @param {string} [hostname='localhost']
+     * @param {string} [hostname="localhost"]
      * 
      * @memberOf Restful
      */
@@ -71,8 +98,7 @@ export class Restful {
      * 响应错误处理
      * 
      * @param {ServerResponse} res
-     * @param {(number | Object)} code          http code 或者错误信息对象
-     * @param {(Object | string)} [data={}]     错误信息对象
+     * @param {ErrorData} errorData          错误信息
      * 
      * @memberOf Restful
      */
@@ -102,7 +128,7 @@ export class Restful {
     }
 
     /**
-     * e
+     * route
      * 
      * @param {IncomingMessage} req
      * @returns
@@ -146,7 +172,7 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    addSource(resource: any, path: string) {
+    addSource(resource: Resource, path: string) {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {
@@ -154,7 +180,7 @@ export class Restful {
         }
         try {
             resource = new resource();
-            let {rule, params} = getRuleReg(path);
+            let { rule, params } = getRuleReg(path);
 
             resourceList.push({
                 path: path,
@@ -175,9 +201,9 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    addSourceMap(map) {
-        for (let key in map) {
-            this.addSource(map[key], key);
+    addSourceMap(resourceMap: ResourceMap) {
+        for (let path in resourceMap) {
+            this.addSource(resourceMap[path], path);
         }
     }
 
@@ -187,21 +213,21 @@ export class Restful {
      * 
      * @memberOf Api
      */
-    start(options?: {}) {
+    start(options: StartOption = { debug: false }) {
         if (this.resourceList.length === 0) {
             throw new RestfulError('There can not be any proxied resources');
         }
         this.server = createServer();
 
         this.server.on('request', (req, res) => {
-            let {params, resource} = this._route(req);
+            let { params, resource } = this._route(req);
 
             // 存在处理当前数据的 resource
             if (resource === null) {
                 this._handleError(res, { code: 404, message: 'This url does not have a corresponding resource' });
             } else {
                 resource._getResponse(req, params)
-                    .then(({data, code}: ResourceResult) => {
+                    .then(({ data, code }: ResourceResult) => {
                         this._handleSuccess(res, data, code);
                     })
                     .catch((errorData: ErrorData) => {
@@ -210,7 +236,10 @@ export class Restful {
             }
         });
 
-        options && options['debug'] && console.log(`The server is running ${this.hostname}:${this.port}`);
+        if (options.debug) {
+            console.log(`The server is running ${this.hostname}:${this.port}`);
+        }
+
         this.server.listen(this.port, this.hostname);
     }
 
@@ -224,14 +253,12 @@ export class Restful {
      */
     bindServer(server: Server) {
         server.on('request', (req, res) => {
-            let {params, resource} = this._route(req);
+            let { params, resource } = this._route(req);
 
             // 存在处理当前数据的 resource
-            if (resource === null) {
-                return;
-            } else {
+            if (resource !== null) {
                 resource._getResponse(req, params)
-                    .then(({data, code}: ResourceResult) => {
+                    .then(({ data, code }: ResourceResult) => {
                         this._handleSuccess(res, data, code);
                     })
                     .catch((errorData: ErrorData) => {

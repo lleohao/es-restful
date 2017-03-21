@@ -35,6 +35,10 @@ export interface ResourceResult {
  * @extends {EventEmitter}
  */
 export class Resource {
+    constructor () {
+
+    }
+    
     /**
      * (装饰器)指定该函数将以异步的方式返回数据
      * 

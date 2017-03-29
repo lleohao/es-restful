@@ -1,7 +1,7 @@
 # es-restful
 > easy & simple nodejs restful server framework
 
-[![Build Status](https://travis-ci.org/lleohao/restful.svg?branch=master)](https://travis-ci.org/lleohao/restful)  [![Coverage Status](https://coveralls.io/repos/github/lleohao/restful/badge.svg?branch=master)](https://coveralls.io/github/lleohao/restful?branch=master)
+[![Build Status](https://travis-ci.org/lleohao/es-restful.svg?branch=master)](https://travis-ci.org/lleohao/es-restful) [![Coverage Status](https://coveralls.io/repos/github/lleohao/es-restful/badge.svg?branch=master)](https://coveralls.io/github/lleohao/es-restful?branch=master)
 
 用于快速构建 restful 服务器的框架, 基于typescript开发
 

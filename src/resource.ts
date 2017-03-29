@@ -35,6 +35,10 @@ export interface ResourceResult {
  * @extends {EventEmitter}
  */
 export class Resource {
+    constructor() {
+
+    }
+
     /**
      * (装饰器)指定该函数将以异步的方式返回数据
      * 
@@ -75,7 +79,7 @@ export class Resource {
      * 
      * @memberOf Resource
      */
-    _getResponse(req: IncomingMessage, routeParams: Object) {
+    public _getResponse(req: IncomingMessage, routeParams: Object) {
         let method = req.method.toLowerCase();
 
         return new Promise((reslove, reject) => {

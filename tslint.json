@@ -84,6 +84,7 @@
             "check-operator",
             "check-separator",
             "check-type"
-        ]
+        ],
+        "eofline": true
     }
 }

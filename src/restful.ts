@@ -48,7 +48,7 @@ interface ApiResource {
  * @interface ResourceMap
  */
 export interface ResourceMap {
-    [path: string]: Resource
+    [path: string]: any
 }
 
 /**
@@ -167,12 +167,12 @@ export class Restful {
     /**
      * add Resource
      * 
-     * @param {Resource} resource
+     * @param {any} resource
      * @param {string} path
      * 
      * @memberOf Restful
      */
-    addSource(resource: Resource, path: string) {
+    addSource(resource: any, path: string) {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {

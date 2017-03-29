@@ -85,9 +85,6 @@
             "check-separator",
             "check-type"
         ],
-        "eofline": true,
-        "linebreak-style": [
-            "LF"
-        ]
+        "eofline": true
     }
 }

@@ -5,15 +5,12 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "build": "npm run clean && tsc -p src",
+    "build": "npm run clean && tsc -p src/tsconfig.json",
     "test": "mocha --compilers ts:ts-node/register test/*.ts ",
     "cov": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- test/*.ts --report lcovonly --compilers ts:ts-node/register && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "cover": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- test/*.ts --report lcovonly --compilers ts:ts-node/register",
     "report": "mocha --recursive --reporter mochawesome",
-    "preexample": "npm i",
-    "example": "ts-node ./example/server.ts",
-    "clean": "rimraf lib/*",
-    "prepublish": "npm run build"
+    "clean": "rimraf lib/*"
   },
   "repository": {
     "type": "git",
@@ -45,7 +42,7 @@
     "mochawesome": "^1.5.4",
     "rimraf": "^2.6.1",
     "should": "^11.1.1",
-    "ts-node": "^1.7.2",
+    "ts-node": "^1.7.3",
     "typescript": "^2.0.10"
   },
   "config": {

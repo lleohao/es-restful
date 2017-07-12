@@ -1,15 +1,6 @@
 {
+    "extends": "./tsconfig.json",
     "compilerOptions": {
-        "target": "es6",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-
-        "noImplicitAny": false,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-
         "sourceMap": true,
         "outDir": "../tempLib",
         "watch": true

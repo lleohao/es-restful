@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import * as qs from 'querystring';
 import { EventEmitter } from 'events';
 
-import { errorCode, errorMessages } from './utils';
+import { errorCode, errorMessages } from './global';
 
 /**
  * 参数配置信息

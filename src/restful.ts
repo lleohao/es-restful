@@ -3,7 +3,7 @@ import { parse } from 'url';
 
 import { Resource, ResourceResult } from './resource';
 import { ErrorData } from './parser';
-import { getRuleReg, arrHas, RestfulError } from './utils';
+import { getRuleReg, arrHas, throwError } from './utils';
 
 /**
  * 资源类型
@@ -176,7 +176,7 @@ export class Restful {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {
-            throw new RestfulError(`The path:${path} already exists.`);
+            throwError(`The path:${path} already exists.`)
         }
         try {
             resource = new resource();
@@ -215,7 +215,7 @@ export class Restful {
      */
     start(options: StartOption = { debug: false }) {
         if (this.resourceList.length === 0) {
-            throw new RestfulError('There can not be any proxied resources');
+            throwError('There can not be any proxied resources');
         }
         this.server = createServer();
 

@@ -127,7 +127,7 @@ class TodoList extends Resource {
     }
 }
 
-api.addSource(TodoList, '/todos');
-api.addSource(Todo, '/todos/<todoId>');
+api.addSource(new TodoList(), '/todos');
+api.addSource(new Todo(), '/todos/<todoId>');
 
 api.start({ debug: true });

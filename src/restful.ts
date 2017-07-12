@@ -5,6 +5,9 @@ import { Resource, ResourceResult } from './resource';
 import { ErrorData } from './parser';
 import { getRuleReg, arrHas, throwError } from './utils';
 
+export interface CunstomResource extends Resource {
+}
+
 /**
  * 资源类型
  * 
@@ -38,7 +41,7 @@ interface ApiResource {
      * @type {Resource}
      * @memberOf ApiResource
      */
-    resource: Resource;
+    resource: CunstomResource;
 }
 
 /**
@@ -48,7 +51,7 @@ interface ApiResource {
  * @interface ResourceMap
  */
 export interface ResourceMap {
-    [path: string]: any
+    [path: string]: CunstomResource
 }
 
 /**
@@ -81,7 +84,7 @@ export class Restful {
     private server: Server;
 
     /**
-     * Creates an instance of Api.
+     * Creates an instance of Restful.
      * 
      * @param {number} [port=5050]
      * @param {string} [hostname="localhost"]
@@ -172,25 +175,20 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    addSource(resource: any, path: string) {
+    addSource(resource: CunstomResource, path: string) {
         let resourceList = this.resourceList;
 
         if (arrHas(resourceList, 'path', path)) {
             throwError(`The path:${path} already exists.`)
         }
-        try {
-            resource = new resource();
-            let { rule, params } = getRuleReg(path);
+        let { rule, params } = getRuleReg(path);
 
-            resourceList.push({
-                path: path,
-                rule: rule,
-                params: params,
-                resource: resource
-            });
-        } catch (error) {
-            throw error;
-        }
+        resourceList.push({
+            path: path,
+            rule: rule,
+            params: params,
+            resource: resource
+        });
     }
 
 

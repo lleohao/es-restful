@@ -20,13 +20,6 @@ describe('Restful tets', () => {
             });
         })
 
-        it('错误添加resouce', () => {
-            should.throws(() => {
-                api.addSource(1, '/books');
-                api.start();
-            })
-        })
-
         it('添加重复路径 resource 抛出 RestfulError', () => {
             class Todos extends Resource {
                 get() {
@@ -35,9 +28,9 @@ describe('Restful tets', () => {
                     };
                 }
             }
-            api.addSource(Todos, '/todos');
+            api.addSource(new Todos(), '/todos');
             should.throws(() => {
-                api.addSource(Todos, '/todos');
+                api.addSource(new Todos(), '/todos');
             })
         })
 
@@ -49,7 +42,7 @@ describe('Restful tets', () => {
                     };
                 }
             }
-            api.addSource(Todos, '/todos');
+            api.addSource(new Todos(), '/todos');
             api.start();
 
             get({
@@ -78,11 +71,11 @@ describe('Restful tets', () => {
             parser.addParam('title');
             class Demo extends Resource {
                 @Resource.addParser(parser)
-                post({title}) {
+                post({ title }) {
                     return { data: title }
                 }
             }
-            api.addSource(Demo, '/demo');
+            api.addSource(new Demo(), '/demo');
             api.start();
             let req = request({
                 hostname: 'localhost',
@@ -113,7 +106,7 @@ describe('Restful tets', () => {
 
         it('正确解析路由参数', (done) => {
             class Books extends Resource {
-                get({id, page}) {
+                get({ id, page }) {
                     return {
                         data: {
                             id: id,
@@ -122,7 +115,7 @@ describe('Restful tets', () => {
                     }
                 }
             }
-            api.addSource(Books, '/books/<id>/<page>');
+            api.addSource(new Books(), '/books/<id>/<page>');
             api.start();
             get({
                 hostname: 'localhost',
@@ -150,7 +143,7 @@ describe('Restful tets', () => {
 
         it('错误路径测试', (done) => {
             class Books extends Resource {
-                get({id, page}) {
+                get({ id, page }) {
                     return {
                         data: {
                             id: id,
@@ -159,7 +152,7 @@ describe('Restful tets', () => {
                     }
                 }
             }
-            api.addSource(Books, '/books/<id>/<page>');
+            api.addSource(new Books(), '/books/<id>/<page>');
             api.start();
             get({
                 hostname: 'localhost',
@@ -183,7 +176,7 @@ describe('Restful tets', () => {
 
         it('访问未定义方法测试', (done) => {
             class Books extends Resource {
-                get({id, page}) {
+                get({ id, page }) {
                     return {
                         data: {
                             id: id,
@@ -192,7 +185,7 @@ describe('Restful tets', () => {
                     }
                 }
             }
-            api.addSource(Books, '/books/<id>/<page>');
+            api.addSource(new Books(), '/books/<id>/<page>');
             api.start();
             let req = request({
                 hostname: 'localhost',
@@ -224,7 +217,7 @@ describe('Restful tets', () => {
             parser.addParam('page');
             class Books extends Resource {
                 @Resource.addParser(parser)
-                post({id, page}) {
+                post({ id, page }) {
                     return {
                         data: {
                             id: id,
@@ -233,7 +226,7 @@ describe('Restful tets', () => {
                     }
                 }
             }
-            api.addSource(Books, '/books');
+            api.addSource(new Books(), '/books');
             api.start();
             let req = request({
                 hostname: 'localhost',
@@ -329,8 +322,8 @@ describe('Restful tets', () => {
         before(() => {
             api = new Restful();
             api.addSourceMap({
-                '/test1': Test1,
-                '/test2': Test2,
+                '/test1': new Test1(),
+                '/test2': new Test2(),
             })
             api.start();
         })

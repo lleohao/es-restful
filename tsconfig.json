@@ -3,15 +3,8 @@
         "target": "es6",
         "module": "commonjs",
         "moduleResolution": "node",
+
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-
-        "noImplicitAny": false,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-
-        "typeRoots": [
-            "node_modules/@types"
-        ]
+        "emitDecoratorMetadata": true
     }
 }

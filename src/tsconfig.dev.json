@@ -11,6 +11,7 @@
         "noUnusedParameters": true,
 
         "sourceMap": true,
-        "outDir": "../tempLib"
+        "outDir": "../tempLib",
+        "watch": true
     }
 }

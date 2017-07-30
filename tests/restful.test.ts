@@ -1,6 +1,6 @@
 import { get, request, createServer, Server } from 'http';
 import * as should from 'should';
-import { Restful, Parser, Resource } from '../src/index';
+import { Restful, Parser, Resource } from '../lib';
 
 
 describe('Restful tets', () => {

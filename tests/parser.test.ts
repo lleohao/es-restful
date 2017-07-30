@@ -1,6 +1,6 @@
 import { createServer, get, request, Server } from 'http';
 import * as should from 'should';
-import { Parser } from '../src/index';
+import { Parser } from '../lib';
 
 
 describe('Parser test', () => {

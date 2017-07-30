@@ -1,6 +1,6 @@
 import { get, request } from 'http';
 import * as should from 'should';
-import { Restful, Parser, Resource } from '../src/index';
+import { Restful, Parser, Resource } from '../lib';
 
 interface TodoItem {
     id: number,

@@ -4,9 +4,10 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-
-        "outDir": "../lib",
-        "declaration": true
-    }
+        "emitDecoratorMetadata": true
+    },
+    "include": [
+        "./node_modules/@types",
+        "./lib"
+    ]
 }

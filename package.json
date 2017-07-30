@@ -5,6 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
+    "start": "nodemon --watch 'example/**/*.ts' --exec 'ts-node' example/server.ts",
     "build": "rimraf lib/* && tsc -p ./src",
     "dev": "rimraf lib/* && tsc -p ./src -w",
     "prepublish": "npm run build",
@@ -42,6 +43,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "mochawesome": "^1.5.4",
+    "nodemon": "^1.11.0",
     "rimraf": "^2.6.1",
     "should": "^11.1.1",
     "ts-node": "^1.7.3",

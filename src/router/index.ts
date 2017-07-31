@@ -1,10 +1,9 @@
-import { IncomingMessage } from 'http';
 import { parse } from 'url';
 
 import { Route, CustomResource } from './route';
 
 /**
- * Sort routerList by weigth.
+ * Sort routerList by weight.
  * 
  * @param array 
  */
@@ -22,7 +21,7 @@ const _insertSort = function (array: Route[]) {
         }
         array[j] = temp;
     }
-}
+};
 
 export class Router {
     private routeList: Route[] = [];
@@ -32,8 +31,9 @@ export class Router {
 
     addRoute(path: string, Resource: { new(): CustomResource }) {
         if (this.pathCache[path] !== undefined) {
-            throw Error(`Soruce path: ${path} used twice.`)
+            throw Error(`Source path: ${path} used twice.`)
         }
+        this.pathCache[path] = true;
 
         try {
             const resource = new Resource();

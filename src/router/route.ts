@@ -1,15 +1,14 @@
 import { Resource } from '../resource';
 
-export interface CustomResource extends Resource { };
+export interface CustomResource extends Resource { }
 
 const RULE_RE = /([^<]*)<(?:([a-zA-Z_][a-zA-Z0-9_]*):)?([a-zA-Z_][a-zA-Z0-9_]*)>/g;
 
 enum RuleResultIndex {
-    static = 1,
-    argName,
-    argType
+    staticPart = 1,
+    argType,
+    argName
 }
-
 
 function* _parseRule(rule: string) {
     let pos = 0;
@@ -21,17 +20,18 @@ function* _parseRule(rule: string) {
         let result = RULE_RE.exec(rule);
 
         if (result === null) {
-            return;
+            break;
         }
-        if (result[RuleResultIndex.static]) {
-            yield [null, result[RuleResultIndex.static]];
+        if (result[RuleResultIndex.staticPart]) {
+            yield [null, result[RuleResultIndex.staticPart]];
         }
 
-        let variable = result[RuleResultIndex.argName];
-        let converter = result[RuleResultIndex.argType] || 'default';
+        let variable = result[3];
+        let converter = result[2] || 'default';
         if (usedNames.has(variable)) {
             throw TypeError(`Variable name: ${variable} used twice.`);
         }
+        usedNames.add(variable);
         yield [converter, variable];
         pos = RULE_RE.lastIndex;
     }
@@ -39,7 +39,7 @@ function* _parseRule(rule: string) {
     if (pos < end) {
         const remaining = rule.substr(pos);
         if (remaining.indexOf('>') !== -1 || remaining.indexOf('<') !== -1) {
-            throw TypeError(`Malformed url rule: ${rule}.`);
+            throw TypeError(`Malformed url rule: ${rule} .`);
         }
         yield [null, remaining];
     }
@@ -55,7 +55,7 @@ function _getConverter(type: string): { regex: string, weight: number } {
     switch (type) {
         case 'path':
             result = { regex: '(.*?)', weight: 200 };
-            break
+            break;
         case 'int':
             result = { regex: '(\\d+)', weight: 50 };
             break;
@@ -69,38 +69,6 @@ function _getConverter(type: string): { regex: string, weight: number } {
     }
 
     return result;
-}
-
-
-/**
- * Parse dynamic path
- */
-function getRuleReg(path: string) {
-    let ruleRe = /([^<]*)<([a-zA-Z_][a-zA-Z0-9_]+(:[int|float|string|path|default]))>/g;
-    let params = [];
-    let length = path.length;
-    let index = 0;
-
-    while (index < length) {
-        // 获取参数名称
-        let result: RegExpExecArray = ruleRe.exec(path);
-        if (result !== null) {
-            params.push(result[2]);
-            index = ruleRe.lastIndex;
-        } else {
-            break;
-        }
-    }
-
-    params.forEach((name) => {
-        path = path.replace(`<${name}>`, '(\\w+)');
-    });
-    path = '^' + path + '$';
-
-    return {
-        rule: new RegExp(path, 'g'),
-        params: params
-    };
 }
 
 export class Route {
@@ -119,11 +87,11 @@ export class Route {
 
         function _buildRegex(rule: string) {
             for (let [converter, variable] of _parseRule(rule)) {
-                if (converter === null) { // static part
+                if (converter === null) { // staticPart part
                     regexParts.push(variable);
                     self.weight += variable.length;
                 } else {                  // dynamic part
-                    let type = _getConverter(variable);
+                    let type = _getConverter(converter);
                     self.variables.push(variable);
                     regexParts.push(type.regex);
                     self.weight += type.weight;
@@ -147,7 +115,7 @@ export class Route {
             return null;
         }
 
-        for (let i = 1, len = res.length; i <= len; i++) {
+        for (let i = 1, len = res.length - 1; i <= len; i++) {
             result[this.variables[i - 1]] = res[i];
         }
 

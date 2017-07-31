@@ -6,13 +6,7 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
 
-        "noImplicitAny": false,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        
-        "sourceMap": true,
-        "declaration": true,
-
-        "outDir": "../lib"
+        "outDir": "../lib",
+        "declaration": true
     }
 }

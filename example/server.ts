@@ -1,4 +1,4 @@
-import { Parser, Restful, Resource } from '../lib/index';
+import { Parser, Restful, Resource } from '../lib';
 
 const api = new Restful();
 
@@ -38,7 +38,7 @@ let indexOf = function (todoId: number) {
 
 
 class Todo extends Resource {
-    get({todoId}) {
+    get({ todoId }) {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
             return item.id === todoId;
@@ -56,7 +56,7 @@ class Todo extends Resource {
         }
     }
 
-    delete({todoId}) {
+    delete({ todoId }) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
@@ -73,7 +73,7 @@ class Todo extends Resource {
         }
     }
 
-    put({todoId}) {
+    put({ todoId }) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
@@ -94,7 +94,7 @@ class Todo extends Resource {
 class TodoList extends Resource {
     parser: Parser;
 
-    constructor () {
+    constructor() {
         super();
         this.parser = new Parser();
         this.parser.addParam('title', {
@@ -111,7 +111,7 @@ class TodoList extends Resource {
 
     @Resource.async()
     @Resource.addParser(this.parser)
-    post({title}, _return) {
+    post({ title }, _return) {
         setTimeout(() => {
             let item = {
                 id: ++COUNT_ID,
@@ -127,7 +127,7 @@ class TodoList extends Resource {
     }
 }
 
-api.addSource(TodoList, '/todos');
-api.addSource(Todo, '/todos/<todoId>');
+api.addSource(new TodoList(), '/todos');
+api.addSource(new Todo(), '/todos/<todoId>');
 
 api.start({ debug: true });

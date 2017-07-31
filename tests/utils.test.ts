@@ -1,5 +1,5 @@
 import * as should from 'should';
-import { arrHas, getRuleReg } from '../src/utils';
+import { arrHas, getRuleReg } from '../lib/utils';
 
 
 describe('utils.ts test', () => {
@@ -18,7 +18,7 @@ describe('utils.ts test', () => {
 
     describe('getRuleReg test: 包含参数', () => {
         let path = '/books/<name>/page/<page>';
-        let {rule, params} = getRuleReg(path);
+        let { rule, params } = getRuleReg(path);
 
         it('rule test', () => {
             should(rule).be.eql(/^\/books\/(\w+)\/page\/(\w+)$/g);
@@ -30,7 +30,7 @@ describe('utils.ts test', () => {
 
     describe('getRuleReg test: 不包含参数', () => {
         let path = '/books';
-        let {rule} = getRuleReg(path);
+        let { rule } = getRuleReg(path);
 
         it('rule test', () => {
             should(rule).be.eql(/^\/books$/g);

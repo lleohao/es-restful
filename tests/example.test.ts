@@ -1,6 +1,6 @@
 import { get, request } from 'http';
 import * as should from 'should';
-import { Restful, Parser, Resource } from '../src/index';
+import { Restful, Parser, Resource } from '../lib';
 
 interface TodoItem {
     id: number,
@@ -42,7 +42,7 @@ describe('Example tets', () => {
 
 
         class Todo extends Resource {
-            get({todoId}) {
+            get({ todoId }) {
                 todoId = parseInt(todoId);
                 let item = TODOS.filter((item) => {
                     return item.id === todoId;
@@ -61,7 +61,7 @@ describe('Example tets', () => {
             }
 
             @Resource.async()
-            delete({todoId}, _return) {
+            delete({ todoId }, _return) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
@@ -80,7 +80,7 @@ describe('Example tets', () => {
                 }
             }
 
-            put({todoId}) {
+            put({ todoId }) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
@@ -107,7 +107,7 @@ describe('Example tets', () => {
 
             @Resource.async()
             @Resource.addParser(parser)
-            post({title}, _return) {
+            post({ title }, _return) {
                 setTimeout(() => {
                     let item = {
                         id: ++COUNT_ID,
@@ -123,8 +123,8 @@ describe('Example tets', () => {
             }
         }
 
-        api.addSource(TodoList, '/todos')
-        api.addSource(Todo, '/todos/<todoId>')
+        api.addSource(new TodoList(), '/todos')
+        api.addSource(new Todo(), '/todos/<todoId>')
         api.start();
     })
 

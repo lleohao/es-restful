@@ -29,13 +29,19 @@ export function getRuleReg(path: string) {
     };
 }
 
-
 /**
- * 判断对象数组中是否存在指定值
+ * Verify that a value exists in the array
+ * if value in array will return true
+ * 
+ * @export
+ * @param arr       target objecy array
+ * @param key       value key
+ * @param value     value
+ * @returns {boolean}
  */
-export function arrHas(arr: Object[], key: string, value: any) {
+export function arrHas(arr: Object[], key: string, value: any): boolean {
     return arr.some((item) => {
-        return item[key] === value;
+        return item.hasOwnProperty(key) && item[key] === value;
     });
 }
 

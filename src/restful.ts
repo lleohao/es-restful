@@ -1,47 +1,9 @@
 import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
-import { parse } from 'url';
 
 import { Resource, ResourceResult } from './resource';
 import { ErrorData } from './parser';
-import { getRuleReg, arrHas, throwError } from './utils';
-
-export interface CustomResource extends Resource { }
-/**
- * 资源类型
- * 
- */
-interface ApiResource {
-    /**
-     * 资源对应路径
-     * 
-     */
-    path: string;
-    /**
-     * 资源对应路径的解析表达式
-     * 
-     */
-    rule: RegExp;
-    /**
-     * 解析返回的参数信息
-     * 
-     */
-    params: string[];
-    /**
-     * 对应Resource类
-     * 
-     */
-    resource: CustomResource;
-}
-
-/**
- * Reousrce map
- * 
- * @export
- * @interface ResourceMap
- */
-export interface ResourceMap {
-    [path: string]: { new(): CustomResource }
-}
+import { arrHas, throwError } from './utils';
+import router, { CustomResource } from './router/router';
 
 /**
  * 启动配置项
@@ -72,7 +34,6 @@ const defaultOptions = {
  * @class Restful
  */
 export class Restful {
-    private resourceList: ApiResource[] = [];
     private options: RestfulOption;
     private server: Server;
 
@@ -119,68 +80,17 @@ export class Restful {
     }
 
     /**
-     * route
-     * 
-     * @param {IncomingMessage} req
-     * @returns
-     * 
-     * @memberOf Restful
-     */
-    private _route(req: IncomingMessage) {
-        let resourceList = this.resourceList;
-        let pathname = parse(req.url).pathname;
-
-        for (let i = 0, len = resourceList.length; i < len; i++) {
-            let resource = resourceList[i];
-            let rule = resource.rule;
-            rule.lastIndex = 0;
-
-            let _params: RegExpExecArray = rule.exec(pathname);
-            let params = {};
-
-            if (_params !== null) {
-                resource.params.forEach((key, index) => {
-                    params[key] = _params[index + 1]
-                })
-                return {
-                    params: params,
-                    resource: resource.resource
-                }
-            }
-        }
-
-        return {
-            params: null,
-            resource: null
-        };
-    }
-
-    /**
      * 
      * 
      * @param Resource      class should extend Reource
      * @param path          resource path
      */
-    addSource(Resource: { new(): CustomResource }, path: string) {
-        let resourceList = this.resourceList;
-        let resource: CustomResource;
+    addSource<T extends Resource>(Resource: { new(): T }, path: string) {
+        router.addRoute(Resource, path);
+    }
 
-        if (arrHas(resourceList, 'path', path)) {
-            throwError(`The path:${path} already exists.`)
-        }
-        let { rule, params } = getRuleReg(path);
-
-        try {
-            resource = new Resource();
-            resourceList.push({
-                path: path,
-                rule: rule,
-                params: params,
-                resource: resource
-            });
-        } catch (error) {
-            throw error;
-        }
+    add<T extends Resource>(Resource: { new(): T }, path: string) {
+        this.addSource(Resource, path);
     }
 
     /**
@@ -190,7 +100,7 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    addSourceMap(resourceMap: ResourceMap) {
+    addSourceMap<T extends Resource>(resourceMap: { [path: string]: { new(): T } }) {
         for (let path in resourceMap) {
             this.addSource(resourceMap[path], path);
         }
@@ -199,12 +109,12 @@ export class Restful {
     start(options: RestfulOption = {}) {
         this.options = Object.assign({}, this.options, options);
 
-        if (this.resourceList.length === 0) {
+        if (router.routerList.length === 0) {
             throwError('There can not be any proxied resources');
         }
         this.server = createServer();
         this.server.on('request', (req, res) => {
-            let { params, resource } = this._route(req);
+            let { params, resource } = router.getRoute(req);
 
             // 存在处理当前数据的 resource
             if (resource === null) {
@@ -237,7 +147,7 @@ export class Restful {
      */
     bindServer(server: Server) {
         server.on('request', (req, res) => {
-            let { params, resource } = this._route(req);
+            let { params, resource } = router.getRoute(req);
 
             // 存在处理当前数据的 resource
             if (resource !== null) {

@@ -1,9 +1,9 @@
-import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
+import { createServer, Server, ServerResponse } from 'http';
 
 import { Resource, ResourceResult } from './resource';
 import { ErrorData } from './parser';
-import { arrHas, throwError } from './utils';
-import router, { CustomResource } from './router/router';
+import { throwError } from './utils';
+import { Router } from './router';
 
 /**
  * 启动配置项
@@ -36,6 +36,7 @@ const defaultOptions = {
 export class Restful {
     private options: RestfulOption;
     private server: Server;
+    private router: Router;
 
 
     /**
@@ -44,6 +45,7 @@ export class Restful {
      */
     constructor() {
         this.options = Object.assign({}, defaultOptions);
+        this.router = new Router();
     }
 
     /**
@@ -86,7 +88,7 @@ export class Restful {
      * @param path          resource path
      */
     addSource<T extends Resource>(Resource: { new(): T }, path: string) {
-        router.addRoute(Resource, path);
+        this.router.addRoute(path, Resource);
     }
 
     add<T extends Resource>(Resource: { new(): T }, path: string) {
@@ -109,12 +111,12 @@ export class Restful {
     start(options: RestfulOption = {}) {
         this.options = Object.assign({}, this.options, options);
 
-        if (router.routerList.length === 0) {
+        if (this.router.isEmpty()) {
             throwError('There can not be any proxied resources');
         }
         this.server = createServer();
         this.server.on('request', (req, res) => {
-            let { params, resource } = router.getRoute(req);
+            let { params, resource } = this.router.getResource(req.url);
 
             // 存在处理当前数据的 resource
             if (resource === null) {
@@ -147,7 +149,7 @@ export class Restful {
      */
     bindServer(server: Server) {
         server.on('request', (req, res) => {
-            let { params, resource } = router.getRoute(req);
+            let { params, resource } = this.router.getResource(req.url);
 
             // 存在处理当前数据的 resource
             if (resource !== null) {

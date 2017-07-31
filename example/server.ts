@@ -1,4 +1,4 @@
-import { Parser, Restful, Resource } from '../src/index';
+import { Parser, Restful, Resource } from '../lib';
 
 const api = new Restful();
 

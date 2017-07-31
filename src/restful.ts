@@ -5,43 +5,32 @@ import { Resource, ResourceResult } from './resource';
 import { ErrorData } from './parser';
 import { getRuleReg, arrHas, throwError } from './utils';
 
-export interface CunstomResource extends Resource {
-}
-
+export interface CustomResource extends Resource { }
 /**
  * 资源类型
  * 
- * @interface ApiResource
  */
 interface ApiResource {
     /**
      * 资源对应路径
      * 
-     * @type {string}
-     * @memberOf ApiResource
      */
     path: string;
     /**
      * 资源对应路径的解析表达式
      * 
-     * @type {RegExp}
-     * @memberOf ApiResource
      */
     rule: RegExp;
     /**
      * 解析返回的参数信息
      * 
-     * @type {string[]}
-     * @memberOf ApiResource
      */
     params: string[];
     /**
      * 对应Resource类
      * 
-     * @type {Resource}
-     * @memberOf ApiResource
      */
-    resource: CunstomResource;
+    resource: CustomResource;
 }
 
 /**
@@ -51,7 +40,7 @@ interface ApiResource {
  * @interface ResourceMap
  */
 export interface ResourceMap {
-    [path: string]: CunstomResource
+    [path: string]: { new(): CustomResource }
 }
 
 /**
@@ -167,29 +156,32 @@ export class Restful {
     }
 
     /**
-     * add Resource
      * 
-     * @param {any} resource
-     * @param {string} path
      * 
-     * @memberOf Restful
+     * @param Resource      class should extend Reource
+     * @param path          resource path
      */
-    addSource(resource: CunstomResource, path: string) {
+    addSource(Resource: { new(): CustomResource }, path: string) {
         let resourceList = this.resourceList;
+        let resource: CustomResource;
 
         if (arrHas(resourceList, 'path', path)) {
             throwError(`The path:${path} already exists.`)
         }
         let { rule, params } = getRuleReg(path);
 
-        resourceList.push({
-            path: path,
-            rule: rule,
-            params: params,
-            resource: resource
-        });
+        try {
+            resource = new Resource();
+            resourceList.push({
+                path: path,
+                rule: rule,
+                params: params,
+                resource: resource
+            });
+        } catch (error) {
+            throw error;
+        }
     }
-
 
     /**
      * 批量添加 Resource
@@ -272,3 +264,4 @@ export class Restful {
         }
     }
 }
+

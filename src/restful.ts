@@ -58,18 +58,23 @@ export interface ResourceMap {
  * 启动配置项
  * 
  * @export
- * @interface StartOption
+ * @interface RestfulOption
  */
-export interface StartOption {
+export interface RestfulOption {
     /**
      * open debug
      * 
-     * @type {boolean}
-     * @memberOf StartOption
      */
-    debug?: boolean
+    debug?: boolean;
+    port?: number;
+    hostname?: string;
 }
 
+const defaultOptions = {
+    port: 5050,
+    hostname: 'localhost',
+    debug: false
+};
 
 /**
  * Restful Server class
@@ -78,23 +83,17 @@ export interface StartOption {
  * @class Restful
  */
 export class Restful {
-    private resourceList: ApiResource[];
-    private port: number;
-    private hostname: string;
+    private resourceList: ApiResource[] = [];
+    private options: RestfulOption;
     private server: Server;
+
 
     /**
      * Creates an instance of Restful.
      * 
-     * @param {number} [port=5050]
-     * @param {string} [hostname="localhost"]
-     * 
-     * @memberOf Restful
      */
-    constructor(port: number = 5050, hostname: string = 'localhost') {
-        this.port = port;
-        this.hostname = hostname;
-        this.resourceList = [];
+    constructor() {
+        this.options = Object.assign({}, defaultOptions);
     }
 
     /**
@@ -205,18 +204,13 @@ export class Restful {
         }
     }
 
-    /**
-     * Start server
-     * 
-     * 
-     * @memberOf Api
-     */
-    start(options: StartOption = { debug: false }) {
+    start(options: RestfulOption = {}) {
+        this.options = Object.assign({}, this.options, options);
+
         if (this.resourceList.length === 0) {
             throwError('There can not be any proxied resources');
         }
         this.server = createServer();
-
         this.server.on('request', (req, res) => {
             let { params, resource } = this._route(req);
 
@@ -234,11 +228,11 @@ export class Restful {
             }
         });
 
+        let { port, hostname } = this.options;
+        this.server.listen(port, hostname);
         if (options.debug) {
-            console.log(`The server is running ${this.hostname}:${this.port}`);
+            console.log(`The server is running ${hostname}:${port}`);
         }
-
-        this.server.listen(this.port, this.hostname);
     }
 
     /**

@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import * as qs from 'querystring';
 import { EventEmitter } from 'events';
 
-import { errorCode, errorMessages } from './global';
+import { ErrorCode, ErrorMessages } from './global';
 
 /**
  * 参数配置信息
@@ -177,10 +177,10 @@ interface ParamsResultError {
     /**
      * 错误类型
      * 
-     * @type {errorCode}
+     * @type {ErrorCode}
      * @memberOf ResultError
      */
-    type?: errorCode;
+    type?: ErrorCode;
     /**
      * 错误详细信息
      * 
@@ -278,7 +278,7 @@ export class Parser extends EventEmitter {
                 default:
                     data = {
                         error: {
-                            type: errorCode.REQUEST_ERROR,
+                            type: ErrorCode.REQUEST_ERROR,
                             info: 'This request method is not supported'
                         }
                     };
@@ -286,7 +286,7 @@ export class Parser extends EventEmitter {
         } catch (e) {
             data = {
                 error: {
-                    type: errorCode.REQUEST_ERROR,
+                    type: ErrorCode.REQUEST_ERROR,
                     info: e.toString()
                 }
             };
@@ -316,7 +316,7 @@ export class Parser extends EventEmitter {
             // 1. required
             if (rule.required && value === undefined) {
                 parseData.error = {
-                    type: errorCode.REQUIRED_ERROR,
+                    type: ErrorCode.REQUIRED_ERROR,
                     info: key
                 };
 
@@ -331,7 +331,7 @@ export class Parser extends EventEmitter {
             // 3. nullabeld
             if (!rule.nullabled && !value) {
                 parseData.error = {
-                    type: errorCode.NULL_ERROR,
+                    type: ErrorCode.NULL_ERROR,
                     info: key
                 };
 
@@ -369,7 +369,7 @@ export class Parser extends EventEmitter {
                         conversionVal = conversion(value);
                     } catch (error) {
                         parseData.error = {
-                            type: errorCode.CONVER_ERROR,
+                            type: ErrorCode.CONVER_ERROR,
                             info: { key: key, type: type, help: rule.help }
                         };
                     }
@@ -381,7 +381,7 @@ export class Parser extends EventEmitter {
                     if (parseData.error !== null) return false;
                     if (type === 'number' && isNaN(conversionVal)) {
                         parseData.error = {
-                            type: errorCode.CONVER_ERROR,
+                            type: ErrorCode.CONVER_ERROR,
                             info: { key: key, type: type, help: rule.help }
                         };
                         return false;
@@ -400,7 +400,7 @@ export class Parser extends EventEmitter {
             // 6. choices
             if (rule.choices && rule.choices.indexOf(value) === -1) {
                 parseData.error = {
-                    type: errorCode.CHOICES_ERROR,
+                    type: ErrorCode.CHOICES_ERROR,
                     info: { key: key, value: value, choices: rule.choices }
                 };
 
@@ -436,26 +436,26 @@ export class Parser extends EventEmitter {
      * @memberOf Parser
      */
     private _getErrorMessage(error: ParamsResultError): ErrorData {
-        let message: string = errorMessages[error.type];
-        let resCode = error.type === errorCode.REQUEST_ERROR ? 400 : 403;
+        let message: string = ErrorMessages[error.type];
+        let resCode = error.type === ErrorCode.REQUEST_ERROR ? 400 : 403;
 
         switch (error.type) {
-            case errorCode.REQUEST_ERROR:
+            case ErrorCode.REQUEST_ERROR:
                 error['message'] = <string>error.info;
                 break;
-            case errorCode.REQUIRED_ERROR:
+            case ErrorCode.REQUIRED_ERROR:
                 error['message'] = `The "${error.info}" are required.`;
                 break;
-            case errorCode.CONVER_ERROR:
+            case ErrorCode.CONVER_ERROR:
                 error['message'] =
                     error.info['help'] === null ?
                         `Can not convert "${error.info['key']}" to ${error.info['type']} type`
                         : error.info['help'];
                 break;
-            case errorCode.CHOICES_ERROR:
+            case ErrorCode.CHOICES_ERROR:
                 error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
                 break;
-            case errorCode.NULL_ERROR:
+            case ErrorCode.NULL_ERROR:
                 error['message'] = `The "${error.info}" does not allow null values`;
                 break;
         };

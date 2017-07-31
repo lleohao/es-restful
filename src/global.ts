@@ -3,12 +3,12 @@
  */
 
 /**
- * Error status code 
+ * es-resuful error code 
  * 
  * @export
  * @enum {number}
  */
-export enum errorCode {
+export enum ErrorCode {
     REQUEST_ERROR = 1,
     REQUIRED_ERROR = 2,
     CONVER_ERROR = 3,
@@ -17,9 +17,9 @@ export enum errorCode {
 }
 
 /**
- * Error message
+ * es-resuful message
  */
-export const errorMessages = {
+export const ErrorMessages = {
     1: 'Unable to parse this request.',
     2: 'Missing request parameters.',
     3: 'Parameter type conversion error.',

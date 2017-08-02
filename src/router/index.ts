@@ -52,18 +52,18 @@ export class Router {
 
         for (let i = 0, len = routeList.length; i < len; i++) {
             const route = routeList[i];
-            const params = route.match(pathname);
+            const urlPara = route.match(pathname);
 
-            if (params !== null) {
+            if (urlPara !== null) {
                 return {
-                    params: params,
+                    urlPara: urlPara,
                     resource: route.resource
                 }
             }
         }
 
         return {
-            params: null,
+            urlPara: null,
             resource: null
         };
     }

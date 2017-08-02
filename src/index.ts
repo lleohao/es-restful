@@ -1,4 +1,4 @@
 export { Restful } from './restful';
 export { Resource } from './resource';
-export { Parser, Param } from './parser';
-export { ErrorCode } from './global';
+export { ReqParse, ParaOptions } from './parser';
+export { StatusCode } from './global';

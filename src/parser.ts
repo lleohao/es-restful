@@ -125,7 +125,11 @@ export interface ParsedData {
 
 interface ValidationError {
     code: StatusCode;
-    info?: any;
+    info?: {
+        key: string;
+        value?: any;
+        others?: any
+    };
 }
 
 export class ReqParse {
@@ -210,24 +214,51 @@ export class ReqParse {
             let value = requestData(params);
 
             // set default value
-            if (value === undefined && rule.defaultVal !== undefined) {
-                value = rule.defaultVal;
+            if (rule.defaultVal !== undefined) {
+                value = value !== undefined ? value : rule.defaultVal;
+            } else {
+                // check required
+                if (rule.required && value === undefined) {
+                    error = {
+                        code: StatusCode.REQUIRED_ERROR,
+                        info: { key }
+                    };
+                    return false;
+                }
+
+                // check nullable
+                if (rule.nullabled && (value === '' || value === null)) {
+                    error = {
+                        code: StatusCode.NULL_ERROR,
+                        info: { key }
+                    };
+                    return false;
+                }
             }
 
-            // check required
-            if (rule.required && value === undefined) {
+            // check type
+            if (rule.type !== 'any' && isType(value, rule.type)) {
                 error = {
-                    code: StatusCode.REQUIRED_ERROR,
-                    info: { key }
+                    code: StatusCode.TYPE_ERRPR,
+                    info: {
+                        key,
+                        value,
+                        others: rule.type
+                    }
                 };
                 return false;
             }
 
-            // check nullable
-            if (rule.nullabled && (value === '' || value === null)) {
+            // check choices
+            if (rule.choices &&
+                ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1)) {
                 error = {
-                    code: StatusCode.NULL_ERROR,
-                    info: { key }
+                    code: StatusCode.CHOICES_ERROR,
+                    info: {
+                        key,
+                        value,
+                        others: rule.coveration
+                    }
                 };
                 return false;
             }
@@ -251,37 +282,14 @@ export class ReqParse {
                 } catch (e) {
                     error = {
                         code: StatusCode.CONVER_ERROR,
-                        info: e.toString()
+                        info: {
+                            key,
+                            value,
+                            others: e.toString()
+                        }
                     }
                     return false;
                 }
-            }
-
-            // check type
-            if (rule.type !== 'any' && isType(value, rule.type)) {
-                error = {
-                    code: StatusCode.TYPE_ERRPR,
-                    info: {
-                        key,
-                        value,
-                        type: rule.type
-                    }
-                };
-                return false;
-            }
-
-            // check choices
-            if (rule.choices &&
-                ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1)) {
-                error = {
-                    code: StatusCode.CHOICES_ERROR,
-                    info: {
-                        key,
-                        value,
-                        choices: rule.coveration
-                    }
-                };
-                return false;
             }
 
             return true;
@@ -302,6 +310,7 @@ export class ReqParse {
 
     private genErroeMsg(error: ValidationError) {
         let message;
+        let info = error.info;
 
         switch (error.code) {
             case StatusCode.REQUIRED_ERROR:

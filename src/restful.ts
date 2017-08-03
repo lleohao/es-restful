@@ -1,7 +1,7 @@
-import { createServer, Server, ServerResponse } from 'http';
+import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 
 import { Resource, ResourceResult } from './resource';
-import { ErrorData } from './parser';
+import { requestParse } from './requestParse';
 import { throwError } from './utils';
 import { Router } from './router';
 
@@ -56,10 +56,10 @@ export class Restful {
      * 
      * @memberOf Restful
      */
-    private _handleError(res: ServerResponse, errorData: ErrorData) {
-        res.writeHead(errorData.code, { 'Content-type': 'application/json' });
-        res.end(JSON.stringify(errorData));
-    }
+    // private _handleError(res: ServerResponse, errorData: ErrorData) {
+    //     res.writeHead(errorData.code, { 'Content-type': 'application/json' });
+    //     res.end(JSON.stringify(errorData));
+    // }
 
     /**
      * 响应正确数据
@@ -79,6 +79,33 @@ export class Restful {
 
         res.writeHead(code, { 'Content-type': 'application/json' });
         res.end(JSON.stringify(data));
+    }
+
+    private requestHandle(inside = true, context) {
+        const self: Restful = context;
+
+        return async function (request: IncomingMessage, response: ServerResponse) {
+            let { urlPara, resource } = self.router.getResource(request.url);
+
+            // 存在处理当前数据的 resource
+            if (inside && resource === null) {
+                // self._handleError(response, { code: 404, message: 'This url does not have a corresponding resource' });
+            } else {
+                try {
+                    let requestData = await requestParse(request);
+                } catch (err) {
+
+                }
+
+                // resource._getResponse(request, urlPara)
+                //     .then(({ data, code }: ResourceResult) => {
+                //         self._handleSuccess(response, data, code);
+                //     })
+                //     .catch((errorData: ErrorData) => {
+                //         self._handleError(response, errorData)
+                //     });
+            }
+        }
     }
 
     /**
@@ -115,22 +142,7 @@ export class Restful {
             throwError('There can not be any proxied resources');
         }
         this.server = createServer();
-        this.server.on('request', (req, res) => {
-            let { params, resource } = this.router.getResource(req.url);
-
-            // 存在处理当前数据的 resource
-            if (resource === null) {
-                this._handleError(res, { code: 404, message: 'This url does not have a corresponding resource' });
-            } else {
-                resource._getResponse(req, params)
-                    .then(({ data, code }: ResourceResult) => {
-                        this._handleSuccess(res, data, code);
-                    })
-                    .catch((errorData: ErrorData) => {
-                        this._handleError(res, errorData)
-                    });
-            }
-        });
+        this.server.on('request', this.requestHandle(true, this));
 
         let { port, hostname } = this.options;
         this.server.listen(port, hostname);
@@ -148,20 +160,7 @@ export class Restful {
      * @api
      */
     bindServer(server: Server) {
-        server.on('request', (req, res) => {
-            let { params, resource } = this.router.getResource(req.url);
-
-            // 存在处理当前数据的 resource
-            if (resource !== null) {
-                resource._getResponse(req, params)
-                    .then(({ data, code }: ResourceResult) => {
-                        this._handleSuccess(res, data, code);
-                    })
-                    .catch((errorData: ErrorData) => {
-                        this._handleError(res, errorData)
-                    });
-            }
-        })
+        server.on('request', this.requestHandle(false, this));
     }
 
     /**

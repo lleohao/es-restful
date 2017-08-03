@@ -1,7 +1,5 @@
 import { IncomingMessage } from 'http';
-import * as Promise from 'bluebird';
-
-import { Parser, ParamData } from './parser';
+import { ReqParse, ParsedData } from './parser';
 
 /**
  * 资源返回值类型
@@ -58,12 +56,12 @@ export class Resource {
      * (装饰器)给指定请求绑定参数解析
      * 
      * @static
-     * @param {Parser} parser
+     * @param {ReqParse} parser
      * @returns
      * 
      * @memberOf Resource
      */
-    static addParser(parser: Parser) {
+    static addParser(parser: ReqParse) {
         return function (target: any, propertyKey: string) {
             target[propertyKey].parser = parser;
         };
@@ -87,7 +85,7 @@ export class Resource {
 
             // 存在当前请求类型的处理函数
             if (handle) {
-                let parser = <Parser>handle.parser;
+                let parser = <ReqParse>handle.parser;
                 if (parser === undefined) {
                     if (handle['async']) {
                         handle(routeParams, reslove)
@@ -95,17 +93,17 @@ export class Resource {
                         reslove(handle(routeParams));
                     }
                 } else {
-                    parser.parse(req).once('parseEnd', (data: ParamData) => {
-                        if (data.errorData !== undefined) {
-                            reject(data.errorData)
-                        } else {
-                            if (handle['async']) {
-                                handle(Object.assign(data, routeParams), reslove)
-                            } else {
-                                reslove(handle(Object.assign(data, routeParams)));
-                            }
-                        }
-                    });
+                    // parser.parse(req).once('parseEnd', (data: ParamData) => {
+                    //     if (data.errorData !== undefined) {
+                    //         reject(data.errorData)
+                    //     } else {
+                    //         if (handle['async']) {
+                    //             handle(Object.assign(data, routeParams), reslove)
+                    //         } else {
+                    //             reslove(handle(Object.assign(data, routeParams)));
+                    //         }
+                    //     }
+                    // });
                 }
             } else {
                 reject({

@@ -5,5 +5,5 @@ export function throwError(message: string) {
 export function isType(v: any, t: string) {
     let type: string = Object.prototype.toString.call(v);
 
-    return type.match(/object (.*?)/)[1].toString() === t;
+    return type.match(/\[object (\w+)\]/)[1].toLowerCase() === t;
 }

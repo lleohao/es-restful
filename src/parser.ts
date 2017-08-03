@@ -8,10 +8,9 @@ import { isType } from './utils';
  */
 export enum StatusCode {
     REQUIRED_ERROR = 1,
-    NULL_ERROR = 2,
-    TYPE_ERRPR = 3,
-    CHOICES_ERROR = 4,
-    CONVER_ERROR = 5
+    TYPE_ERRPR = 2,
+    CHOICES_ERROR = 3,
+    CONVER_ERROR = 4
 }
 
 /**
@@ -155,15 +154,6 @@ const validation = (params: { [name: string]: ParaOptions }, requestData) => {
                 };
                 return false;
             }
-
-            // check nullable
-            if (rule.nullabled && (value === '' || value === null)) {
-                error = {
-                    code: StatusCode.NULL_ERROR,
-                    info: { key }
-                };
-                return false;
-            }
         }
 
         // check type
@@ -255,9 +245,6 @@ const genErroeMsg = (error: ValidationError) => {
             } else {
                 message = `The choices function check {${info.key}: ${info.value}} is false.`;
             }
-            break;
-        case StatusCode.NULL_ERROR:
-            message = `The "${info.key}" does not allow null values.`;
             break;
     }
 

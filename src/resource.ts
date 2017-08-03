@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import { ReqParse, ParsedData } from './parser';
+import { ReqParse, ParsedData } from './params';
 
 /**
  * 资源返回值类型

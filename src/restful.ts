@@ -2,8 +2,8 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 
 import { Resource, ResourceResult } from './resource';
 import { requestParse } from './requestParse';
-import { throwError } from './utils';
 import { Router } from './router';
+import { throwError } from './utils';
 
 /**
  * 启动配置项
@@ -82,10 +82,8 @@ export class Restful {
     }
 
     private requestHandle(inside = true, context) {
-        const self: Restful = context;
-
-        return async function (request: IncomingMessage, response: ServerResponse) {
-            let { urlPara, resource } = self.router.getResource(request.url);
+        return async (request: IncomingMessage, response: ServerResponse) => {
+            let { urlPara, resource } = this.router.getResource(request.url);
 
             // 存在处理当前数据的 resource
             if (inside && resource === null) {

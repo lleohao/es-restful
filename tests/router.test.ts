@@ -206,7 +206,7 @@ describe('Router', () => {
                     it(_c, () => {
                         let result = router.getResource(_c);
                         if (c.e[index] !== null) {
-                            should(result.params).be.eql(c.e[index]);
+                            should(result.urlPara).be.eql(c.e[index]);
                             should(result.resource).be.instanceOf(TestResource);
                         } else {
                             should(result).be.eql(nullResult);

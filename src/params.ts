@@ -236,15 +236,15 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
     });
 
     if (!flag) {
-        parsedData['error'] = genErroeMsg(error);
+        parsedData['error'] = genErrorMsg(error);
     } else {
         parsedData['result'] = result;
     }
 
     return parsedData;
-}
+};
 
-const genErroeMsg = (error: ValidationError) => {
+const genErrorMsg = (error: ValidationError) => {
     let message;
     let info = error.info;
     let wrap = (typeof info.value === 'string') ? ['"', '"'] : (Array.isArray(info.value)) ? ['[', ']'] : ['', ''];
@@ -276,9 +276,9 @@ const genErroeMsg = (error: ValidationError) => {
         code: error.code,
         message: message
     }
-}
+};
 
-export class ReqParse {
+export class ReqParams {
     private globalOpts: ParaOptions;
     private params: { [name: string]: ParaOptions } = {};
 

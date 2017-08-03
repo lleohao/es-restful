@@ -10,7 +10,8 @@ export enum StatusCode {
     REQUIRED_ERROR = 1,
     TYPE_ERRPR = 2,
     CHOICES_ERROR = 3,
-    CONVER_ERROR = 4
+    COVER_ERROR = 4,
+    CHOICES_RUN_ERROR = 5
 }
 
 /**
@@ -46,7 +47,7 @@ export interface ParaOptions {
      * [1,2,3] => 1-2-3
      * 
      */
-    type?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any';
+    type?: "number" | "boolean" | "object" | "array" | "any" | "string" | string;
     /**
      * Optional range of parameters.
      * 
@@ -58,7 +59,7 @@ export interface ParaOptions {
      * nomen  => throw error
      * men    => true
      */
-    choices?: (input: any) => boolean | any[];
+    choices?: any[] | ChoicesFun;
     /**
      * Set to true coverets the parameter to lowercase.
      * 
@@ -91,6 +92,7 @@ export interface ParaOptions {
  * Error callback function.
  */
 export type ErrorCb = (err: Error) => void;
+export type ChoicesFun = (input: any) => boolean;
 
 /**
  * Parsed out the request data
@@ -132,15 +134,15 @@ interface ValidationError {
 }
 
 
-const validation = (params: { [name: string]: ParaOptions }, requestData) => {
+const validation = (params: { [name: string]: ParaOptions }, requestData: { [key: string]: any }) => {
     const paramsKeys = Object.keys(params);
     let result = {};
-    let parsedData: ParsedData;
+    let parsedData: ParsedData = {};
     let error: ValidationError;
 
     const flag = paramsKeys.every((key) => {
         const rule = params[key];
-        let value = requestData(params);
+        let value = requestData[key];
 
         // set default value
         if (rule.defaultVal !== undefined) {
@@ -157,7 +159,7 @@ const validation = (params: { [name: string]: ParaOptions }, requestData) => {
         }
 
         // check type
-        if (rule.type !== 'any' && isType(value, rule.type)) {
+        if (rule.type !== 'any' && !isType(value, rule.type)) {
             error = {
                 code: StatusCode.TYPE_ERRPR,
                 info: {
@@ -170,17 +172,31 @@ const validation = (params: { [name: string]: ParaOptions }, requestData) => {
         }
 
         // check choices
-        if (rule.choices &&
-            ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1)) {
-            error = {
-                code: StatusCode.CHOICES_ERROR,
-                info: {
-                    key,
-                    value,
-                    others: rule.coveration
+        if (rule.choices) {
+            try {
+                if ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1) {
+                    error = {
+                        code: StatusCode.CHOICES_ERROR,
+                        info: {
+                            key,
+                            value,
+                            others: rule.choices
+                        }
+                    };
+                    return false;
                 }
-            };
-            return false;
+
+            } catch (e) {
+                error = {
+                    code: StatusCode.CHOICES_RUN_ERROR,
+                    info: {
+                        key,
+                        value,
+                        others: e.toString()
+                    }
+                }
+                return false;
+            }
         }
 
         // value coveration
@@ -201,7 +217,7 @@ const validation = (params: { [name: string]: ParaOptions }, requestData) => {
                 value = rule.coveration(value);
             } catch (e) {
                 error = {
-                    code: StatusCode.CONVER_ERROR,
+                    code: StatusCode.COVER_ERROR,
                     info: {
                         key,
                         value,
@@ -212,17 +228,17 @@ const validation = (params: { [name: string]: ParaOptions }, requestData) => {
             }
         }
 
+        if (rule.required || value !== undefined) {
+            result[rule.dset || key] = value;
+        }
+
         return true;
     });
 
     if (!flag) {
         parsedData['error'] = genErroeMsg(error);
     } else {
-        parsedData['result'] = {};
-        paramsKeys.forEach(key => {
-            key = params[key].dset || key;
-            parsedData['result'][key] = result[key];
-        });
+        parsedData['result'] = result;
     }
 
     return parsedData;
@@ -231,20 +247,28 @@ const validation = (params: { [name: string]: ParaOptions }, requestData) => {
 const genErroeMsg = (error: ValidationError) => {
     let message;
     let info = error.info;
+    let wrap = (typeof info.value === 'string') ? ['"', '"'] : (Array.isArray(info.value)) ? ['[', ']'] : ['', ''];
 
     switch (error.code) {
+
         case StatusCode.REQUIRED_ERROR:
             message = `The "${info.key}" are required.`;
             break;
-        case StatusCode.CONVER_ERROR:
-            message = `Corveration {${info.key}: ${info.value}} throws a error: ${info.others}.`;
+        case StatusCode.COVER_ERROR:
+            message = `Corveration function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws a error: ${info.others}.`;
+            break;
+        case StatusCode.CHOICES_RUN_ERROR:
+            message = `Choises function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws a error: ${info.others}.`;
             break;
         case StatusCode.CHOICES_ERROR:
             if (typeof info.others === 'function') {
-                message = `The ${info.key}: "${info.value}" is not in [${error.info['choices'].toString()}].`
+                message = `The choices function check {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} is false.`;
             } else {
-                message = `The choices function check {${info.key}: ${info.value}} is false.`;
+                message = `The {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} is not in [${info.others.toString()}].`
             }
+            break;
+        case StatusCode.TYPE_ERRPR:
+            message = `The {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} type is not "${info.others}".`
             break;
     }
 

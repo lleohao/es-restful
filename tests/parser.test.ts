@@ -1,774 +1,152 @@
-import { createServer, get, request, Server } from 'http';
-import * as should from 'should';
-import { Parser } from '../lib';
+import should = require('should');
+import p from '../lib/parser';
+import { ReqParse, StatusCode } from '../lib';
 
 
-describe('Parser test', () => {
-    describe('创建实例测试', () => {
-        it('正确返回parser实例', () => {
-            let parser = new Parser();
-            should(parser).be.instanceof(Parser);
+describe('ReqParse', () => {
+    describe('API', () => {
+        let parser: ReqParse;
+
+        beforeEach(() => {
+            parser = new ReqParse();
+        });
+
+        it('add test', () => {
+            parser.add('name');
+            parser.add('age', { type: 'number' });
+
+            should(parser.getParams()).be.eql({
+                name: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+                age: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null,
+                    type: 'number'
+                }
+            });
+            should.throws(() => {
+                parser.add('name');
+            }, /The parameter name: name already exists\./);
+            should.throws(() => {
+                parser.add('zh-name', { dset: 'name' });
+            }, /The parameter name: zh-name, dtet: name already exists./);
+        });
+
+        it('remove test', () => {
+            parser.add('name');
+            parser.add('age', { type: 'number' });
+            parser.add('address');
+
+            parser.remove('name');
+            should(parser.getParams()).be.eql({
+                address: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+                age: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null,
+                    type: 'number'
+                }
+            });
+
+            parser.remove(['age', 'address', 'no']);
+            should(parser.getParams()).be.eql({});
         });
     });
 
-    describe('API 测试', () => {
-        describe('addParam 方法测试', () => {
-            it('添加同名参数会抛出错误', () => {
-                should.throws(() => {
-                    let parser = new Parser();
-                    parser.addParam('name');
-                    parser.addParam('name');
-                });
-            });
+    describe('Validation', () => {
+        let parser: ReqParse;
 
-            it('添加同名的参数和别名会抛出错误', () => {
-                should.throws(() => {
-                    let parser = new Parser();
-                    parser.addParam('name');
-                    parser.addParam('sName', {
-                        dset: 'name'
-                    });
-                });
-            });
+        beforeEach(() => {
+            parser = new ReqParse();
         });
 
-        describe('removeParams 方法测试', function () {
-            let server: Server;
+        const cases = [
+            { c: { name: 'no-options', o: {} }, i: {}, e: {} },
+            { c: { name: 'no-options', o: {} }, i: { a: 'b', c: 1 }, e: {} },
+            { c: { name: 'no-options', o: {} }, i: { 'no-options': 'b' }, e: { 'no-options': 'b' } },
+            { c: { name: 'defaultVal', o: { defaultVal: 'a' } }, i: {}, e: { defaultVal: 'a' } },
+            { c: { name: 'defaultVal', o: { defaultVal: 'b' } }, i: { defaultVal: 'b' }, e: { defaultVal: 'b' } },
+            { c: { name: 'required', o: { required: true } }, i: {}, err: { code: StatusCode.REQUIRED_ERROR, message: 'The "required" are required.' } },
+            { c: { name: 'required', o: { required: true } }, i: { required: 'r' }, e: { required: 'r' } },
+            { c: { name: 'type-number', o: { type: 'number' } }, i: {}, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-number: undefined} type is not "number".' } },
+            { c: { name: 'type-number', o: { type: 'number' } }, i: { 'type-number': '1' }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-number: "1"} type is not "number".' } },
+            { c: { name: 'type-number', o: { type: 'number' } }, i: { 'type-number': 1 }, e: { 'type-number': 1 } },
+            { c: { name: 'type-string', o: { type: 'string' } }, i: {}, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-string: undefined} type is not "string".' } },
+            { c: { name: 'type-string', o: { type: 'string' } }, i: { 'type-string': 1 }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-string: 1} type is not "string".' } },
+            { c: { name: 'type-string', o: { type: 'string' } }, i: { 'type-string': '1' }, e: { 'type-string': '1' } },
+            { c: { name: 'type-boolean', o: { type: 'boolean' } }, i: {}, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-boolean: undefined} type is not "boolean".' } },
+            { c: { name: 'type-boolean', o: { type: 'boolean' } }, i: { 'type-boolean': 'false' }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-boolean: "false"} type is not "boolean".' } },
+            { c: { name: 'type-boolean', o: { type: 'boolean' } }, i: { 'type-boolean': '' }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-boolean: ""} type is not "boolean".' } },
+            { c: { name: 'type-boolean', o: { type: 'boolean' } }, i: { 'type-boolean': true }, e: { 'type-boolean': true } },
+            { c: { name: 'type-object', o: { type: 'object' } }, i: {}, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-object: undefined} type is not "object".' } },
+            { c: { name: 'type-object', o: { type: 'object' } }, i: { 'type-object': 'false' }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-object: "false"} type is not "object".' } },
+            { c: { name: 'type-object', o: { type: 'object' } }, i: { 'type-object': [1, 2] }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-object: [1,2]} type is not "object".' } },
+            { c: { name: 'type-object', o: { type: 'object' } }, i: { 'type-object': { a: 'a' } }, e: { 'type-object': { a: 'a' } } },
+            { c: { name: 'type-array', o: { type: 'array' } }, i: {}, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-array: undefined} type is not "array".' } },
+            { c: { name: 'type-array', o: { type: 'array' } }, i: { 'type-array': 'false' }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-array: "false"} type is not "array".' } },
+            { c: { name: 'type-array', o: { type: 'array' } }, i: { 'type-array': { a: '2' } }, err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-array: [object Object]} type is not "array".' } },
+            { c: { name: 'type-array', o: { type: 'array' } }, i: { 'type-array': [1, 2] }, e: { 'type-array': [1, 2] } },
+            { c: { name: 'dset', o: { dset: 'dset2' } }, i: { 'dset': '1' }, e: { 'dset2': '1' } },
+            { c: { name: 'trim', o: { trim: true } }, i: { 'trim': '      1        ' }, e: { 'trim': '1' } },
+            { c: { name: 'trim', o: { trim: true } }, i: { 'trim': 1 }, e: { 'trim': 1 } },
+            { c: { name: 'caseSensitive', o: { caseSensitive: true } }, i: { 'caseSensitive': 'ABC' }, e: { 'caseSensitive': 'abc' } },
+            { c: { name: 'caseSensitive', o: { caseSensitive: true } }, i: { 'caseSensitive': 1 }, e: { 'caseSensitive': 1 } },
+            { c: { name: 'choices', o: { choices: [1, 2, 3] } }, i: { choices: '1' }, err: { code: StatusCode.CHOICES_ERROR, message: 'The {choices: "1"} is not in [1,2,3].' } },
+            { c: { name: 'choices', o: { choices: [1, 2, 3] } }, i: { choices: 11 }, err: { code: StatusCode.CHOICES_ERROR, message: 'The {choices: 11} is not in [1,2,3].' } },
+            { c: { name: 'choices', o: { choices: function (input) { return [1, 2, 3].indexOf(input) !== -1; } } }, i: { choices: '1' }, err: { code: StatusCode.CHOICES_ERROR, message: 'The choices function check {choices: "1"} is false.' } },
+            { c: { name: 'choices', o: { choices: function (input) { return [1, 2, 3].indexOf(input) !== -1; } } }, i: { choices: 11 }, err: { code: StatusCode.CHOICES_ERROR, message: 'The choices function check {choices: 11} is false.' } },
+            { c: { name: 'choices', o: { choices: [1, 2, 3] } }, i: { choices: 1 }, e: { choices: 1 } },
+            { c: { name: 'choices', o: { choices: function (input) { return [1, 2, 3].indexOf(input) !== -1; } } }, i: { choices: 1 }, e: { choices: 1 } },
+            { c: { name: 'choices', o: { choices: function (input) { throw new Error('error') } } }, i: { choices: 1 }, err: { code: StatusCode.CHOICES_RUN_ERROR, message: 'Choises function processing {choices: 1} throws a error: Error: error.' } },
+            { c: { name: 'coveration', o: { coveration: function (input) { return input.join('-') } } }, i: { coveration: '11' }, err: { code: StatusCode.COVER_ERROR, message: 'Corveration function processing {coveration: "11\"} throws a error: TypeError: input.join is not a function.' } },
+            { c: { name: 'coveration', o: { coveration: function (input) { return input.join('-') } } }, i: { coveration: [1, 2, 3] }, e: { coveration: '1-2-3' } }
+        ];
 
-            afterEach(() => {
-                server.close();
+        cases.forEach(_case => {
+            it(_case.c.name, () => {
+                parser.add(_case.c.name, _case.c.o);
+                let result, e;
+
+                if (_case['err']) {
+                    result = p.validation(parser.getParams(), _case.i).error;
+                    e = _case['err'];
+                } else {
+                    result = p.validation(parser.getParams(), _case.i).result;
+                    e = _case['e'];
+                }
+
+                should(result).be.eql(e);
             });
-
-            it('正确删除单个参数', (done) => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('name');
-                    parser.removeParams('name');
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        should(data).be.eql({});
-                        res.end();
-                        done();
-                    });
-
-                });
-                server.listen(5052);
-                get({
-                    port: 5052,
-                    path: '/?name=lleohao'
-                }, () => {
-
-                });
-            });
-
-            it('正确删除多个参数', (done) => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('name');
-                    parser.addParam('age');
-                    parser.removeParams(['name', 'age']);
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        should(data).be.eql({});
-                        res.end();
-                        done();
-                    });
-
-                });
-                server.listen(5052);
-                get({
-                    port: 5052,
-                    path: '/?name=lleohao&age=22'
-                }, () => {
-
-                });
-            });
-        });
-
-        describe('parse 方法测试', function () {
-            let server: Server;
-
-            afterEach(() => {
-                server.close();
-            });
-
-            it('正确解析参数(get请求)', (done) => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('name');
-                    parser.addParam('age');
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        should(data).be.eql({
-                            age: '22',
-                            name: 'lleohao'
-                        });
-                        res.end();
-                        done();
-                    });
-
-                });
-                server.listen(5052);
-                get({
-                    port: 5052,
-                    path: '/?name=lleohao&age=22'
-                }, () => {
-                });
-            });
-
-            it('正确解析参数(post请求)', (done) => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('name');
-                    parser.addParam('age');
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        should(data).be.eql({
-                            age: 22,
-                            name: 'lleohao'
-                        });
-                        res.end();
-                        done();
-                    });
-
-                });
-                server.listen(5052);
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, () => { });
-
-                req.write(JSON.stringify({ name: 'lleohao', age: 22 }));
-                req.end();
-            });
-        });
-    });
-
-    describe('参数错误验证测试', () => {
-        describe('required(参数是否为必须值) 参数测试, 设置 required = true', () => {
-            let server: Server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('name', {
-                        required: true
-                    });
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('正确验证 required', (done) => {
-                get({
-                    port: 5052,
-                    path: '/?name=lleohao'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        should(data).be.eql({
-                            name: 'lleohao'
-                        });
-                        done();
-                    });
-                });
-            });
-
-            it('正确验证 required 错误', (done) => {
-                get({
-                    port: 5052
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        should(data).be.eql({
-                            errorData: {
-                                code: 403,
-                                message: 'Missing request parameters.',
-                                error: { type: 2, info: 'name', message: 'The "name" are required.' }
-                            }
-                        });
-                        done();
-                    });
-                });
-            });
-
-
-        });
-
-        describe('nullabled(参数是否可以为空) 参数测试, 设置 nullabled = false, 默认值为 true', function () {
-            let server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('name', {
-                        nullabled: false
-                    });
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('正确验证 nullabled 错误', (done) => {
-                get({
-                    port: 5052,
-                    path: '/?name='
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            errorData: {
-                                code: 403,
-                                message: 'Parameters are not allowed to be null.',
-                                error: {
-                                    type: 5,
-                                    info: 'name',
-                                    message: 'The "name" does not allow null values'
-                                }
-                            }
-                        });
-                        done();
-                    });
-                });
-            });
-        });
-
-        describe('参数类型转换测试, int test', function () {
-            let server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('age', {
-                        type: 'int'
-                    });
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('正确值测试', (done) => {
-                get({
-                    port: 5052,
-                    path: '/?age=21'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            age: 21
-                        });
-                        done();
-                    });
-                });
-            });
-
-            it('错误值测试, 抛出 type error', (done) => {
-                get({
-                    port: 5052,
-                    path: '/?age=lleohao'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            errorData: {
-                                code: 403,
-                                message: 'Parameter type conversion error.',
-                                error: {
-                                    type: 3,
-                                    info: {
-                                        key: 'age',
-                                        type: 'number',
-                                        help: null
-                                    },
-                                    message: 'Can not convert "age" to number type'
-                                }
-                            }
-                        });
-                        done();
-                    });
-                });
-            });
-        });
-
-        describe('参数类型转换测试, float test', function () {
-            let server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('weight', {
-                        type: 'float'
-                    });
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('正确值验证', (done) => {
-                get({
-                    port: 5052,
-                    path: '/?weight=42.5'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            weight: 42.5
-                        });
-                        done();
-                    });
-                });
-            });
-
-            it('错误值验证, 抛出 type error', (done) => {
-                get({
-                    port: 5052,
-                    path: '/?weight=lleohao'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            errorData: {
-                                code: 403,
-                                message: 'Parameter type conversion error.',
-                                error: {
-                                    type: 3,
-                                    info: {
-                                        key: 'weight',
-                                        type: 'number',
-                                        help: null
-                                    },
-                                    message: 'Can not convert "weight" to number type'
-                                }
-                            }
-                        });
-                        done();
-                    });
-                });
-            });
-        });
-
-        describe('参数类型转换测试, 传入转换函数', function () {
-            let server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('join', {
-                        type: (value) => {
-                            return value.join('-');
-                        },
-                        help: 'haha'
-                    });
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('正确值验证', (done) => {
-                let data = JSON.stringify({
-                    join: ['lleo', 'hao']
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            join: 'lleo-hao'
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-
-            it('错误值验证, 抛出 type error', (done) => {
-                let data = JSON.stringify({
-                    join: 'lleohao'
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            errorData: {
-                                code: 403,
-                                message: 'Parameter type conversion error.',
-                                error: {
-                                    type: 3,
-                                    info: {
-                                        key: 'join',
-                                        type: 'function',
-                                        help: 'haha'
-                                    },
-                                    message: 'haha'
-                                }
-                            }
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-        });
-
-        describe('choices 属性测试', function () {
-            let server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('sex', {
-                        choices: ['man', 'woman']
-                    });
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('正确值验证', (done) => {
-                let data = JSON.stringify({
-                    sex: 'man'
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            sex: 'man'
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-
-            it('错误值验证, 抛出 choice error', (done) => {
-                let data = JSON.stringify({
-                    sex: 'lalalal'
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            errorData: {
-                                code: 403,
-                                message: 'The parameter is not in the selection range.',
-                                error: {
-                                    type: 4,
-                                    info: {
-                                        key: 'sex',
-                                        value: 'lalalal',
-                                        choices: ['man', 'woman']
-                                    },
-                                    message: 'The sex: "lalalal" is not in [man,woman]'
-                                }
-                            }
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-        });
-
-        describe('caseSensitive defaultVal 属性测试', function () {
-            let server;
-
-            before(() => {
-                server = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('sex', {
-                        defaultVal: 'man',
-                        caseSensitive: true
-                    });
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server.listen(5052);
-            });
-
-            after(() => {
-                server.close();
-            });
-
-            it('不传送参数, 正确填充默认值', (done) => {
-                let data = JSON.stringify({
-                    sex: ''
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            sex: 'man'
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-
-            it('不传送参数, 正确返回传送的值', (done) => {
-                let data = JSON.stringify({
-                    sex: 'WOMEN'
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            sex: 'women'
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-        });
-
-        describe('trim dset 属性测试', function () {
-            let server_1;
-            let server_2;
-
-            before(() => {
-                server_1 = createServer((req, res) => {
-                    let parser = new Parser(true);
-                    parser.addParam('trim_test_false', {
-                        trim: false,
-                        dset: 'trim'
-                    });
-                    parser.addParam('trim_test_normal');
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server_1.listen(5052);
-                server_2 = createServer((req, res) => {
-                    let parser = new Parser();
-                    parser.addParam('trim', {
-                        trim: true
-                    });
-
-                    parser.parse(req).on('parseEnd', (data) => {
-                        res.writeHead(200, {
-                            'Content-type': 'application/json'
-                        });
-                        res.end(JSON.stringify(data));
-                    });
-                });
-                server_2.listen(5053);
-            });
-
-            after(() => {
-                server_1.close();
-                server_2.close();
-            });
-
-            it('should return {data: {trim: " lleohao ", trim_test_normal: "lleohao"}', (done) => {
-                let data = JSON.stringify({
-                    trim_test_false: ' lleohao ',
-                    trim_test_normal: ' lleohao '
-                });
-
-                let req = request({
-                    port: 5052,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            trim_test_normal: 'lleohao',
-                            trim: ' lleohao ',
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-
-            it('should return {trim: "lleohao"}', (done) => {
-                let data = JSON.stringify({
-                    trim: '   lleohao     ',
-                });
-
-                let req = request({
-                    port: 5053,
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    }
-                }, (res) => {
-                    let data = [];
-                    res.on('data', chunk => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        data = JSON.parse(data.toString());
-                        data.should.containEql({
-                            trim: 'lleohao'
-                        });
-                        done();
-                    });
-                });
-                req.write(data);
-                req.end();
-            });
-        });
+        })
     });
 });

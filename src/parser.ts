@@ -132,11 +132,144 @@ interface ValidationError {
     };
 }
 
+
+const validation = (params: { [name: string]: ParaOptions }, requestData) => {
+    const paramsKeys = Object.keys(params);
+    let result = {};
+    let parsedData: ParsedData;
+    let error: ValidationError;
+
+    const flag = paramsKeys.every((key) => {
+        const rule = params[key];
+        let value = requestData(params);
+
+        // set default value
+        if (rule.defaultVal !== undefined) {
+            value = value !== undefined ? value : rule.defaultVal;
+        } else {
+            // check required
+            if (rule.required && value === undefined) {
+                error = {
+                    code: StatusCode.REQUIRED_ERROR,
+                    info: { key }
+                };
+                return false;
+            }
+
+            // check nullable
+            if (rule.nullabled && (value === '' || value === null)) {
+                error = {
+                    code: StatusCode.NULL_ERROR,
+                    info: { key }
+                };
+                return false;
+            }
+        }
+
+        // check type
+        if (rule.type !== 'any' && isType(value, rule.type)) {
+            error = {
+                code: StatusCode.TYPE_ERRPR,
+                info: {
+                    key,
+                    value,
+                    others: rule.type
+                }
+            };
+            return false;
+        }
+
+        // check choices
+        if (rule.choices &&
+            ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1)) {
+            error = {
+                code: StatusCode.CHOICES_ERROR,
+                info: {
+                    key,
+                    value,
+                    others: rule.coveration
+                }
+            };
+            return false;
+        }
+
+        // value coveration
+        if (rule.caseSensitive) {
+            if (typeof value === 'string') {
+                value = value.toLocaleLowerCase();
+            }
+        }
+
+        if (rule.trim) {
+            if (typeof value === 'string') {
+                value = value.trim();
+            }
+        }
+
+        if (rule.coveration) {
+            try {
+                value = rule.coveration(value);
+            } catch (e) {
+                error = {
+                    code: StatusCode.CONVER_ERROR,
+                    info: {
+                        key,
+                        value,
+                        others: e.toString()
+                    }
+                }
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    if (!flag) {
+        parsedData['error'] = genErroeMsg(error);
+    } else {
+        parsedData['result'] = {};
+        paramsKeys.forEach(key => {
+            key = params[key].dset || key;
+            parsedData['result'][key] = result[key];
+        });
+    }
+
+    return parsedData;
+}
+
+const genErroeMsg = (error: ValidationError) => {
+    let message;
+    let info = error.info;
+
+    switch (error.code) {
+        case StatusCode.REQUIRED_ERROR:
+            message = `The "${info.key}" are required.`;
+            break;
+        case StatusCode.CONVER_ERROR:
+            message = `Corveration {${info.key}: ${info.value}} throws a error: ${info.others}.`;
+            break;
+        case StatusCode.CHOICES_ERROR:
+            if (typeof info.others === 'function') {
+                message = `The ${info.key}: "${info.value}" is not in [${error.info['choices'].toString()}].`
+            } else {
+                message = `The choices function check {${info.key}: ${info.value}} is false.`;
+            }
+            break;
+        case StatusCode.NULL_ERROR:
+            message = `The "${info.key}" does not allow null values.`;
+            break;
+    }
+
+    return {
+        code: error.code,
+        message: message
+    }
+}
+
 export class ReqParse {
     private globalOpts: ParaOptions;
     private params: { [name: string]: ParaOptions } = {};
-    private trim: boolean = false;
-    private errCb: ErrorCb;
 
     /**
      * Create reqparser instance.
@@ -165,16 +298,16 @@ export class ReqParse {
      * @param name      parameter name
      * @param [opts]    parameter options
      */
-    add(name: string, opts?: ParaOptions) {
+    public add(name: string, opts?: ParaOptions) {
         if (this.params[name]) {
             throw new Error(`The parameter name: ${name} already exists.`);
         }
 
         if (opts && opts.dset && this.params[opts.dset]) {
-            throw new Error(`The parameter dtet: ${name} already exists`);
+            throw new Error(`The parameter name: ${name}, dtet: ${opts.dset} already exists.`);
         }
 
-        opts = Object.assign({ name: name }, this.globalOpts, opts);
+        opts = Object.assign({}, this.globalOpts, opts);
         this.params[name] = opts;
     }
 
@@ -183,7 +316,7 @@ export class ReqParse {
      * 
      * @param name      parameter name or parameter name array.
      */
-    remove(name: (string | string[])) {
+    public remove(name: (string | string[])) {
         let names = [].concat(name);
 
         names.forEach(name => {
@@ -194,145 +327,15 @@ export class ReqParse {
     }
 
     /**
+     * Return all params
      * 
-     * 
-     * @param requestData 
+     * @returns 
      */
-    parse(requestData) {
-        return this.validation(requestData);
+    public getParams(): { [name: string]: ParaOptions } {
+        return this.params;
     }
+}
 
-    private validation(requestData) {
-        const params = this.params;
-        const paramsKeys = Object.keys(params);
-        let result = {};
-        let parsedData: ParsedData;
-        let error: ValidationError;
-
-        const flag = paramsKeys.every((key) => {
-            const rule = params[key];
-            let value = requestData(params);
-
-            // set default value
-            if (rule.defaultVal !== undefined) {
-                value = value !== undefined ? value : rule.defaultVal;
-            } else {
-                // check required
-                if (rule.required && value === undefined) {
-                    error = {
-                        code: StatusCode.REQUIRED_ERROR,
-                        info: { key }
-                    };
-                    return false;
-                }
-
-                // check nullable
-                if (rule.nullabled && (value === '' || value === null)) {
-                    error = {
-                        code: StatusCode.NULL_ERROR,
-                        info: { key }
-                    };
-                    return false;
-                }
-            }
-
-            // check type
-            if (rule.type !== 'any' && isType(value, rule.type)) {
-                error = {
-                    code: StatusCode.TYPE_ERRPR,
-                    info: {
-                        key,
-                        value,
-                        others: rule.type
-                    }
-                };
-                return false;
-            }
-
-            // check choices
-            if (rule.choices &&
-                ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1)) {
-                error = {
-                    code: StatusCode.CHOICES_ERROR,
-                    info: {
-                        key,
-                        value,
-                        others: rule.coveration
-                    }
-                };
-                return false;
-            }
-
-            // value coveration
-            if (rule.caseSensitive) {
-                if (typeof value === 'string') {
-                    value = value.toLocaleLowerCase();
-                }
-            }
-
-            if (rule.trim) {
-                if (typeof value === 'string') {
-                    value = value.trim();
-                }
-            }
-
-            if (rule.coveration) {
-                try {
-                    value = rule.coveration(value);
-                } catch (e) {
-                    error = {
-                        code: StatusCode.CONVER_ERROR,
-                        info: {
-                            key,
-                            value,
-                            others: e.toString()
-                        }
-                    }
-                    return false;
-                }
-            }
-
-            return true;
-        });
-
-        if (!flag) {
-            parsedData['error'] = this.genErroeMsg(error);
-        } else {
-            parsedData['result'] = {};
-            paramsKeys.forEach(key => {
-                key = params[key].dset || key;
-                parsedData['result'][key] = result[key];
-            });
-        }
-
-        return parsedData;
-    }
-
-    private genErroeMsg(error: ValidationError) {
-        let message;
-        let info = error.info;
-
-        switch (error.code) {
-            case StatusCode.REQUIRED_ERROR:
-                message = `The "${error.info}" are required.`;
-                break;
-            case StatusCode.CONVER_ERROR:
-                message =
-                    error.info['help'] === null ?
-                        `Can not convert "${error.info['key']}" to ${error.info['type']} type.`
-                        : error.info['help'];
-                break;
-            case StatusCode.CHOICES_ERROR:
-                message = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}].`;
-                break;
-            case StatusCode.NULL_ERROR:
-                message = `The "${error.info}" does not allow null values.`;
-                break;
-        }
-
-        return {
-            code: error.code,
-            message: message
-        }
-    }
+export default {
+    validation
 }

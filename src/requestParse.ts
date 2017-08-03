@@ -16,7 +16,7 @@ const parseBodyData = (type: string, body: string) => {
     }
 
     return data;
-}
+};
 
 export const requestParse = (req: IncomingMessage) => {
     return new Promise((reject, reslove) => {
@@ -25,7 +25,7 @@ export const requestParse = (req: IncomingMessage) => {
             const index = url.indexOf('?');
 
             const queryStr = index === -1 ? '' : url.substr(index + 1);
-            let data = parse(queryStr)
+            let data = parse(queryStr);
 
             reject(data);
         } else {
@@ -45,4 +45,4 @@ export const requestParse = (req: IncomingMessage) => {
             });
         }
     });
-}
+};

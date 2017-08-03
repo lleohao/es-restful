@@ -1,566 +1,185 @@
-import { IncomingMessage } from 'http';
-import * as qs from 'querystring';
-import { EventEmitter } from 'events';
-
-import { ErrorCode, ErrorMessages } from './global';
+import { isType } from './utils';
 
 /**
- * 参数配置信息
+ * es-resuful error code 
  * 
  * @export
- * @interface Param
+ * @enum {number}
  */
-export interface Param {
+export enum StatusCode {
+    REQUIRED_ERROR = 1,
+    NULL_ERROR = 2,
+    TYPE_ERRPR = 3,
+    CHOICES_ERROR = 4,
+    CONVER_ERROR = 5
+}
+
+/**
+ * Defined parameter options
+ * 
+ * @export
+ * @interface ParaOptions
+ */
+export interface ParaOptions {
     /**
-     * 是否忽略大小写, 设置为 true 则统一转换为小写
+     * The default value when the parameter is empty.
      * 
-     * @type {boolean}
-     * @default false
-     * @memberOf Param
-     */
-    caseSensitive?: boolean;
-    /**
-     * 是否允许传递空值
-     * 
-     * @type {boolean}
-     * @default true
-     * @memberOf Param
-     */
-    nullabled?: boolean;
-    /**
-     * 是否忽略参数自动转换类型发生的错误
-     * 
-     * @type {boolean}
-     * @default false
-     * @memberOf Param
-     */
-    ignore?: boolean;
-    /**
-     * 当参数为空时的默认值
-     * 
-     * @type {*}
-     * @memberOf Param
      */
     defaultVal?: any;
     /**
-     * 参数的别名, 返回的解析值将使用这个名称代替请求中的名称
+     * Set this value to true when the parameter is required.
      * 
-     * @type {string}
-     * @memberOf Param
-     */
-    dset?: string;
-    /**
-     * 是否是必填的值
-     * 
-     * @type {boolean}
      * @default false
-     * @memberOf Param
      */
     required?: boolean;
     /**
-     * 指定将参数转换为什么类型的值, 可以传递函数
+     * Set this value to true when the argument can be null value. eg: null, undefined, ''.
      * 
-     * @type {(['string', 'float', 'int'] | Function)}
-     * @memberOf Param
+     * @default true
      */
-    type?: string | Function;
+    nullabled?: boolean;
     /**
-     * 是否自动清除参数两端的空白
+     * Specifies the type of parameter. eg: string, float, int.
+     * And you can give a function to conversion parameter.
      * 
-     * @type {boolean}
+     * @example
+     * type: (input) => { return input.join('-') };
+     * [1,2,3] => 1-2-3
+     * 
+     */
+    type?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any';
+    /**
+     * Optional range of parameters.
+     * 
+     * @example
+     * choices: ['men', 'women']
+     * @example
+     * choices: function(input) { return ['men', 'women'].indexOf(inpiut) !== -1; }
+     * 
+     * nomen  => throw error
+     * men    => true
+     */
+    choices?: (input: any) => boolean | any[];
+    /**
+     * Set to true coverets the parameter to lowercase.
+     * 
      * @default false
-     * @memberOf Param
      */
-    trim?: boolean | null;
+    caseSensitive?: boolean;
     /**
-     * 参数的可选范围
+     * Whether to clear the blanks at both ends of the parameter.
      * 
-     * @type {any[]}
-     * @memberOf Param
+     * @default false
      */
-    choices?: any[];
+    trim?: boolean;
     /**
-     * 当类型转换错误时,指定的返回错误信息
+     * Customize the conversion function.
      * 
-     * @type {string}
-     * @memberOf Param
+     * @example
+     * input = [1,2,3]
+     * coveration: function(input) { retuen input.join('-') }
+     * // => 1-2-3
      */
-    help?: string;
-}
-
-export interface ErrorData {
+    coveration?: (input: any) => any;
     /**
-     * 错误对应的http code
+     * The alias of the parameter, you can use this alias instead of the name in request.
      * 
-     * @type {number}
-     * @memberOf ErrorData
      */
-    code: number;
-
-    /**
-     * 错误信息概述 
-     * 
-     * @type {string}
-     * @memberOf ErrorData
-     */
-    message: string;
-
-    /**
-     * 详细错误信息 
-     * 
-     * @type {any}
-     * @memberOf ErrorData
-     */
-    error?: any
+    dset?: string;
 }
 
 /**
- * 解析的参数数据
- * 
- * @export
- * @interface ParamData
+ * Error callback function.
  */
-export interface ParamData {
-    /**
-     * 解析错误时的错误信息
-     * 
-     * @type {ErrorData}
-     * @memberOf ParamData
-     */
-    errorData?: ErrorData;
-    /**
-     * 解析正确时的参数
-     * 
-     * @type {Object}
-     * @memberOf ParamData
-     */
-    data?: Object;
-}
+export type ErrorCb = (err: Error) => void;
 
 /**
- * 解析的参数信息(内部使用)
+ * Parsed out the request data
  * 
  * @export
- * @interface ParamResult
+ * @interface ParsedData
  */
-interface ParamResult {
+export interface ParsedData {
     /**
-     * 请求方式
+     * The error in parsing
      * 
-     * @type {string}
-     * @memberOf Result
      */
-    method: string;
+    error?: {
+        /**
+         * Error code
+         * 
+         */
+        code: StatusCode;
+        /**
+         * Error message
+         * 
+         */
+        message: string;
+    };
     /**
-     * 错误信息数据
+     * The result of parsing
      * 
-     * @type {ResultError[]}
-     * @memberOf Result
      */
-    error?: ParamsResultError;
-    /**
-     * 解析参数内容
-     * 
-     * @type {*}
-     * @memberOf Result
-     */
-    result: any;
+    result?: { [key: string]: any };
 }
 
-/**
- * 参数解析错误信息(内部使用)
- * 
- * @export
- * @interface ParamsResultError
- */
-interface ParamsResultError {
-    /**
-     * 错误类型
-     * 
-     * @type {ErrorCode}
-     * @memberOf ResultError
-     */
-    type?: ErrorCode;
-    /**
-     * 错误详细信息
-     * 
-     * @type {*}
-     * @memberOf ResultError
-     */
+interface ValidationError {
+    code: StatusCode;
     info?: any;
-    /**
-     * 错误简略信息
-     * 
-     * @type {string}
-     * @memberOf ResultError
-     */
-    message?: string;
 }
 
-/**
- * 参数解析类
- * 1. 自动处理请求数据中的参数
- * 2. 处理参数中的错误
- * 
- * @export
- * @class Parser
- * @extends {EventEmitter}
- * @version 0.1
- */
-export class Parser extends EventEmitter {
-    private params: any;
-    private trim: boolean;
-    private errCb: Function;
+export class ReqParse {
+    private globalOpts: ParaOptions;
+    private params: { [name: string]: ParaOptions } = {};
+    private trim: boolean = false;
+    private errCb: ErrorCb;
 
     /**
-     * parse request
-     *
-     * @private
-     * @param {IncomingMessage} req
-     * @returns
-     *
-     * @memberOf Parser
-     */
-    private _parseRequest(req: IncomingMessage) {
-        let isGet = req.method === 'GET';
-        let parsedData: ParamResult = {
-            method: req.method,
-            result: null,
-            error: null
-        };
-
-        if (isGet) {
-            let url = req.url;
-            let index = url.indexOf('?');
-            let queryStr = index === -1 ? '' : url.substr(index + 1);
-
-            parsedData['result'] = qs.parse(queryStr);
-            this.emit('_endParse', this._checkParams(parsedData));
-        } else {
-            let contentType: string = req.headers['content-type'];
-            let body: any = [];
-
-            req.on('data', (chunk) => {
-                body.push(chunk);
-            }).on('end', () => {
-                body = body.toString();
-                let bodyData = this._handleBodyData(contentType, body);
-                if (bodyData['error']) {
-                    parsedData['error'] = bodyData;
-                } else {
-                    parsedData['result'] = bodyData;
-                }
-
-                this.emit('_endParse', this._checkParams(parsedData));
-            });
-        }
-    }
-
-    /**
-     * 处理请求中的body数据
-     *
-     * @private
-     * @param {string} type     请求类型
-     * @param {*} body          请求数据主体
-     * @returns
-     */
-    private _handleBodyData(type: string, body: any) {
-        let data: Object;
-
-        try {
-            switch (type) {
-                case 'application/x-www-form-urlencoded':
-                    data = qs.parse(body);
-                    break;
-                case 'application/json':
-                    data = JSON.parse(body);
-                    break;
-                default:
-                    data = {
-                        error: {
-                            type: ErrorCode.REQUEST_ERROR,
-                            info: 'This request method is not supported'
-                        }
-                    };
-            }
-        } catch (e) {
-            data = {
-                error: {
-                    type: ErrorCode.REQUEST_ERROR,
-                    info: e.toString()
-                }
-            };
-        }
-
-        return data;
-    }
-
-    /**
-     * 检测参数是否正确
-     *
-     * @private
-     * @param {*} result    解析出来的参数
-     * @returns
-     */
-    private _checkParams(parseData: ParamResult) {
-        let result = parseData.result;
-        let params = this.params;
-
-        // 对于请求方式的错误提前解析返回
-        if (parseData['error']) return parseData;
-
-        // 检测参数是否正确
-        Object.keys(params).every((key: string) => {
-            let rule = <Param>params[key];
-            let value = result[key];
-            // 1. required
-            if (rule.required && value === undefined) {
-                parseData.error = {
-                    type: ErrorCode.REQUIRED_ERROR,
-                    info: key
-                };
-
-                return false;
-            }
-
-            // 2. defaultVal
-            if (rule.defaultVal !== undefined && !value) {
-                value = rule.defaultVal;
-            }
-
-            // 3. nullabeld
-            if (!rule.nullabled && !value) {
-                parseData.error = {
-                    type: ErrorCode.NULL_ERROR,
-                    info: key
-                };
-
-                return false;
-            }
-
-            // 4. type (ignore help)
-            if (rule.type) {
-                let conversion: any;
-                let type: string;
-                let conversionVal: any;
-                switch (rule.type) {
-                    case 'int':
-                        conversion = parseInt;
-                        type = 'number';
-                        break;
-                    case 'float':
-                        conversion = parseFloat;
-                        type = 'number';
-                        break;
-                    case 'string':
-                        conversion = (val: any) => {
-                            return '' + val;
-                        };
-                        type = 'string';
-                        break;
-                    default:
-                        conversion = rule.type;
-                        type = 'function';
-                        break;
-                }
-
-                if (type === 'function') {
-                    try {
-                        conversionVal = conversion(value);
-                    } catch (error) {
-                        parseData.error = {
-                            type: ErrorCode.CONVER_ERROR,
-                            info: { key: key, type: type, help: rule.help }
-                        };
-                    }
-                } else {
-                    conversionVal = conversion(value);
-                }
-
-                if (!rule.ignore) {
-                    if (parseData.error !== null) return false;
-                    if (type === 'number' && isNaN(conversionVal)) {
-                        parseData.error = {
-                            type: ErrorCode.CONVER_ERROR,
-                            info: { key: key, type: type, help: rule.help }
-                        };
-                        return false;
-                    }
-                }
-                value = conversionVal;
-            }
-
-            // 5. trim caseSensitive
-            if (typeof (value) === 'string') {
-                if (rule.caseSensitive) value = <string>value.toLowerCase();
-                let _trim = rule.trim !== null ? rule.trim : this.trim;
-                value = _trim ? value.trim() : value;
-            }
-
-            // 6. choices
-            if (rule.choices && rule.choices.indexOf(value) === -1) {
-                parseData.error = {
-                    type: ErrorCode.CHOICES_ERROR,
-                    info: { key: key, value: value, choices: rule.choices }
-                };
-
-                return false;
-            }
-
-            if (rule.dset) {
-                delete result[key];
-                result[rule.dset] = value;
-            } else {
-                result[key] = value;
-            }
-            return true;
-        });
-
-        // 删除不在params中的参数
-        let _tmpData = {};
-        Object.keys(params).forEach((key) => {
-            key = params[key].dset || key;
-            _tmpData[key] = parseData.result[key];
-        });
-
-        parseData.result = _tmpData;
-        return parseData;
-    }
-
-    /**
-     * 根据错误信息生成错误响应数据
+     * Create reqparser instance.
      * 
-     * @param {ParamsResultError} error
-     * @returns
-     * 
-     * @memberOf Parser
+     * @param [globalOpts={}]   Global settings are overridden by zone settings
      */
-    private _getErrorMessage(error: ParamsResultError): ErrorData {
-        let message: string = ErrorMessages[error.type];
-        let resCode = error.type === ErrorCode.REQUEST_ERROR ? 400 : 403;
-
-        switch (error.type) {
-            case ErrorCode.REQUEST_ERROR:
-                error['message'] = <string>error.info;
-                break;
-            case ErrorCode.REQUIRED_ERROR:
-                error['message'] = `The "${error.info}" are required.`;
-                break;
-            case ErrorCode.CONVER_ERROR:
-                error['message'] =
-                    error.info['help'] === null ?
-                        `Can not convert "${error.info['key']}" to ${error.info['type']} type`
-                        : error.info['help'];
-                break;
-            case ErrorCode.CHOICES_ERROR:
-                error['message'] = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}]`;
-                break;
-            case ErrorCode.NULL_ERROR:
-                error['message'] = `The "${error.info}" does not allow null values`;
-                break;
-        };
-
-        return {
-            code: resCode,
-            message: message,
-            error: error
-        };
-    }
-
-    /**
-     * 绑定一次解析函数
-     * 
-     * 
-     * @memberOf Parser
-     */
-    _preParse() {
-        this.on('_endParse', (result: ParamResult) => {
-            let data = {};
-            if (result.error !== null) {
-                data['errorData'] = this._getErrorMessage(result.error);
-            } else {
-                data = result.result;
-            }
-            process.nextTick(() => {
-                this.emit('parseEnd', <ParamData>data);
-            });
-        });
-    }
-
-    /**
-     * Creates an instance of Parser.
-     * 
-     * 
-     * @param {(boolean | Function)} [trim=false]       是否自动清除参数两端的空白, 可以被参数的单独设置的属性覆盖
-     * @param {Function} [errCb]                        错误处理函数
-     * 
-     * @memberOf Parser
-     */
-    constructor(trim: boolean | Function = false, errCb?: Function) {
-        super();
-
-        this.params = {};
-
-        if (typeof (trim) !== 'function') {
-            this.trim = !!trim;
-            this.errCb = errCb || function () { };
-        } else {
-            this.trim = false;
-            this.errCb = <Function>trim;
-        }
-
-        this._preParse();
-    }
-
-    /**
-     * 添加参数信息
-     *
-     *
-     * @memberOf Parser
-     * @api
-     * @param name          参数名称
-     * @param options       参数配置  
-     */
-    addParam(name: string, options?: Param) {
-        let baseParam: Param = {
-            required: false,
-            ignore: false,
-            caseSensitive: false,
-            nullabled: true,
-            trim: null,
+    constructor(globalOpts: ParaOptions = {}) {
+        const baseOpts = {
             defaultVal: undefined,
-            dset: null,
-            type: null,
+            nullabled: true,
+            required: false,
+            type: 'any',
             choices: null,
-            help: null
+            caseSensitive: false,
+            trim: false,
+            coveration: null,
+            dset: null
         };
 
-        if (this.params[name]) {
-            throw new Error(`The parameter name: ${name} already exists`);
-        }
-
-        if (options) {
-            if (options.dset && this.params[options.dset]) {
-                throw new Error(`The parameter dtet: ${name} already exists`);
-            }
-
-            if (options.defaultVal !== undefined && options.required) {
-                console.warn('Setting both the required and defaultVal attributes invalidates the required attribute');
-            }
-        }
-
-        options = Object.assign({ name: name }, baseParam, options);
-        this.params[name] = options;
+        this.globalOpts = Object.assign({}, baseOpts, globalOpts)
     }
 
     /**
-     * 删除参数信息
+     * Add parameters.
      * 
-     * @param {((string | string[]))} name   参数名称或参数名称数组
-     * 
-     * @memberOf Parser
+     * @param name      parameter name
+     * @param [opts]    parameter options
      */
-    removeParams(name: (string | string[])) {
+    add(name: string, opts?: ParaOptions) {
+        if (this.params[name]) {
+            throw new Error(`The parameter name: ${name} already exists.`);
+        }
+
+        if (opts && opts.dset && this.params[opts.dset]) {
+            throw new Error(`The parameter dtet: ${name} already exists`);
+        }
+
+        opts = Object.assign({ name: name }, this.globalOpts, opts);
+        this.params[name] = opts;
+    }
+
+    /**
+     * Remove parameters.
+     * 
+     * @param name      parameter name or parameter name array.
+     */
+    remove(name: (string | string[])) {
         let names = [].concat(name);
 
         names.forEach(name => {
@@ -571,15 +190,140 @@ export class Parser extends EventEmitter {
     }
 
     /**
-     * 解析请求参数
      * 
-     * @param {IncomingMessage} req
      * 
-     * @memberOf Parser
-     * @api
+     * @param requestData 
      */
-    parse(req: IncomingMessage) {
-        this._parseRequest(req);
-        return this;
+    parse(requestData) {
+        return this.validation(requestData);
+    }
+
+    private validation(requestData) {
+        const params = this.params;
+        const paramsKeys = Object.keys(params);
+        let result = {};
+        let parsedData: ParsedData;
+        let error: ValidationError;
+
+        const flag = paramsKeys.every((key) => {
+            const rule = params[key];
+            let value = requestData(params);
+
+            // set default value
+            if (value === undefined && rule.defaultVal !== undefined) {
+                value = rule.defaultVal;
+            }
+
+            // check required
+            if (rule.required && value === undefined) {
+                error = {
+                    code: StatusCode.REQUIRED_ERROR,
+                    info: { key }
+                };
+                return false;
+            }
+
+            // check nullable
+            if (rule.nullabled && (value === '' || value === null)) {
+                error = {
+                    code: StatusCode.NULL_ERROR,
+                    info: { key }
+                };
+                return false;
+            }
+
+            // value coveration
+            if (rule.caseSensitive) {
+                if (typeof value === 'string') {
+                    value = value.toLocaleLowerCase();
+                }
+            }
+
+            if (rule.trim) {
+                if (typeof value === 'string') {
+                    value = value.trim();
+                }
+            }
+
+            if (rule.coveration) {
+                try {
+                    value = rule.coveration(value);
+                } catch (e) {
+                    error = {
+                        code: StatusCode.CONVER_ERROR,
+                        info: e.toString()
+                    }
+                    return false;
+                }
+            }
+
+            // check type
+            if (rule.type !== 'any' && isType(value, rule.type)) {
+                error = {
+                    code: StatusCode.TYPE_ERRPR,
+                    info: {
+                        key,
+                        value,
+                        type: rule.type
+                    }
+                };
+                return false;
+            }
+
+            // check choices
+            if (rule.choices &&
+                ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1)) {
+                error = {
+                    code: StatusCode.CHOICES_ERROR,
+                    info: {
+                        key,
+                        value,
+                        choices: rule.coveration
+                    }
+                };
+                return false;
+            }
+
+            return true;
+        });
+
+        if (!flag) {
+            parsedData['error'] = this.genErroeMsg(error);
+        } else {
+            parsedData['result'] = {};
+            paramsKeys.forEach(key => {
+                key = params[key].dset || key;
+                parsedData['result'][key] = result[key];
+            });
+        }
+
+        return parsedData;
+    }
+
+    private genErroeMsg(error: ValidationError) {
+        let message;
+
+        switch (error.code) {
+            case StatusCode.REQUIRED_ERROR:
+                message = `The "${error.info}" are required.`;
+                break;
+            case StatusCode.CONVER_ERROR:
+                message =
+                    error.info['help'] === null ?
+                        `Can not convert "${error.info['key']}" to ${error.info['type']} type.`
+                        : error.info['help'];
+                break;
+            case StatusCode.CHOICES_ERROR:
+                message = `The ${error.info['key']}: "${error.info['value']}" is not in [${error.info['choices'].toString()}].`;
+                break;
+            case StatusCode.NULL_ERROR:
+                message = `The "${error.info}" does not allow null values.`;
+                break;
+        }
+
+        return {
+            code: error.code,
+            message: message
+        }
     }
 }

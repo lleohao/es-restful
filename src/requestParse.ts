@@ -9,10 +9,10 @@ const parseBodyData = (type: string, body: string) => {
             data = parse(body);
             break;
         case 'application/json':
-            data = JSON.parse(body);
+            data = body === "" ? {} : JSON.parse(body);
             break;
         default:
-            throw new TypeError(`This request Content-Type: ${type} is not supported.`);
+            throw new TypeError(`This request "Content-Type": "${type}" is not supported.`);
     }
 
     return data;
@@ -29,7 +29,7 @@ export const requestParse = (req: IncomingMessage) => {
 
             reject(data);
         } else {
-            let contentType: string = req.headers['content-type'];
+            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/)[0];
             let body: Buffer[] = [];
 
             req.on('data', (chunk) => {

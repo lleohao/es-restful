@@ -59,12 +59,19 @@ export class Restful {
                     try {
                         const requestData = await requestParse(request);
                         const customParam: ReqParams = processFun['params'];
-                        const validationData: ParsedData = params.validation(customParam.getParams(), requestData);
 
-                        if (validationData.error) {
-                            this.finish(response, 400, validationData.error);
+                        if (customParam) {
+                            const validationData = params.validation(customParam.getParams(), requestData);
+
+                            if (validationData.error) {
+                                this.finish(response, 400, validationData.error);
+                            } else {
+                                processFun(urlPara, validationData.result, (data: any, code: number = 200) => {
+                                    this.finish(response, code, data);
+                                });
+                            }
                         } else {
-                            processFun(urlPara, validationData.result, (data: any, code: number = 200) => {
+                            processFun(urlPara, (data: any, code: number = 200) => {
                                 this.finish(response, code, data);
                             });
                         }

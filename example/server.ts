@@ -1,27 +1,14 @@
-import { Parser, Restful, Resource } from '../lib';
+import { ReqParams, Restful, Resource } from '../lib';
 
 const api = new Restful();
-
-interface TodoItem {
-    id: number;
-    title: string;
-    completed: boolean;
-}
-
-let TODOS: TodoItem[] = [{
+const TODOS = [{
     id: 0,
-    title: 'init todo',
+    title: 'todo1',
     completed: false
 }];
 let COUNT_ID = 0;
 
-
-/**
- * 
- * 
- * @param {number} todoId
- */
-let indexOf = function (todoId: number) {
+const indexOf = (todoId: number) => {
     let index, len = TODOS.length;
     for (index = 0; index < len; index++) {
         if (TODOS[index].id === todoId) {
@@ -36,98 +23,72 @@ let indexOf = function (todoId: number) {
     }
 };
 
-
 class Todo extends Resource {
-    get({ todoId }) {
+    get(render, { todoId }) {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
             return item.id === todoId;
-        });
+        })
 
         if (item.length === 0) {
-            return {
-                data: `The item for the id:${todoId} does not exist`,
-                code: 404
-            }
+            render(`The item for the id:${todoId} does not exist`, 404);
         } else {
-            return {
-                data: item[0]
-            }
+            render(item[0]);
         }
     }
 
-    delete({ todoId }) {
+    delete(render, { todoId }) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return {
-                data: `The item for the id:${todoId} does not exist`,
-                code: 404
-            }
+
+            render(`The item for the id:${todoId} does not exist`, 404);
         } else {
-            TODOS.splice(index, 1);
-            return {
-                data: 'success'
-            }
+            setTimeout(() => {
+                TODOS.splice(index, 1);
+                render('success');
+            }, 10)
         }
     }
 
-    put({ todoId }) {
+    put(render, { todoId }) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return {
-                data: `The item for the id:${todoId} does not exist`,
-                code: 404
-            }
+
+            render(`The item for the id:${todoId} does not exist`, 404)
         } else {
             TODOS[index].completed = !TODOS[index].completed;
-            return {
-                data: 'success'
-            }
+            render('success');
         }
     }
 }
 
+const postParams = new ReqParams();
+postParams.add('title', {
+    required: true,
+    type: 'string'
+});
 class TodoList extends Resource {
-    parser: Parser;
-
-    constructor() {
-        super();
-        this.parser = new Parser();
-        this.parser.addParam('title', {
-            required: true,
-            type: 'string'
-        });
+    get(render) {
+        render(TODOS);
     }
 
-    get() {
-        return {
-            data: TODOS
-        };
-    }
+    @Resource.addParser(postParams)
+    post(render, { title }) {
+        const item = {
+            id: ++COUNT_ID,
+            title: title,
+            completed: false
 
-    @Resource.async()
-    @Resource.addParser(this.parser)
-    post({ title }, _return) {
-        setTimeout(() => {
-            let item = {
-                id: ++COUNT_ID,
-                title: title,
-                completed: false
-
-            };
-            TODOS.push(item);
-            _return({
-                data: item
-            });
-        }, 1000)
+        }
+        TODOS.push(item);
+        render(item);
     }
 }
 
-api.addSource(new TodoList(), '/todos');
-api.addSource(new Todo(), '/todos/<todoId>');
-
-api.start({ debug: true });
+api.addSource(TodoList, '/todos')
+api.addSource(Todo, '/todos/<todoId>')
+api.start({ port: 5051 });

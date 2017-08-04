@@ -35,7 +35,7 @@ describe('Example tets', () => {
         };
 
         class Todo extends Resource {
-            get({ todoId }, render) {
+            get(render, { todoId }) {
                 todoId = parseInt(todoId);
                 let item = TODOS.filter((item) => {
                     return item.id === todoId;
@@ -48,7 +48,7 @@ describe('Example tets', () => {
                 }
             }
 
-            delete({ todoId }, render) {
+            delete(render, { todoId }) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
@@ -63,7 +63,7 @@ describe('Example tets', () => {
                 }
             }
 
-            put({ todoId }, render) {
+            put(render, { todoId }) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
@@ -83,12 +83,12 @@ describe('Example tets', () => {
             type: 'string'
         });
         class TodoList extends Resource {
-            get({ }, render) {
+            get(render) {
                 render(TODOS);
             }
 
             @Resource.addParser(postParams)
-            post({ }, { title }, render) {
+            post(render, { title }) {
                 const item = {
                     id: ++COUNT_ID,
                     title: title,

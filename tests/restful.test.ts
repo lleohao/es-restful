@@ -21,10 +21,8 @@ describe('Restful', () => {
 
         it('can throws error with add same path', () => {
             class Todos extends Resource {
-                get() {
-                    return {
-                        data: 'ok'
-                    };
+                get(render) {
+                    render('ok');
                 }
             }
             api.addSource(Todos, '/todos');
@@ -35,7 +33,7 @@ describe('Restful', () => {
 
         it('can start server', (done) => {
             class Todos extends Resource {
-                get({ }, render) {
+                get(render) {
                     render('ok');
                 }
             }
@@ -66,7 +64,7 @@ describe('Restful', () => {
             parser.add('title');
             class Demo extends Resource {
                 @Resource.addParser(parser)
-                post({ }, { title }, render) {
+                post(render, { title }) {
                     render(title);
                 }
             }
@@ -100,13 +98,13 @@ describe('Restful', () => {
         describe('addSourceMap', () => {
             let api: Restful;
             class Test1 extends Resource {
-                get({ }, render) {
+                get(render) {
                     render('restful request1');
                 }
             }
 
             class Test2 extends Resource {
-                get({ }, render) {
+                get(render) {
                     render('restful request2');
                 }
             }
@@ -173,7 +171,7 @@ describe('Restful', () => {
 
         it('access undefined method', (done) => {
             class Books extends Resource {
-                get({ id, page }, render) {
+                get(render, { id, page }) {
                     render({
                         id: id,
                         page: page
@@ -206,7 +204,7 @@ describe('Restful', () => {
 
         it('access undefined path', (done) => {
             class Books extends Resource {
-                get({ id, page }, render) {
+                get(render, { id, page }) {
                     render({
                         id: id,
                         page: page
@@ -245,7 +243,7 @@ describe('Restful', () => {
         let api;
 
         class Test extends Resource {
-            get({ }, render) {
+            get(render) {
                 render('restful request');
             }
         }

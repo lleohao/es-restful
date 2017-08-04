@@ -47,6 +47,12 @@ export class Restful {
     }
 
     private requestHandle(inside = true) {
+        const generateEnd = (response) => {
+            return (data: any, code: number = 200) => {
+                this.finish(response, code, data);
+            };
+        };
+
         return async (request: IncomingMessage, response: ServerResponse) => {
             const { urlPara, resource } = this.router.getResource(request.url);
 
@@ -59,26 +65,28 @@ export class Restful {
                     try {
                         const requestData = await requestParse(request);
                         const customParam: ReqParams = processFun['params'];
+                        const { error, result } = customParam ? params.validation(customParam.getParams(), requestData) : {
+                            error: null,
+                            result: null
+                        };
 
-                        if (customParam) {
-                            const validationData = params.validation(customParam.getParams(), requestData);
-
-                            if (validationData.error) {
-                                this.finish(response, 400, validationData.error);
-                            } else {
-                                processFun(urlPara, validationData.result, (data: any, code: number = 200) => {
-                                    this.finish(response, code, data);
-                                });
-                            }
-                        } else {
-                            processFun(urlPara, (data: any, code: number = 200) => {
-                                this.finish(response, code, data);
-                            });
+                        if (error) {
+                            this.finish(response, 400, error);
+                            return;
                         }
+
+                        const callArgument: any[] = [generateEnd(response)];
+                        if (Object.keys(urlPara).length > 0) {
+                            callArgument.push(urlPara);
+                        }
+                        if (result !== null) {
+                            callArgument.push(result);
+                        }
+
+                        processFun.apply(null, callArgument);
                     } catch (err) {
                         this.finish(response, 400, `Request parse throws a error: ${err.toString()}.`);
                     }
-
                 } else {
                     this.finish(response, 404, `This path: "${request.url}", method: "${request.method}" is undefined.`)
                 }

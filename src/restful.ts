@@ -1,280 +1,137 @@
 import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
-import { parse } from 'url';
 
-import { Resource, ResourceResult } from './resource';
-import { ErrorData } from './parser';
-import { getRuleReg, arrHas, throwError } from './utils';
+import { Resource } from './resource';
+import { requestParse } from './requestParse';
+import { Router } from './router';
+import { throwError } from './utils';
+import params, { ReqParams, ParsedData } from './params';
 
-export interface CunstomResource extends Resource {
+
+export interface RestfulOption {
+    debug?: boolean;
+    port?: number;
+    hostname?: string;
 }
 
-/**
- * 资源类型
- * 
- * @interface ApiResource
- */
-interface ApiResource {
-    /**
-     * 资源对应路径
-     * 
-     * @type {string}
-     * @memberOf ApiResource
-     */
-    path: string;
-    /**
-     * 资源对应路径的解析表达式
-     * 
-     * @type {RegExp}
-     * @memberOf ApiResource
-     */
-    rule: RegExp;
-    /**
-     * 解析返回的参数信息
-     * 
-     * @type {string[]}
-     * @memberOf ApiResource
-     */
-    params: string[];
-    /**
-     * 对应Resource类
-     * 
-     * @type {Resource}
-     * @memberOf ApiResource
-     */
-    resource: CunstomResource;
-}
+const defaultOptions = {
+    port: 5050,
+    hostname: 'localhost',
+    debug: false
+};
 
-/**
- * Reousrce map
- * 
- * @export
- * @interface ResourceMap
- */
-export interface ResourceMap {
-    [path: string]: CunstomResource
-}
-
-/**
- * 启动配置项
- * 
- * @export
- * @interface StartOption
- */
-export interface StartOption {
-    /**
-     * open debug
-     * 
-     * @type {boolean}
-     * @memberOf StartOption
-     */
-    debug?: boolean
-}
-
-
-/**
- * Restful Server class
- * 
- * @export
- * @class Restful
- */
 export class Restful {
-    private resourceList: ApiResource[];
-    private port: number;
-    private hostname: string;
+    private options: RestfulOption;
     private server: Server;
+    private router: Router;
 
-    /**
-     * Creates an instance of Restful.
-     * 
-     * @param {number} [port=5050]
-     * @param {string} [hostname="localhost"]
-     * 
-     * @memberOf Restful
-     */
-    constructor(port: number = 5050, hostname: string = 'localhost') {
-        this.port = port;
-        this.hostname = hostname;
-        this.resourceList = [];
+    constructor() {
+        this.options = Object.assign({}, defaultOptions);
+        this.router = new Router();
     }
 
-    /**
-     * 响应错误处理
-     * 
-     * @param {ServerResponse} res
-     * @param {ErrorData} errorData          错误信息
-     * 
-     * @memberOf Restful
-     */
-    private _handleError(res: ServerResponse, errorData: ErrorData) {
-        res.writeHead(errorData.code, { 'Content-type': 'application/json' });
-        res.end(JSON.stringify(errorData));
+    private finish(res: ServerResponse, code: number, data: object | string) {
+        const responesData = {
+            code: code
+        };
+        if (code >= 400) {
+            responesData['error'] = (typeof data === 'string') ? {
+                message: data
+            } : data;
+        } else {
+            responesData['result'] = data;
+        }
+
+        res.writeHead(code, { 'Content-Type': 'Application/json' });
+        res.write(JSON.stringify(responesData));
+        res.end();
     }
 
-    /**
-     * 响应正确数据
-     * 
-     * @param {ServerResponse}  res
-     * @param {any}             data                 需要返回的数据
-     * @param {number}          code                 http code
-     * 
-     * @memberOf Restful
-     */
-    private _handleSuccess(res: ServerResponse, data: any, code: number = 200) {
-        data = {
-            code: code,
-            message: 'success',
-            data: data
+    private requestHandle(inside = true) {
+        const generateEnd = (response) => {
+            return (data: any, code: number = 200) => {
+                this.finish(response, code, data);
+            };
         };
 
-        res.writeHead(code, { 'Content-type': 'application/json' });
-        res.end(JSON.stringify(data));
-    }
+        return async (request: IncomingMessage, response: ServerResponse) => {
+            const { urlPara, resource } = this.router.getResource(request.url);
 
-    /**
-     * route
-     * 
-     * @param {IncomingMessage} req
-     * @returns
-     * 
-     * @memberOf Restful
-     */
-    private _route(req: IncomingMessage) {
-        let resourceList = this.resourceList;
-        let pathname = parse(req.url).pathname;
+            if (inside && resource === null) {
+                this.finish(response, 404, `This path: "${request.url}" does not have a resource.`);
+            } else {
+                const processFun = resource.getMethodProcess(request.method);
 
-        for (let i = 0, len = resourceList.length; i < len; i++) {
-            let resource = resourceList[i];
-            let rule = resource.rule;
-            rule.lastIndex = 0;
+                if (processFun) {
+                    try {
+                        const requestData = await requestParse(request);
+                        const customParam: ReqParams = processFun['params'];
+                        const { error, result } = customParam ? params.validation(customParam.getParams(), requestData) : {
+                            error: null,
+                            result: null
+                        };
 
-            let _params: RegExpExecArray = rule.exec(pathname);
-            let params = {};
+                        if (error) {
+                            this.finish(response, 400, error);
+                            return;
+                        }
 
-            if (_params !== null) {
-                resource.params.forEach((key, index) => {
-                    params[key] = _params[index + 1]
-                })
-                return {
-                    params: params,
-                    resource: resource.resource
+                        const callArgument: any[] = [generateEnd(response)];
+                        if (Object.keys(urlPara).length > 0) {
+                            callArgument.push(urlPara);
+                        }
+                        if (result !== null) {
+                            callArgument.push(result);
+                        }
+
+                        processFun.apply(null, callArgument);
+                    } catch (err) {
+                        this.finish(response, 400, `Request parse throws a error: ${err.toString()}.`);
+                    }
+                } else {
+                    this.finish(response, 404, `This path: "${request.url}", method: "${request.method}" is undefined.`)
                 }
             }
         }
-
-        return {
-            params: null,
-            resource: null
-        };
     }
 
-    /**
-     * add Resource
-     * 
-     * @param {any} resource
-     * @param {string} path
-     * 
-     * @memberOf Restful
-     */
-    addSource(resource: CunstomResource, path: string) {
-        let resourceList = this.resourceList;
-
-        if (arrHas(resourceList, 'path', path)) {
-            throwError(`The path:${path} already exists.`)
-        }
-        let { rule, params } = getRuleReg(path);
-
-        resourceList.push({
-            path: path,
-            rule: rule,
-            params: params,
-            resource: resource
-        });
+    public add<T extends Resource>(Resource: { new(): T }, path: string) {
+        this.addSource(Resource, path);
     }
 
+    public addSource<T extends Resource>(Resource: { new(): T }, path: string) {
+        this.router.addRoute(path, Resource);
+    }
 
-    /**
-     * 批量添加 Resource
-     * 
-     * @param  map
-     * 
-     * @memberOf Restful
-     */
-    addSourceMap(resourceMap: ResourceMap) {
+    public addSourceMap<T extends Resource>(resourceMap: { [path: string]: { new(): T } }) {
         for (let path in resourceMap) {
             this.addSource(resourceMap[path], path);
         }
     }
 
-    /**
-     * Start server
-     * 
-     * 
-     * @memberOf Api
-     */
-    start(options: StartOption = { debug: false }) {
-        if (this.resourceList.length === 0) {
-            throwError('There can not be any proxied resources');
+    public start(options: RestfulOption = {}) {
+        this.options = Object.assign({}, this.options, options);
+
+        if (this.router.isEmpty()) {
+            throwError('There can not be any proxied resources.');
         }
         this.server = createServer();
+        this.server.on('request', this.requestHandle(true));
 
-        this.server.on('request', (req, res) => {
-            let { params, resource } = this._route(req);
-
-            // 存在处理当前数据的 resource
-            if (resource === null) {
-                this._handleError(res, { code: 404, message: 'This url does not have a corresponding resource' });
-            } else {
-                resource._getResponse(req, params)
-                    .then(({ data, code }: ResourceResult) => {
-                        this._handleSuccess(res, data, code);
-                    })
-                    .catch((errorData: ErrorData) => {
-                        this._handleError(res, errorData)
-                    });
-            }
-        });
-
+        let { port, hostname } = this.options;
+        this.server.listen(port, hostname);
         if (options.debug) {
-            console.log(`The server is running ${this.hostname}:${this.port}`);
+            console.log(`The server is running ${hostname}:${port}`);
         }
-
-        this.server.listen(this.port, this.hostname);
     }
 
-    /**
-     * 绑定外部服务器
-     * 
-     * @param {Server} server
-     * 
-     * @memberOf Restful
-     * @api
-     */
-    bindServer(server: Server) {
-        server.on('request', (req, res) => {
-            let { params, resource } = this._route(req);
-
-            // 存在处理当前数据的 resource
-            if (resource !== null) {
-                resource._getResponse(req, params)
-                    .then(({ data, code }: ResourceResult) => {
-                        this._handleSuccess(res, data, code);
-                    })
-                    .catch((errorData: ErrorData) => {
-                        this._handleError(res, errorData)
-                    });
-            }
-        })
+    public bindServer(server: Server) {
+        server.on('request', this.requestHandle(false));
     }
 
-    /**
-     * Stop server
-     * 
-     * 
-     * @memberOf Restful
-     */
-    stop() {
+    public stop() {
         if (this.server !== undefined) {
             this.server.close();
         }
     }
 }
+

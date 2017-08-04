@@ -1,49 +1,44 @@
 import { get, request, createServer, Server } from 'http';
-import * as should from 'should';
-import { Restful, Parser, Resource } from '../lib';
+import { Restful, ReqParams, Resource } from '../lib';
+import should = require('should');
 
 
-describe('Restful tets', () => {
-    describe('API test', () => {
+describe('Restful', () => {
+    describe('API', () => {
         let api: Restful;
         beforeEach(() => {
-            api = new Restful(5051);
+            api = new Restful();
+        });
+        afterEach(() => {
+            api.stop();
         })
 
-        it('返回restful实例', () => {
-            should(api).instanceOf(Restful);
-        })
-
-        it('不添加 resource 抛出 RestfulError', () => {
+        it('can throw error with not add resource', () => {
             should.throws(() => {
-                api.start()
-            });
-        })
+                api.start({ port: 5051 })
+            }, /There can not be any proxied resources\./);
+        });
 
-        it('添加重复路径 resource 抛出 RestfulError', () => {
+        it('can throws error with add same path', () => {
             class Todos extends Resource {
-                get() {
-                    return {
-                        data: 'ok'
-                    };
+                get(render) {
+                    render('ok');
                 }
             }
-            api.addSource(new Todos(), '/todos');
+            api.addSource(Todos, '/todos');
             should.throws(() => {
-                api.addSource(new Todos(), '/todos');
+                api.addSource(Todos, '/todos');
             })
-        })
+        });
 
-        it('正确开启服务器', (done) => {
+        it('can start server', (done) => {
             class Todos extends Resource {
-                get() {
-                    return {
-                        data: 'ok'
-                    };
+                get(render) {
+                    render('ok');
                 }
             }
-            api.addSource(new Todos(), '/todos');
-            api.start();
+            api.addSource(Todos, '/todos');
+            api.start({ port: 5051 });
 
             get({
                 hostname: 'localhost',
@@ -57,26 +52,24 @@ describe('Restful tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        message: 'success',
-                        data: 'ok'
+                        result: 'ok'
                     });
                     done();
-                    api.stop();
-                })
-            })
-        })
+                });
+            });
+        });
 
-        it('正确添加 parser 实例', (done) => {
-            let parser = new Parser();
-            parser.addParam('title');
+        it('can add reqParams', (done) => {
+            let parser = new ReqParams();
+            parser.add('title');
             class Demo extends Resource {
                 @Resource.addParser(parser)
-                post({ title }) {
-                    return { data: title }
+                post(render, { title }) {
+                    render(title);
                 }
             }
-            api.addSource(new Demo(), '/demo');
-            api.start();
+            api.addSource(Demo, '/demo');
+            api.start({ port: 5051 });
             let req = request({
                 hostname: 'localhost',
                 port: 5051,
@@ -93,10 +86,8 @@ describe('Restful tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        message: 'success',
-                        data: 'demo'
+                        result: 'demo'
                     });
-                    api.stop();
                     done();
                 })
             });
@@ -104,91 +95,92 @@ describe('Restful tets', () => {
             req.end();
         });
 
-        it('正确解析路由参数', (done) => {
-            class Books extends Resource {
-                get({ id, page }) {
-                    return {
-                        data: {
-                            id: id,
-                            page: page
-                        }
-                    }
+        describe('addSourceMap', () => {
+            let api: Restful;
+            class Test1 extends Resource {
+                get(render) {
+                    render('restful request1');
                 }
             }
-            api.addSource(new Books(), '/books/<id>/<page>');
-            api.start();
-            get({
-                hostname: 'localhost',
-                port: 5051,
-                path: '/books/1/25'
-            }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk)
-                }).on('end', () => {
-                    data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        message: 'success',
-                        data: {
-                            id: '1',
-                            page: '25'
-                        }
-                    });
-                    api.stop();
-                    done();
+
+            class Test2 extends Resource {
+                get(render) {
+                    render('restful request2');
+                }
+            }
+
+            before(() => {
+                api = new Restful();
+                api.addSourceMap({
+                    '/test1': Test1,
+                    '/test2': Test2,
+                })
+                api.start({ port: 5051 });
+            });
+
+            after(() => {
+                api.stop();
+            });
+
+            it('can correct response path1', (done) => {
+                get({
+                    port: 5051,
+                    path: '/test1'
+                }, (res) => {
+                    let data = [];
+                    res.on('data', (chunk) => {
+                        data.push(chunk);
+                    }).on('end', () => {
+                        should(JSON.parse(data.toString())).be.eql({
+                            code: 200,
+                            result: 'restful request1',
+                        })
+                        done();
+                    })
+                })
+            })
+
+            it('can correct response path2', (done) => {
+                get({
+                    port: 5051,
+                    path: '/test2'
+                }, (res) => {
+                    let data = [];
+                    res.on('data', (chunk) => {
+                        data.push(chunk);
+                    }).on('end', () => {
+                        should(JSON.parse(data.toString())).be.eql({
+                            code: 200,
+                            result: 'restful request2'
+                        })
+                        done();
+                    })
                 })
             })
         })
+    });
 
-        it('错误路径测试', (done) => {
+    describe('access undefind resource', () => {
+        let api: Restful;
+        beforeEach(() => {
+            api = new Restful();
+        });
+        afterEach(() => {
+            api.stop();
+        });
+
+        it('access undefined method', (done) => {
             class Books extends Resource {
-                get({ id, page }) {
-                    return {
-                        data: {
-                            id: id,
-                            page: page
-                        }
-                    }
-                }
-            }
-            api.addSource(new Books(), '/books/<id>/<page>');
-            api.start();
-            get({
-                hostname: 'localhost',
-                port: 5051,
-                path: '/book'
-            }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk)
-                }).on('end', () => {
-                    data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 404,
-                        message: 'This url does not have a corresponding resource'
+                get(render, { id, page }) {
+                    render({
+                        id: id,
+                        page: page
                     });
-                    api.stop();
-                    done();
-                })
-            })
-        })
-
-        it('访问未定义方法测试', (done) => {
-            class Books extends Resource {
-                get({ id, page }) {
-                    return {
-                        data: {
-                            id: id,
-                            page: page
-                        }
-                    }
                 }
             }
-            api.addSource(new Books(), '/books/<id>/<page>');
-            api.start();
+            api.addSource(Books, '/books/<id>/<page>');
+            api.start({ port: 5051 });
             let req = request({
-                hostname: 'localhost',
                 port: 5051,
                 path: '/books/1/25',
                 method: 'post'
@@ -199,43 +191,32 @@ describe('Restful tets', () => {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        code: 400,
+                        code: 404,
                         error: {
-                            message: 'post method is undefined.'
+                            message: 'This path: "/books/1/25", method: "POST" is undefined.'
                         }
                     });
-                    api.stop();
                     done();
                 })
             })
             req.end();
-        })
+        });
 
-        it('错误请求方式测试', (done) => {
-            let parser = new Parser();
-            parser.addParam('id');
-            parser.addParam('page');
+        it('access undefined path', (done) => {
             class Books extends Resource {
-                @Resource.addParser(parser)
-                post({ id, page }) {
-                    return {
-                        data: {
-                            id: id,
-                            page: page
-                        }
-                    }
+                get(render, { id, page }) {
+                    render({
+                        id: id,
+                        page: page
+                    });
                 }
             }
-            api.addSource(new Books(), '/books');
-            api.start();
-            let req = request({
-                hostname: 'localhost',
+            api.addSource(Books, '/books/<id>/<page>');
+            api.start({ port: 5051 });
+
+            let req = get({
                 port: 5051,
-                path: '/books',
-                method: 'post',
-                headers: {
-                    'Content-Type': 'text/xml'
-                }
+                path: '/book',
             }, (res) => {
                 let data = [];
                 res.on('data', (chunk) => {
@@ -243,27 +224,27 @@ describe('Restful tets', () => {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        code: 403,
-                        error: { error: { type: 1, info: 'This request method is not supported' } }
-                    })
-                    api.stop();
+                        code: 404,
+                        error: {
+                            message: 'This path: "/book" does not have a resource.'
+                        }
+                    });
                     done();
                 })
-            })
-            req.write(JSON.stringify({ id: 1, page: 22 }))
-            req.end();
-        })
-    })
+            });
 
-    describe('bindServer test', () => {
+            req.end();
+        });
+
+    });
+
+    describe('bind server', () => {
         let server: Server;
         let api;
 
         class Test extends Resource {
-            get() {
-                return {
-                    data: 'restful request'
-                };
+            get(render) {
+                render('restful request');
             }
         }
 
@@ -274,13 +255,13 @@ describe('Restful tets', () => {
             api.bindServer(server);
 
             server.listen(5052);
-        })
+        });
 
         after(() => {
             server.close();
-        })
+        });
 
-        it('正确响应API请求', (done) => {
+        it('can correct response', (done) => {
             get({
                 port: 5052,
                 path: '/api'
@@ -291,83 +272,11 @@ describe('Restful tets', () => {
                 }).on('end', () => {
                     should(JSON.parse(data.toString())).be.eql({
                         code: 200,
-                        data: 'restful request',
-                        message: 'success'
+                        result: 'restful request'
                     })
                     done();
                 })
             })
         })
-    })
-
-    describe('addSourceMap test', () => {
-        let api: Restful;
-
-        class Test1 extends Resource {
-            get() {
-                return {
-                    data: 'restful request1'
-                };
-            }
-        }
-
-        class Test2 extends Resource {
-            get() {
-                return {
-                    data: 'restful request2'
-                };
-            }
-        }
-
-        before(() => {
-            api = new Restful();
-            api.addSourceMap({
-                '/test1': new Test1(),
-                '/test2': new Test2(),
-            })
-            api.start();
-        })
-
-        after(() => {
-            api.stop();
-        })
-
-        it('正确响应test1', (done) => {
-            get({
-                port: 5050,
-                path: '/test1'
-            }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk);
-                }).on('end', () => {
-                    should(JSON.parse(data.toString())).be.eql({
-                        code: 200,
-                        data: 'restful request1',
-                        message: 'success'
-                    })
-                    done();
-                })
-            })
-        })
-
-        it('正确响应test2', (done) => {
-            get({
-                port: 5050,
-                path: '/test2'
-            }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk);
-                }).on('end', () => {
-                    should(JSON.parse(data.toString())).be.eql({
-                        code: 200,
-                        data: 'restful request2',
-                        message: 'success'
-                    })
-                    done();
-                })
-            })
-        })
-    })
-}) 
+    });
+});

@@ -1,39 +1,42 @@
 import * as should from 'should';
-import { arrHas, getRuleReg } from '../lib/utils';
-
+import { isType } from '../lib/utils';
 
 describe('utils.ts test', () => {
-    describe('arrHas test', () => {
-        let arr = [{
-            name: 'ok'
-        }];
+    const cases = [
+        { v: 'string', type: 'string', e: true },
+        { v: 1, type: 'string', e: false },
+        { v: true, type: 'string', e: false },
+        { v: [1, 2, 3], type: 'string', e: false },
+        { v: { a: '1' }, type: 'string', e: false },
 
-        it('should return true', () => {
-            should(arrHas(arr, 'name', 'ok')).be.eql(true);
+        { v: 'string', type: 'number', e: false },
+        { v: 1, type: 'number', e: true },
+        { v: true, type: 'number', e: false },
+        { v: [1, 2, 3], type: 'number', e: false },
+        { v: { a: '1' }, type: 'number', e: false },
+
+        { v: 'string', type: 'boolean', e: false },
+        { v: 1, type: 'boolean', e: false },
+        { v: true, type: 'boolean', e: true },
+        { v: [1, 2, 3], type: 'boolean', e: false },
+        { v: { a: '1' }, type: 'boolean', e: false },
+
+        { v: 'string', type: 'array', e: false },
+        { v: 1, type: 'array', e: false },
+        { v: true, type: 'array', e: false },
+        { v: [1, 2, 3], type: 'array', e: true },
+        { v: { a: '1' }, type: 'array', e: false },
+
+        { v: 'string', type: 'object', e: false },
+        { v: 1, type: 'object', e: false },
+        { v: true, type: 'object', e: false },
+        { v: [1, 2, 3], type: 'object', e: false },
+        { v: { a: '1' }, type: 'object', e: true }
+    ];
+
+    cases.forEach((_case) => {
+        it(_case.v + ': ' + _case.type, () => {
+            should(isType(_case.v, _case.type)).be.eql(_case.e);
         });
-        it('should return false', () => {
-            should(arrHas(arr, 'name', 'false')).be.eql(false);
-        });
-    });
-
-    describe('getRuleReg test: 包含参数', () => {
-        let path = '/books/<name>/page/<page>';
-        let { rule, params } = getRuleReg(path);
-
-        it('rule test', () => {
-            should(rule).be.eql(/^\/books\/(\w+)\/page\/(\w+)$/g);
-        })
-        it('params test', () => {
-            should(params).be.eql(['name', 'page']);
-        })
-    });
-
-    describe('getRuleReg test: 不包含参数', () => {
-        let path = '/books';
-        let { rule } = getRuleReg(path);
-
-        it('rule test', () => {
-            should(rule).be.eql(/^\/books$/g);
-        })
     });
 });

@@ -1,6 +1,6 @@
 import { get, request } from 'http';
-import * as should from 'should';
-import { Restful, Parser, Resource } from '../lib';
+import { Restful, ReqParams, Resource } from '../lib';
+import should = require('should');
 
 interface TodoItem {
     id: number,
@@ -9,23 +9,17 @@ interface TodoItem {
 }
 
 describe('Example tets', () => {
-    const api = new Restful(5051);
+    const api = new Restful();
 
     before(() => {
-        let TODOS: TodoItem[] = [{
+        const TODOS: TodoItem[] = [{
             id: 0,
             title: 'todo1',
             completed: false
         }];
         let COUNT_ID = 0;
 
-        let parser = new Parser();
-        parser.addParam('title', {
-            required: true,
-            type: 'string'
-        })
-
-        let indexOf = function (todoId: number) {
+        const indexOf = (todoId: number) => {
             let index, len = TODOS.length;
             for (index = 0; index < len; index++) {
                 if (TODOS[index].id === todoId) {
@@ -38,94 +32,77 @@ describe('Example tets', () => {
             } else {
                 return index;
             }
-        }
-
+        };
 
         class Todo extends Resource {
-            get({ todoId }) {
+            get(render, { todoId }) {
                 todoId = parseInt(todoId);
                 let item = TODOS.filter((item) => {
                     return item.id === todoId;
                 })
 
                 if (item.length === 0) {
-                    return {
-                        data: `The item for the id:${todoId} does not exist`,
-                        code: 404
-                    }
+                    render(`The item for the id:${todoId} does not exist`, 404);
                 } else {
-                    return {
-                        data: item[0]
-                    };
+                    render(item[0]);
                 }
             }
 
-            @Resource.async()
-            delete({ todoId }, _return) {
+            delete(render, { todoId }) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
                 if (index === -1) {
-                    _return({
-                        data: `The item for the id:${todoId} does not exist`,
-                        code: 404
-                    });
+
+                    render(`The item for the id:${todoId} does not exist`, 404);
                 } else {
                     setTimeout(() => {
                         TODOS.splice(index, 1);
-                        _return({
-                            data: 'success'
-                        });
+                        render('success');
                     }, 10)
                 }
             }
 
-            put({ todoId }) {
+            put(render, { todoId }) {
                 todoId = parseInt(todoId);
                 let index = indexOf(todoId);
 
                 if (index === -1) {
-                    return {
-                        data: `The item for the id:${todoId} does not exist`,
-                        code: 404
-                    }
+
+                    render(`The item for the id:${todoId} does not exist`, 404)
                 } else {
                     TODOS[index].completed = !TODOS[index].completed;
-                    return {
-                        data: 'success'
-                    };
+                    render('success');
                 }
             }
         }
 
+        const postParams = new ReqParams();
+        postParams.add('title', {
+            required: true,
+            type: 'string'
+        });
         class TodoList extends Resource {
-            get() {
-                return {
-                    data: TODOS
-                };
+            get(render) {
+                render(TODOS);
             }
 
-            @Resource.async()
-            @Resource.addParser(parser)
-            post({ title }, _return) {
-                setTimeout(() => {
-                    let item = {
-                        id: ++COUNT_ID,
-                        title: title,
-                        completed: false
+            @Resource.addParser(postParams)
+            post(render, { title }) {
+                const item = {
+                    id: ++COUNT_ID,
+                    title: title,
+                    completed: false
 
-                    }
-                    TODOS.push(item);
-                    _return({
-                        data: item
-                    });
-                }, 10)
+                }
+                TODOS.push(item);
+                render(item);
             }
         }
 
-        api.addSource(new TodoList(), '/todos')
-        api.addSource(new Todo(), '/todos/<todoId>')
-        api.start();
+        api.addSource(TodoList, '/todos')
+        api.addSource(Todo, '/todos/<todoId>')
+        api.start({ port: 5051 });
     })
 
     after(() => {
@@ -148,14 +125,13 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        'code': 200,
-                        'message': 'success',
-                        'data': [{
+                        code: 200,
+                        result: [{
                             'id': 0,
                             'title': 'todo1',
                             'completed': false
                         }]
-                    })
+                    });
                     done();
                 })
             })
@@ -171,14 +147,13 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        'code': 200,
-                        'message': 'success',
-                        'data': {
+                        code: 200,
+                        result: {
                             'id': 1,
                             'title': 'add todo',
                             'completed': false
                         }
-                    })
+                    });
                     done();
                 })
             });
@@ -209,14 +184,13 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        'code': 200,
-                        'message': 'success',
-                        'data': {
+                        code: 200,
+                        result: {
                             'id': 1,
                             'title': 'add todo',
                             'completed': false
                         }
-                    })
+                    });
                     done();
                 })
             })
@@ -225,7 +199,8 @@ describe('Example tets', () => {
         it('修改 指定id状态', (done) => {
             let req = request(Object.assign({
                 path: '/todos/1',
-                method: 'put'
+                method: 'put',
+                header: { 'Content-Type': 'Application/json' }
             }, reqOpt), (res) => {
                 let data = [];
                 res.on('data', (chunk) => {
@@ -234,9 +209,8 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        'code': 200,
-                        'message': 'success',
-                        'data': 'success'
+                        code: 200,
+                        result: 'success'
                     })
                     done();
                 })
@@ -248,7 +222,8 @@ describe('Example tets', () => {
         it('删除 指定id', (done) => {
             let req = request(Object.assign({
                 path: '/todos/1',
-                method: 'delete'
+                method: 'delete',
+                header: { 'Content-Type': 'Application/json' }
             }, reqOpt), (res) => {
                 let data = [];
                 res.on('data', (chunk) => {
@@ -257,9 +232,8 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        'code': 200,
-                        'message': 'success',
-                        'data': 'success'
+                        code: 200,
+                        result: 'success'
                     })
                     done();
                 })
@@ -279,9 +253,8 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        'code': 200,
-                        'message': 'success',
-                        'data': [{
+                        code: 200,
+                        result: [{
                             'id': 0,
                             'title': 'todo1',
                             'completed': false

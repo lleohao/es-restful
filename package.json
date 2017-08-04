@@ -1,6 +1,6 @@
 {
   "name": "es-restful",
-  "version": "1.2.2",
+  "version": "2.0.0",
   "description": "easy & simple nodejs restful server framework",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

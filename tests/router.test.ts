@@ -3,7 +3,7 @@ import { Resource } from '../lib/resource';
 import should = require('should');
 
 const nullResult = {
-    params: null,
+    urlPara: null,
     resource: null
 };
 const cases = [

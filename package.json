@@ -11,6 +11,7 @@
     "prepublish": "npm run build",
     "test": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./tests/**/**/*.ts",
     "cover": "rimraf coverage && ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- ./tests/**/**/*.ts --report lcovonly --compilers ts:ts-node/register",
+    "coveralls": "rimraf coverage && ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- ./tests/**/**/*.ts --report lcovonly --compilers ts:ts-node/register && cat ./coverage/lcov.info | coveralls",
     "report": "rimraf mochawesome-report && ./node_modules/.bin/mocha -r ./node_modules/ts-node/register ./tests/**/**/*.ts --recursive --reporter mochawesome",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },

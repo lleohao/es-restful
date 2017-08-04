@@ -5,4 +5,4 @@ before_script:
     - npm install -g mocha should ts-node istanbul coveralls
 script: npm test
 after_success:
-    - npm run coveralls
+    - npm run cover

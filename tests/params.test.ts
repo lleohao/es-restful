@@ -1,14 +1,14 @@
 import should = require('should');
-import p from '../lib/parser';
-import { ReqParse, StatusCode } from '../lib';
+import p from '../lib/params';
+import { ReqParams, StatusCode } from '../lib';
 
 
 describe('ReqParse', () => {
     describe('API', () => {
-        let parser: ReqParse;
+        let parser: ReqParams;
 
         beforeEach(() => {
-            parser = new ReqParse();
+            parser = new ReqParams();
         });
 
         it('add test', () => {
@@ -84,10 +84,10 @@ describe('ReqParse', () => {
     });
 
     describe('Validation', () => {
-        let parser: ReqParse;
+        let parser: ReqParams;
 
         beforeEach(() => {
-            parser = new ReqParse();
+            parser = new ReqParams();
         });
 
         const cases = [

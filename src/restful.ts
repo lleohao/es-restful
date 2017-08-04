@@ -51,7 +51,7 @@ export class Restful {
             const { urlPara, resource } = this.router.getResource(request.url);
 
             if (inside && resource === null) {
-                this.finish(response, 404, `This ${request.url} does not have a resource.`);
+                this.finish(response, 404, `This path: "${request.url}" does not have a resource.`);
             } else {
                 const processFun = resource.getMethodProcess(request.method);
 
@@ -80,7 +80,7 @@ export class Restful {
                     }
 
                 } else {
-                    this.finish(response, 404, `This ${request.url}, method: "${request.method}" is undefined.`)
+                    this.finish(response, 404, `This path: "${request.url}", method: "${request.method}" is undefined.`)
                 }
             }
         }
@@ -104,7 +104,7 @@ export class Restful {
         this.options = Object.assign({}, this.options, options);
 
         if (this.router.isEmpty()) {
-            throwError('There can not be any proxied resources');
+            throwError('There can not be any proxied resources.');
         }
         this.server = createServer();
         this.server.on('request', this.requestHandle(true));

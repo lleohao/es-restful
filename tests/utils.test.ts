@@ -1,7 +1,6 @@
 import * as should from 'should';
 import { isType } from '../lib/utils';
 
-
 describe('utils.ts test', () => {
     const cases = [
         { v: 'string', type: 'string', e: true },

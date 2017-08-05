@@ -1,9 +1,12 @@
 {
   "name": "es-restful",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "easy & simple nodejs restful server framework",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "start": "nodemon --watch 'example/**/*.ts' --exec 'ts-node' example/server.ts",
     "build": "rimraf lib/* && tsc -p ./src",

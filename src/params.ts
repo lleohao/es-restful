@@ -1,4 +1,4 @@
-import { isType } from './utils';
+import { isType, createError } from './utils';
 
 /**
  * es-resuful error code 
@@ -101,27 +101,7 @@ export type ChoicesFun = (input: any) => boolean;
  * @interface ParsedData
  */
 export interface ParsedData {
-    /**
-     * The error in parsing
-     * 
-     */
-    error?: {
-        /**
-         * Error code
-         * 
-         */
-        code: StatusCode;
-        /**
-         * Error message
-         * 
-         */
-        message: string;
-    };
-    /**
-     * The result of parsing
-     * 
-     */
-    result?: { [key: string]: any };
+    [key: string]: any;
 }
 
 interface ValidationError {
@@ -137,7 +117,6 @@ interface ValidationError {
 const validation = (params: { [name: string]: ParaOptions }, requestData: { [key: string]: any }) => {
     const paramsKeys = Object.keys(params);
     let result = {};
-    let parsedData: ParsedData = {};
     let error: ValidationError;
 
     const flag = paramsKeys.every((key) => {
@@ -192,7 +171,7 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
                     info: {
                         key,
                         value,
-                        others: e.toString()
+                        others: e.message
                     }
                 }
                 return false;
@@ -221,7 +200,7 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
                     info: {
                         key,
                         value,
-                        others: e.toString()
+                        others: e.message
                     }
                 }
                 return false;
@@ -236,12 +215,16 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
     });
 
     if (!flag) {
-        parsedData['error'] = genErrorMsg(error);
-    } else {
-        parsedData['result'] = result;
+        const { code, message } = genErrorMsg(error);
+        throw createError({
+            type: 'params',
+            code,
+            message,
+            statusCode: 400
+        }, ReqParams);
     }
 
-    return parsedData;
+    return result;
 };
 
 const genErrorMsg = (error: ValidationError) => {
@@ -250,15 +233,14 @@ const genErrorMsg = (error: ValidationError) => {
     let wrap = (typeof info.value === 'string') ? ['"', '"'] : (Array.isArray(info.value)) ? ['[', ']'] : ['', ''];
 
     switch (error.code) {
-
         case StatusCode.REQUIRED_ERROR:
             message = `The "${info.key}" are required.`;
             break;
         case StatusCode.COVER_ERROR:
-            message = `Corveration function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws a error: ${info.others}.`;
+            message = `Corveration function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws an error: ${info.others}.`;
             break;
         case StatusCode.CHOICES_RUN_ERROR:
-            message = `Choises function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws a error: ${info.others}.`;
+            message = `Choises function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws an error: ${info.others}.`;
             break;
         case StatusCode.CHOICES_ERROR:
             if (typeof info.others === 'function') {
@@ -311,11 +293,15 @@ export class ReqParams {
      */
     public add(name: string, opts?: ParaOptions) {
         if (this.params[name]) {
-            throw new Error(`The parameter name: ${name} already exists.`);
+            throw createError({
+                message: `The parameter name: ${name} already exists.`
+            }, ReqParams);
         }
 
         if (opts && opts.dset && this.params[opts.dset]) {
-            throw new Error(`The parameter name: ${name}, dtet: ${opts.dset} already exists.`);
+            throw createError({
+                message: `The parameter name: ${name}, dtet: ${opts.dset} already exists.`
+            }, ReqParams);
         }
 
         opts = Object.assign({}, this.globalOpts, opts);

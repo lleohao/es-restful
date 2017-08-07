@@ -57,7 +57,7 @@ function _getConverter(type: string): { regex: string, weight: number } {
     if (converterTypes.indexOf(type) === -1) {
 
         throw createError({
-            type: 'route',
+            type: RestfulErrorType.ROUTE,
             message: `Converter type: '${type}' is undefined.`
         }, Route);
     }

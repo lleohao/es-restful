@@ -5,6 +5,10 @@ export class Resource {
 
     }
 
+    options(render) {
+        render();
+    }
+
     static addParser(params: ReqParams) {
         return function (target: any, propertyKey: string) {
             target[propertyKey]['params'] = params;

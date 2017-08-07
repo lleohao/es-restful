@@ -31,7 +31,7 @@ export interface RestfulErrorSetting {
 }
 
 export class RestfulError extends Error {
-    type: string;
+    type: RestfulErrorType;
     code: number;
     statusCode: number;
     details: object | string;
@@ -41,7 +41,7 @@ export class RestfulError extends Error {
         super();
         this.name = 'RestfulError';
 
-        this.type = settings.type || 'Restful';
+        this.type = settings.type || -100;
         this.message = settings.message || 'An error occurred.';
         this.details = settings.details || '';
         this.code = settings.code || 0;

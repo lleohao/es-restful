@@ -3,8 +3,8 @@ import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
 import { Resource } from './resource';
 import { requestParse } from './requestParse';
 import { Router } from './router';
-import { throwError } from './utils';
 import params, { ReqParams, ParsedData } from './params';
+import { createError, RestfulErrorType } from './utils';
 
 
 export interface RestfulOption {
@@ -64,26 +64,13 @@ export class Restful {
                 return;
             }
 
-            if (request.method === 'OPTIONS') {
-                return;
-            }
-
-            const processFun = resource.getMethodProcess(request.method);
-            if (processFun) {
+            const methodFunction = resource.getMethodProcess(request.method);
+            if (methodFunction) {
                 try {
                     const requestData = await requestParse(request);
-                    const customParam: ReqParams = processFun['params'];
-                    const { error, result } = customParam ? params.validation(customParam.getParams(), requestData) : {
-                        error: null,
-                        result: null
-                    };
-
-                    if (error) {
-                        this.finish(response, 400, error);
-                        return;
-                    }
-
+                    const result = methodFunction['params'] ? params.validation(methodFunction['params'].getParams(), requestData) : {};
                     const callArgument: any[] = [generateEnd(response)];
+
                     if (Object.keys(urlPara).length > 0) {
                         callArgument.push(urlPara);
                     }
@@ -91,12 +78,22 @@ export class Restful {
                         callArgument.push(result);
                     }
 
-                    processFun.apply(null, callArgument);
+                    methodFunction.apply(null, callArgument);
                 } catch (err) {
-                    this.finish(response, 400, `Request parse throws a error: ${err.toString()}.`);
+                    switch (err.type) {
+                        case RestfulErrorType.PARAMS:
+                            this.finish(response, 400, {
+                                code: err.code,
+                                message: err.message
+                            });
+                            break;
+                        case RestfulErrorType.REQUEST:
+                            this.finish(response, err.statusCode, `Request parse throws a error: ${err.message}.`);
+                            break;
+                    }
                 }
             } else {
-                this.finish(response, 404, `This path: "${request.url}", method: "${request.method}" is undefined.`)
+                this.finish(response, 403, `This path: "${request.url}", method: "${request.method}" is undefined.`)
             }
         }
     }
@@ -119,7 +116,9 @@ export class Restful {
         this.options = Object.assign({}, this.options, options);
 
         if (this.router.isEmpty()) {
-            throwError('There can not be any proxied resources.');
+            throw createError({
+                message: 'There can not be any proxied resources.'
+            }, Restful);
         }
         this.server = createServer();
         this.server.on('request', this.requestHandle(true));

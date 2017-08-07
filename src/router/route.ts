@@ -1,4 +1,5 @@
 import { Resource } from '../resource';
+import { createError } from '../utils';
 
 export interface CustomResource extends Resource { }
 
@@ -29,7 +30,10 @@ function* _parseRule(rule: string) {
         let variable = result[3];
         let converter = result[2] || 'default';
         if (usedNames.has(variable)) {
-            throw TypeError(`Variable name: ${variable} used twice.`);
+            throw createError({
+                type: 'route',
+                message: `Variable name: ${variable} used twice.`
+            }, Route);
         }
         usedNames.add(variable);
         yield [converter, variable];
@@ -39,7 +43,10 @@ function* _parseRule(rule: string) {
     if (pos < end) {
         const remaining = rule.substr(pos);
         if (remaining.indexOf('>') !== -1 || remaining.indexOf('<') !== -1) {
-            throw TypeError(`Malformed url rule: ${rule} .`);
+            throw createError({
+                type: 'route',
+                message: `Malformed url rule: ${rule} .`
+            }, Route);
         }
         yield [null, remaining];
     }
@@ -48,7 +55,11 @@ function* _parseRule(rule: string) {
 function _getConverter(type: string): { regex: string, weight: number } {
     const converterTypes = ['str', 'int', 'float', 'path', 'default'];
     if (converterTypes.indexOf(type) === -1) {
-        throw TypeError('Converter type: ' + type + ' is undefined.');
+
+        throw createError({
+            type: 'route',
+            message: `Converter type: '${type}' is undefined.`
+        }, Route);
     }
 
     let result = { regex: '', weight: 0 };

@@ -1,6 +1,7 @@
 import { parse } from 'url';
 
 import { Route, CustomResource } from './route';
+import { createError } from '../utils';
 
 /**
  * Sort routerList by weight.
@@ -31,7 +32,9 @@ export class Router {
 
     addRoute(path: string, Resource: { new(): CustomResource }) {
         if (this.pathCache[path] !== undefined) {
-            throw Error(`Source path: ${path} used twice.`)
+            throw createError({
+                message: `Source path: ${path} used twice.`,
+            }, Router);
         }
         this.pathCache[path] = true;
 
@@ -42,7 +45,14 @@ export class Router {
             this.routeList.push(route);
             _insertSort(this.routeList);
         } catch (error) {
-            throw error;
+            switch (error.type) {
+                case 'route':
+                    throw error;
+                default:
+                    throw createError({
+                        message: `Instance Resource: "${Resource.name}" throws an error: "${error.message}".`
+                    }, Router);
+            }
         }
     }
 

@@ -154,10 +154,9 @@ describe('Router', () => {
 
     it('add will throw error resource', () => {
         const router = new Router();
-
         should.throws(() => {
             router.addRoute('/test', ThrowErrResource);
-        }, /Throw constructor error./);
+        }, /Instance Resource: "ThrowErrResource" throws an error: "Throw constructor error\."\./);
     });
 
     it('add two same varibale in path', () => {
@@ -193,7 +192,7 @@ describe('Router', () => {
 
         should.throws(() => {
             router.addRoute('/error/<string:s>', TestResource);
-        }, /Converter type: string is undefined\./);
+        }, /Converter type: 'string' is undefined\./);
     });
 
     describe('Parse', () => {

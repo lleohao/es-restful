@@ -5,98 +5,70 @@ import should = require('should');
 
 describe('Restful', () => {
     describe('API', () => {
-        let api: Restful;
-        beforeEach(() => {
-            api = new Restful();
-        });
-        afterEach(() => {
-            api.stop();
-        })
+        const api = new Restful();
 
         it('can throw error with not add resource', () => {
+            const api = new Restful();
             should.throws(() => {
-                api.start({ port: 5051 })
+                api.start({ port: 5050 })
             }, /There can not be any proxied resources\./);
         });
 
-        it('can throws error with add same path', () => {
-            class Todos extends Resource {
-                get(render) {
-                    render('ok');
-                }
+        class Todos extends Resource {
+            get(render) {
+                render('ok');
             }
-            api.addSource(Todos, '/todos');
+        }
+
+        const parser = new ReqParams();
+        parser.add('title');
+        class Demo extends Resource {
+            @Resource.addParser(parser)
+            post(render, { title }) {
+                render(title);
+            }
+        }
+
+        api.addSource(Demo, '/demo');
+        api.addSource(Todos, '/todos');
+
+        api.start({ port: 5050 });
+
+        it('can throws error with add same path', () => {
             should.throws(() => {
                 api.addSource(Todos, '/todos');
             })
         });
 
         it('can start server', (done) => {
-            class Todos extends Resource {
-                get(render) {
-                    render('ok');
-                }
-            }
-            api.addSource(Todos, '/todos');
-            api.start({ port: 5051 });
-
-            get({
-                hostname: 'localhost',
-                port: 5051,
-                path: '/todos'
-            }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk)
-                }).on('end', () => {
-                    data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        result: 'ok'
-                    });
-                    done();
-                });
+            get('http://localhost:5050/todos', (res) => {
+                should(res.statusCode).be.eql(200);
+                done();
             });
         });
 
         it('can add reqParams', (done) => {
-            let parser = new ReqParams();
-            parser.add('title');
-            class Demo extends Resource {
-                @Resource.addParser(parser)
-                post(render, { title }) {
-                    render(title);
-                }
-            }
-            api.addSource(Demo, '/demo');
-            api.start({ port: 5051 });
             let req = request({
                 hostname: 'localhost',
-                port: 5051,
+                port: 5050,
                 method: 'post',
                 path: '/demo',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk)
-                }).on('end', () => {
-                    data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        result: 'demo'
-                    });
-                    done();
-                })
+                should(res.statusCode).be.eql(200);
+                done();
             });
             req.write(JSON.stringify({ title: 'demo' }));
             req.end();
         });
 
+        after(() => {
+            api.stop();
+        });
+
         describe('addSourceMap', () => {
-            let api: Restful;
             class Test1 extends Resource {
                 get(render) {
                     render('restful request1');
@@ -108,134 +80,79 @@ describe('Restful', () => {
                     render('restful request2');
                 }
             }
+            const api = new Restful();
 
-            before(() => {
-                api = new Restful();
-                api.addSourceMap({
-                    '/test1': Test1,
-                    '/test2': Test2,
+            api.addSourceMap({
+                '/test1': Test1,
+                '/test2': Test2,
+            })
+            api.start({ port: 5052 });
+
+            it('can correct response path1', (done) => {
+                get({
+                    port: 5052,
+                    path: '/test1'
+                }, (res) => {
+                    should(res.statusCode).be.eql(200);
+                    done();
                 })
-                api.start({ port: 5051 });
+            });
+
+            it('can correct response path2', (done) => {
+                get({
+                    port: 5052,
+                    path: '/test2'
+                }, (res) => {
+                    should(res.statusCode).be.eql(200);
+                    done();
+                })
             });
 
             after(() => {
                 api.stop();
             });
-
-            it('can correct response path1', (done) => {
-                get({
-                    port: 5051,
-                    path: '/test1'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', (chunk) => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        should(JSON.parse(data.toString())).be.eql({
-                            code: 200,
-                            result: 'restful request1',
-                        })
-                        done();
-                    })
-                })
-            })
-
-            it('can correct response path2', (done) => {
-                get({
-                    port: 5051,
-                    path: '/test2'
-                }, (res) => {
-                    let data = [];
-                    res.on('data', (chunk) => {
-                        data.push(chunk);
-                    }).on('end', () => {
-                        should(JSON.parse(data.toString())).be.eql({
-                            code: 200,
-                            result: 'restful request2'
-                        })
-                        done();
-                    })
-                })
-            })
         })
     });
 
     describe('access undefind resource', () => {
-        let api: Restful;
-        beforeEach(() => {
-            api = new Restful();
-        });
-        afterEach(() => {
-            api.stop();
-        });
+        const api = new Restful();
+        class Books extends Resource {
+            get(render, { id, page }) {
+                render({
+                    id: id,
+                    page: page
+                });
+            }
+        }
+        api.addSource(Books, '/books/<id>/<page>');
+        api.start({ port: 5054 });
 
         it('access undefined method', (done) => {
-            class Books extends Resource {
-                get(render, { id, page }) {
-                    render({
-                        id: id,
-                        page: page
-                    });
-                }
-            }
-            api.addSource(Books, '/books/<id>/<page>');
-            api.start({ port: 5051 });
             let req = request({
-                port: 5051,
+                port: 5054,
                 path: '/books/1/25',
                 method: 'post'
             }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk)
-                }).on('end', () => {
-                    data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 403,
-                        error: {
-                            message: 'This path: "/books/1/25", method: "POST" is undefined.'
-                        }
-                    });
-                    done();
-                })
+                should(res.statusCode).be.eql(403);
+                done();
             })
             req.end();
         });
 
         it('access undefined path', (done) => {
-            class Books extends Resource {
-                get(render, { id, page }) {
-                    render({
-                        id: id,
-                        page: page
-                    });
-                }
-            }
-            api.addSource(Books, '/books/<id>/<page>');
-            api.start({ port: 5051 });
-
             let req = get({
-                port: 5051,
+                port: 5054,
                 path: '/book',
             }, (res) => {
-                let data = [];
-                res.on('data', (chunk) => {
-                    data.push(chunk)
-                }).on('end', () => {
-                    data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 404,
-                        error: {
-                            message: 'This path: "/book" does not have a resource.'
-                        }
-                    });
-                    done();
-                })
+                should(res.statusCode).be.eql(404);
+                done();
             });
-
             req.end();
         });
 
+        after(() => {
+            api.stop();
+        })
     });
 
     describe('bind server', () => {
@@ -248,22 +165,16 @@ describe('Restful', () => {
             }
         }
 
-        before(() => {
-            server = <Server>createServer();
-            api = new Restful();
-            api.addSource(Test, '/api');
-            api.bindServer(server);
+        server = <Server>createServer();
+        api = new Restful();
+        api.addSource(Test, '/api');
+        api.bindServer(server);
 
-            server.listen(5052);
-        });
-
-        after(() => {
-            server.close();
-        });
+        server.listen(5055);
 
         it('can correct response', (done) => {
             get({
-                port: 5052,
+                port: 5055,
                 path: '/api'
             }, (res) => {
                 let data = [];
@@ -274,6 +185,7 @@ describe('Restful', () => {
                         code: 200,
                         result: 'restful request'
                     })
+                    server.close();
                     done();
                 })
             })

@@ -164,13 +164,13 @@ describe('Router', () => {
 
         should.throws(() => {
             router.addRoute('/same/<same>/<same>', TestResource);
-        }, /Variable name: same used twice\./);
+        }, /Url variable name: "same" used twice\./);
         should.throws(() => {
             router.addRoute('/same1/<int:same>/<same>', TestResource);
-        }, /Variable name: same used twice\./);
+        }, /Url variable name: "same" used twice\./);
         should.throws(() => {
             router.addRoute('/same2/<int:same>/<str:same>', TestResource);
-        }, /Variable name: same used twice\./);
+        }, /Url variable name: "same" used twice\./);
     });
 
     it('add error path', () => {

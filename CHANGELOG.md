@@ -1,3 +1,20 @@
+<a name="2.1.0"></a>
+# [2.1.0](https://github.com/lleohao/restful/compare/v2.0.0...v2.1.0) (2017-08-07)
+
+
+### Bug Fixes
+
+* **requestParse:** Fix content-type error ([61bf4a1](https://github.com/lleohao/restful/commit/61bf4a1))
+* **resuful:** Fix options method error ([9f22b74](https://github.com/lleohao/restful/commit/9f22b74))
+* **router:** Fix roter error stack ([e5ce967](https://github.com/lleohao/restful/commit/e5ce967))
+
+
+### Features
+
+* **utils:** Add global error factory function ([514dd04](https://github.com/lleohao/restful/commit/514dd04))
+
+
+
 <a name="2.0.0"></a>
 # [2.0.0](https://github.com/lleohao/restful/compare/v1.2.2...v2.0.0) (2017-08-04)
 

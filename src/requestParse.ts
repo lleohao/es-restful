@@ -41,7 +41,9 @@ export const requestParse = (req: IncomingMessage) => {
 
             reject(data);
         } else {
-            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/)[0];
+            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/);
+            if (contentType) contentType = contentType[0];
+
             let body: Buffer[] = [];
 
             req.on('data', (chunk) => {

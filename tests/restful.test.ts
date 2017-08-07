@@ -191,7 +191,7 @@ describe('Restful', () => {
                 }).on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        code: 404,
+                        code: 403,
                         error: {
                             message: 'This path: "/books/1/25", method: "POST" is undefined.'
                         }

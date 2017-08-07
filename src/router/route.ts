@@ -1,4 +1,5 @@
 import { Resource } from '../resource';
+import { createError, RestfulErrorType } from '../utils';
 
 export interface CustomResource extends Resource { }
 
@@ -10,7 +11,7 @@ enum RuleResultIndex {
     argName
 }
 
-function* _parseRule(rule: string) {
+function* _parseRule(rule: string, ctx: any) {
     let pos = 0;
     let end = rule.length;
     let usedNames = new Set();
@@ -29,7 +30,10 @@ function* _parseRule(rule: string) {
         let variable = result[3];
         let converter = result[2] || 'default';
         if (usedNames.has(variable)) {
-            throw TypeError(`Variable name: ${variable} used twice.`);
+            throw createError({
+                type: RestfulErrorType.ROUTE,
+                message: `Url variable name: "${variable}" used twice.`
+            }, ctx.addRoute);
         }
         usedNames.add(variable);
         yield [converter, variable];
@@ -39,16 +43,22 @@ function* _parseRule(rule: string) {
     if (pos < end) {
         const remaining = rule.substr(pos);
         if (remaining.indexOf('>') !== -1 || remaining.indexOf('<') !== -1) {
-            throw TypeError(`Malformed url rule: ${rule} .`);
+            throw createError({
+                type: RestfulErrorType.ROUTE,
+                message: `Malformed url rule: ${rule} .`
+            }, ctx.addRoute);
         }
         yield [null, remaining];
     }
 }
 
-function _getConverter(type: string): { regex: string, weight: number } {
+function _getConverter(type: string, ctx: any): { regex: string, weight: number } {
     const converterTypes = ['str', 'int', 'float', 'path', 'default'];
     if (converterTypes.indexOf(type) === -1) {
-        throw TypeError('Converter type: ' + type + ' is undefined.');
+        throw createError({
+            type: RestfulErrorType.ROUTE,
+            message: `Converter type: '${type}' is undefined.`
+        }, ctx.addRoute);
     }
 
     let result = { regex: '', weight: 0 };
@@ -75,9 +85,10 @@ export class Route {
     private variables: string[] = [];
     private regex: RegExp;
     weight: number = 0;
+    private ctx: any;
 
-
-    constructor(private rule: string, public resource: CustomResource) {
+    constructor(private rule: string, public resource: CustomResource, ctx: any) {
+        this.ctx = ctx;
         this.compile();
     }
 
@@ -86,12 +97,12 @@ export class Route {
         const regexParts: string[] = [];
 
         function _buildRegex(rule: string) {
-            for (let [converter, variable] of _parseRule(rule)) {
+            for (let [converter, variable] of _parseRule(rule, self.ctx)) {
                 if (converter === null) { // staticPart part
                     regexParts.push(variable);
                     self.weight += variable.length;
                 } else {                  // dynamic part
-                    let type = _getConverter(converter);
+                    let type = _getConverter(converter, self.ctx);
                     self.variables.push(variable);
                     regexParts.push(type.regex);
                     self.weight += type.weight;

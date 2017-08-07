@@ -1,5 +1,6 @@
 import { IncomingMessage } from 'http';
 import { parse } from 'querystring';
+import { createError, RestfulError, RestfulErrorType } from './utils';
 
 const parseBodyData = (type: string, body: string) => {
     let data;
@@ -9,10 +10,21 @@ const parseBodyData = (type: string, body: string) => {
             data = parse(body);
             break;
         case 'application/json':
-            data = body === "" ? {} : JSON.parse(body);
+            try {
+                data = body === "" ? {} : JSON.parse(body);
+            } catch (error) {
+                data = createError({
+                    type: RestfulErrorType.REQUEST,
+                    message: error.message,
+                }, parseBodyData);
+            }
             break;
         default:
-            throw new TypeError(`This request "Content-Type": "${type}" is not supported.`);
+            data = createError({
+                type: RestfulErrorType.REQUEST,
+                message: `This request "Content-Type": "${type}" is not supported.`,
+                statusCode: 403
+            }, parseBodyData);
     }
 
     return data;
@@ -29,18 +41,20 @@ export const requestParse = (req: IncomingMessage) => {
 
             reject(data);
         } else {
-            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/)[0];
+            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/);
+            if (contentType) contentType = contentType[0];
+
             let body: Buffer[] = [];
 
             req.on('data', (chunk) => {
                 body.push(chunk as Buffer);
             }).on('end', () => {
-                let bodyData = body.toString();
+                let bodyData = parseBodyData(contentType, body.toString());
 
-                try {
-                    reject(parseBodyData(contentType, body.toString()));
-                } catch (e) {
-                    reslove(e);
+                if (bodyData instanceof RestfulError) {
+                    throw bodyData;
+                } else {
+                    reject(bodyData);
                 }
             });
         }

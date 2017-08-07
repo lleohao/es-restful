@@ -58,8 +58,6 @@ describe('RequestParse', () => {
     cases.forEach(c => {
         it(c.path, () => {
             let server = createServer(async (req, res) => {
-                // let data = await requestParse(req);
-                // data = Object.assign({}, data);
                 should(requestParse(req)).be.fulfilledWith(c.e);
 
                 res.end();

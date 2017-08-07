@@ -1,6 +1,7 @@
 import { parse } from 'url';
 
 import { Route, CustomResource } from './route';
+import { createError, RestfulErrorType } from '../utils';
 
 /**
  * Sort routerList by weight.
@@ -31,18 +32,29 @@ export class Router {
 
     addRoute(path: string, Resource: { new(): CustomResource }) {
         if (this.pathCache[path] !== undefined) {
-            throw Error(`Source path: ${path} used twice.`)
+            throw createError({
+                type: RestfulErrorType.ROUTER,
+                message: `Source path: ${path} used twice.`,
+            }, this.addRoute);
         }
         this.pathCache[path] = true;
 
         try {
             const resource = new Resource();
-            const route = new Route(path, resource);
+            const route = new Route(path, resource, this);
 
             this.routeList.push(route);
             _insertSort(this.routeList);
         } catch (error) {
-            throw error;
+            switch (error.type) {
+                case RestfulErrorType.ROUTE:
+                case RestfulErrorType.ROUTER:
+                    throw error;
+                default:
+                    throw createError({
+                        message: `Instance Resource: "${Resource.name}" throws an error: "${error.message}".`
+                    }, this.addRoute);
+            }
         }
     }
 

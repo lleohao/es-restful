@@ -138,14 +138,12 @@ describe('ReqParse', () => {
                 let result, e;
 
                 if (_case['err']) {
-                    result = p.validation(parser.getParams(), _case.i).error;
-                    e = _case['err'];
+                    should.throws(() => {
+                        p.validation(parser.getParams(), _case.i);
+                    }, _case['err'].message);
                 } else {
-                    result = p.validation(parser.getParams(), _case.i).result;
-                    e = _case['e'];
+                    should(p.validation(parser.getParams(), _case.i)).be.eql(_case['e']);
                 }
-
-                should(result).be.eql(e);
             });
         })
     });

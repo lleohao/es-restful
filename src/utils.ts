@@ -16,8 +16,14 @@ export function createError(setting: RestfulErrorSetting, implementationContext?
     return new RestfulError(setting, implementationContext);
 }
 
+export enum RestfulErrorType {
+    ROUTE,
+    PARAMS,
+    REQUEST
+}
+
 export interface RestfulErrorSetting {
-    type?: string;
+    type?: RestfulErrorType;
     message?: string;
     code?: number;
     statusCode?: number;

@@ -1,4 +1,4 @@
-import { isType, createError } from './utils';
+import { isType, createError, RestfulErrorType } from './utils';
 
 /**
  * es-resuful error code 
@@ -217,10 +217,9 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
     if (!flag) {
         const { code, message } = genErrorMsg(error);
         throw createError({
-            type: 'params',
+            type: RestfulErrorType.PARAMS,
             code,
-            message,
-            statusCode: 400
+            message
         }, ReqParams);
     }
 

@@ -1,7 +1,7 @@
 import { parse } from 'url';
 
 import { Route, CustomResource } from './route';
-import { createError } from '../utils';
+import { createError, RestfulErrorType } from '../utils';
 
 /**
  * Sort routerList by weight.
@@ -46,7 +46,7 @@ export class Router {
             _insertSort(this.routeList);
         } catch (error) {
             switch (error.type) {
-                case 'route':
+                case RestfulErrorType.ROUTE:
                     throw error;
                 default:
                     throw createError({

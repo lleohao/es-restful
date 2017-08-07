@@ -1,5 +1,5 @@
 import { Resource } from '../resource';
-import { createError } from '../utils';
+import { createError, RestfulErrorType } from '../utils';
 
 export interface CustomResource extends Resource { }
 
@@ -31,7 +31,7 @@ function* _parseRule(rule: string) {
         let converter = result[2] || 'default';
         if (usedNames.has(variable)) {
             throw createError({
-                type: 'route',
+                type: RestfulErrorType.ROUTE,
                 message: `Variable name: ${variable} used twice.`
             }, Route);
         }
@@ -44,7 +44,7 @@ function* _parseRule(rule: string) {
         const remaining = rule.substr(pos);
         if (remaining.indexOf('>') !== -1 || remaining.indexOf('<') !== -1) {
             throw createError({
-                type: 'route',
+                type: RestfulErrorType.ROUTE,
                 message: `Malformed url rule: ${rule} .`
             }, Route);
         }

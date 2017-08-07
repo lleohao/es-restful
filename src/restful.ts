@@ -118,7 +118,7 @@ export class Restful {
         if (this.router.isEmpty()) {
             throw createError({
                 message: 'There can not be any proxied resources.'
-            }, Restful);
+            }, this.start);
         }
         this.server = createServer();
         this.server.on('request', this.requestHandle(true));

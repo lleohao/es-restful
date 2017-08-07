@@ -17,9 +17,10 @@ export function createError(setting: RestfulErrorSetting, implementationContext?
 }
 
 export enum RestfulErrorType {
-    ROUTE,
+    ROUTE = 1,
     PARAMS,
-    REQUEST
+    REQUEST,
+    ROUTER
 }
 
 export interface RestfulErrorSetting {

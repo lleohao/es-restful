@@ -11,7 +11,7 @@ enum RuleResultIndex {
     argName
 }
 
-function* _parseRule(rule: string) {
+function* _parseRule(rule: string, ctx: any) {
     let pos = 0;
     let end = rule.length;
     let usedNames = new Set();
@@ -32,8 +32,8 @@ function* _parseRule(rule: string) {
         if (usedNames.has(variable)) {
             throw createError({
                 type: RestfulErrorType.ROUTE,
-                message: `Variable name: ${variable} used twice.`
-            }, Route);
+                message: `Url variable name: "${variable}" used twice.`
+            }, ctx.addRoute);
         }
         usedNames.add(variable);
         yield [converter, variable];
@@ -46,20 +46,19 @@ function* _parseRule(rule: string) {
             throw createError({
                 type: RestfulErrorType.ROUTE,
                 message: `Malformed url rule: ${rule} .`
-            }, Route);
+            }, ctx.addRoute);
         }
         yield [null, remaining];
     }
 }
 
-function _getConverter(type: string): { regex: string, weight: number } {
+function _getConverter(type: string, ctx: any): { regex: string, weight: number } {
     const converterTypes = ['str', 'int', 'float', 'path', 'default'];
     if (converterTypes.indexOf(type) === -1) {
-
         throw createError({
             type: RestfulErrorType.ROUTE,
             message: `Converter type: '${type}' is undefined.`
-        }, Route);
+        }, ctx.addRoute);
     }
 
     let result = { regex: '', weight: 0 };
@@ -86,9 +85,10 @@ export class Route {
     private variables: string[] = [];
     private regex: RegExp;
     weight: number = 0;
+    private ctx: any;
 
-
-    constructor(private rule: string, public resource: CustomResource) {
+    constructor(private rule: string, public resource: CustomResource, ctx: any) {
+        this.ctx = ctx;
         this.compile();
     }
 
@@ -97,12 +97,12 @@ export class Route {
         const regexParts: string[] = [];
 
         function _buildRegex(rule: string) {
-            for (let [converter, variable] of _parseRule(rule)) {
+            for (let [converter, variable] of _parseRule(rule, self.ctx)) {
                 if (converter === null) { // staticPart part
                     regexParts.push(variable);
                     self.weight += variable.length;
                 } else {                  // dynamic part
-                    let type = _getConverter(converter);
+                    let type = _getConverter(converter, self.ctx);
                     self.variables.push(variable);
                     regexParts.push(type.regex);
                     self.weight += type.weight;

@@ -33,25 +33,27 @@ export class Router {
     addRoute(path: string, Resource: { new(): CustomResource }) {
         if (this.pathCache[path] !== undefined) {
             throw createError({
+                type: RestfulErrorType.ROUTER,
                 message: `Source path: ${path} used twice.`,
-            }, Router);
+            }, this.addRoute);
         }
         this.pathCache[path] = true;
 
         try {
             const resource = new Resource();
-            const route = new Route(path, resource);
+            const route = new Route(path, resource, this);
 
             this.routeList.push(route);
             _insertSort(this.routeList);
         } catch (error) {
             switch (error.type) {
                 case RestfulErrorType.ROUTE:
+                case RestfulErrorType.ROUTER:
                     throw error;
                 default:
                     throw createError({
                         message: `Instance Resource: "${Resource.name}" throws an error: "${error.message}".`
-                    }, Router);
+                    }, this.addRoute);
             }
         }
     }

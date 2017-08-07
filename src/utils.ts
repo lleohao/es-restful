@@ -7,7 +7,7 @@
  * @returns {boolean}
  */
 export function isType(v: any, t: string): boolean {
-    let type: string = Object.prototype.toString.call(v);
+    const type: string = Object.prototype.toString.call(v);
 
     return type.match(/\[object (\w+)\]/)[1].toLowerCase() === t;
 }
@@ -32,11 +32,10 @@ export interface RestfulErrorSetting {
 }
 
 export class RestfulError extends Error {
-    type: RestfulErrorType;
-    code: number;
-    statusCode: number;
-    details: object | string;
-
+    public type: RestfulErrorType;
+    public code: number;
+    public statusCode: number;
+    public details: object | string;
 
     constructor(settings: RestfulErrorSetting, implementationContext?: any) {
         super();

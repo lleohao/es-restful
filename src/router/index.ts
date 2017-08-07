@@ -1,16 +1,16 @@
-import { parse } from 'url';
+import { parse } from "url";
 
-import { Route, CustomResource } from './route';
-import { createError, RestfulErrorType } from '../utils';
+import { createError, RestfulErrorType } from "../utils";
+import { CustomResource, Route } from "./route";
 
 /**
  * Sort routerList by weight.
- * 
- * @param array 
+ *
+ * @param array
  */
-const _insertSort = function (array: Route[]) {
-    let length = array.length,
-        j, temp;
+const insertSort = (array: Route[]) => {
+    const length = array.length;
+    let j, temp;
 
     for (let i = 1; i < length; i++) {
         j = i;
@@ -28,13 +28,11 @@ export class Router {
     private routeList: Route[] = [];
     private pathCache: {} = {};
 
-    constructor() { }
-
-    addRoute(path: string, Resource: { new(): CustomResource }) {
+    public addRoute(path: string, Resource: { new(): CustomResource }) {
         if (this.pathCache[path] !== undefined) {
             throw createError({
-                type: RestfulErrorType.ROUTER,
                 message: `Source path: ${path} used twice.`,
+                type: RestfulErrorType.ROUTER
             }, this.addRoute);
         }
         this.pathCache[path] = true;
@@ -44,7 +42,7 @@ export class Router {
             const route = new Route(path, resource, this);
 
             this.routeList.push(route);
-            _insertSort(this.routeList);
+            insertSort(this.routeList);
         } catch (error) {
             switch (error.type) {
                 case RestfulErrorType.ROUTE:
@@ -52,13 +50,13 @@ export class Router {
                     throw error;
                 default:
                     throw createError({
-                        message: `Instance Resource: "${Resource.name}" throws an error: "${error.message}".`
+                        message: `Instance Resource: "${Resource.name}" throws an error: "${error.message}".`,
                     }, this.addRoute);
             }
         }
     }
 
-    getResource(url: string) {
+    public getResource(url: string) {
         const pathname = parse(url).pathname;
         const routeList = this.routeList;
 
@@ -68,19 +66,19 @@ export class Router {
 
             if (urlPara !== null) {
                 return {
-                    urlPara: urlPara,
-                    resource: route.resource
-                }
+                    resource: route.resource,
+                    urlPara,
+                };
             }
         }
 
         return {
+            resource: null,
             urlPara: null,
-            resource: null
         };
     }
 
-    isEmpty() {
+    public isEmpty() {
         return this.routeList.length === 0;
     }
 }

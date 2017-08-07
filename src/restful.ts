@@ -1,11 +1,10 @@
-import { createServer, Server, ServerResponse, IncomingMessage } from 'http';
+import { createServer, IncomingMessage, Server, ServerResponse, } from 'http';
 
-import { Resource } from './resource';
+import params, { ParsedData, ReqParams } from './params';
 import { requestParse } from './requestParse';
+import { Resource } from './resource';
 import { Router } from './router';
-import params, { ReqParams, ParsedData } from './params';
 import { createError, RestfulErrorType } from './utils';
-
 
 export interface RestfulOption {
     debug?: boolean;
@@ -31,7 +30,7 @@ export class Restful {
 
     private finish(res: ServerResponse, code: number, data: object | string) {
         const responesData = {
-            code: code
+            code
         };
         if (code >= 400) {
             responesData['error'] = (typeof data === 'string') ? {
@@ -68,7 +67,8 @@ export class Restful {
             if (methodFunction) {
                 try {
                     const requestData = await requestParse(request);
-                    const result = methodFunction['params'] ? params.validation(methodFunction['params'].getParams(), requestData) : {};
+                    const result = methodFunction['params'] ?
+                        params.validation(methodFunction['params'].getParams(), requestData) : {};
                     const callArgument: any[] = [generateEnd(response)];
 
                     if (Object.keys(urlPara).length > 0) {
@@ -93,21 +93,21 @@ export class Restful {
                     }
                 }
             } else {
-                this.finish(response, 403, `This path: "${request.url}", method: "${request.method}" is undefined.`)
+                this.finish(response, 403, `This path: "${request.url}", method: "${request.method}" is undefined.`);
             }
-        }
+        };
     }
 
-    public add<T extends Resource>(Resource: { new(): T }, path: string) {
-        this.addSource(Resource, path);
+    public add<T extends Resource>(R: { new(): T }, path: string) {
+        this.addSource(R, path);
     }
 
-    public addSource<T extends Resource>(Resource: { new(): T }, path: string) {
-        this.router.addRoute(path, Resource);
+    public addSource<T extends Resource>(R: { new(): T }, path: string) {
+        this.router.addRoute(path, R);
     }
 
     public addSourceMap<T extends Resource>(resourceMap: { [path: string]: { new(): T } }) {
-        for (let path in resourceMap) {
+        for (const path in resourceMap) {
             this.addSource(resourceMap[path], path);
         }
     }
@@ -123,7 +123,7 @@ export class Restful {
         this.server = createServer();
         this.server.on('request', this.requestHandle(true));
 
-        let { port, hostname } = this.options;
+        const { port, hostname } = this.options;
         this.server.listen(port, hostname);
         if (options.debug) {
             console.log(`The server is running ${hostname}:${port}`);
@@ -140,4 +140,3 @@ export class Restful {
         }
     }
 }
-

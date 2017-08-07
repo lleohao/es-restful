@@ -1,0 +1,37 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rules": {
+        "no-trailing-whitespace": [
+            true, "ignore-comments", "ignore-jsdoc", "ignore-template-strings"
+        ],
+        "one-variable-per-declaration": [
+            false
+        ],
+        "interface-name": [
+            false
+        ],
+        "no-empty-interface": false,
+        "quotemark": [
+            "single"
+        ],
+        "member-ordering": [
+            false
+        ],
+        "object-literal-sort-keys": [
+            false
+        ],
+        "trailing-comma": [
+            false
+        ],
+        "no-string-literal": false,
+        "forin": false,
+        "no-console": [false]
+    },
+    "rulesDirectory": [
+        "src"
+    ]
+}

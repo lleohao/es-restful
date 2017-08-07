@@ -37,19 +37,21 @@ export const requestParse = (req: IncomingMessage) => {
             const index = url.indexOf('?');
 
             const queryStr = index === -1 ? '' : url.substr(index + 1);
-            let data = parse(queryStr);
+            const data = parse(queryStr);
 
             reject(data);
         } else {
             let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/);
-            if (contentType) contentType = contentType[0];
+            if (contentType) {
+                contentType = contentType[0];
+            }
 
-            let body: Buffer[] = [];
+            const body: Buffer[] = [];
 
             req.on('data', (chunk) => {
                 body.push(chunk as Buffer);
             }).on('end', () => {
-                let bodyData = parseBodyData(contentType, body.toString());
+                const bodyData = parseBodyData(contentType, body.toString());
 
                 if (bodyData instanceof RestfulError) {
                     throw bodyData;

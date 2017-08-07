@@ -1,5 +1,5 @@
-import { Resource } from '../resource';
-import { createError, RestfulErrorType } from '../utils';
+import { Resource } from "../resource";
+import { createError, RestfulErrorType } from "../utils";
 
 export interface CustomResource extends Resource { }
 
@@ -13,12 +13,12 @@ enum RuleResultIndex {
 
 function* _parseRule(rule: string, ctx: any) {
     let pos = 0;
-    let end = rule.length;
-    let usedNames = new Set();
+    const end = rule.length;
+    const usedNames = new Set();
 
     RULE_RE.lastIndex = 0;
     while (pos < end) {
-        let result = RULE_RE.exec(rule);
+        const result = RULE_RE.exec(rule);
 
         if (result === null) {
             break;
@@ -27,12 +27,12 @@ function* _parseRule(rule: string, ctx: any) {
             yield [null, result[RuleResultIndex.staticPart]];
         }
 
-        let variable = result[3];
-        let converter = result[2] || 'default';
+        const variable = result[3];
+        const converter = result[2] || 'default';
         if (usedNames.has(variable)) {
             throw createError({
-                type: RestfulErrorType.ROUTE,
-                message: `Url variable name: "${variable}" used twice.`
+                message: `Url variable name: "${variable}" used twice.`,
+                type: RestfulErrorType.ROUTE
             }, ctx.addRoute);
         }
         usedNames.add(variable);
@@ -44,8 +44,8 @@ function* _parseRule(rule: string, ctx: any) {
         const remaining = rule.substr(pos);
         if (remaining.indexOf('>') !== -1 || remaining.indexOf('<') !== -1) {
             throw createError({
-                type: RestfulErrorType.ROUTE,
-                message: `Malformed url rule: ${rule} .`
+                message: `Malformed url rule: ${rule} .`,
+                type: RestfulErrorType.ROUTE
             }, ctx.addRoute);
         }
         yield [null, remaining];
@@ -53,28 +53,28 @@ function* _parseRule(rule: string, ctx: any) {
 }
 
 function _getConverter(type: string, ctx: any): { regex: string, weight: number } {
-    const converterTypes = ['str', 'int', 'float', 'path', 'default'];
+    const converterTypes = ['str', 'int', 'float', 'path', "default"];
     if (converterTypes.indexOf(type) === -1) {
         throw createError({
-            type: RestfulErrorType.ROUTE,
-            message: `Converter type: '${type}' is undefined.`
+            message: `Converter type: '${type}' is undefined.`,
+            type: RestfulErrorType.ROUTE
         }, ctx.addRoute);
     }
 
-    let result = { regex: '', weight: 0 };
+    let result = { regex: "", weight: 0 };
     switch (type) {
-        case 'path':
-            result = { regex: '(.*?)', weight: 200 };
+        case "path":
+            result = { regex: "(.*?)", weight: 200 };
             break;
-        case 'int':
-            result = { regex: '(\\d+)', weight: 50 };
+        case "int":
+            result = { regex: "(\\d+)", weight: 50 };
             break;
-        case 'float':
-            result = { regex: '(\\d+\\.\\d+)', weight: 50 };
+        case "float":
+            result = { regex: "(\\d+\\.\\d+)", weight: 50 };
             break;
-        case 'str':
-        case 'default':
-            result = { regex: '(\\w+)', weight: 100 };
+        case "str":
+        case "default":
+            result = { regex: "(\\w+)", weight: 100 };
             break;
     }
 
@@ -82,27 +82,27 @@ function _getConverter(type: string, ctx: any): { regex: string, weight: number 
 }
 
 export class Route {
-    private variables: string[] = [];
-    private regex: RegExp;
-    weight: number = 0;
     private ctx: any;
+    private regex: RegExp;
+    private variables: string[] = [];
+    public weight: number = 0;
 
     constructor(private rule: string, public resource: CustomResource, ctx: any) {
         this.ctx = ctx;
         this.compile();
     }
 
-    compile() {
+    public compile() {
         const self = this;
         const regexParts: string[] = [];
 
         function _buildRegex(rule: string) {
-            for (let [converter, variable] of _parseRule(rule, self.ctx)) {
+            for (const [converter, variable] of _parseRule(rule, self.ctx)) {
                 if (converter === null) { // staticPart part
                     regexParts.push(variable);
                     self.weight += variable.length;
                 } else {                  // dynamic part
-                    let type = _getConverter(converter, self.ctx);
+                    const type = _getConverter(converter, self.ctx);
                     self.variables.push(variable);
                     regexParts.push(type.regex);
                     self.weight += type.weight;
@@ -112,12 +112,12 @@ export class Route {
 
         _buildRegex(this.rule);
 
-        let regex = '^' + regexParts.join('') + '$';
-        this.regex = new RegExp(regex, 'g');
+        const regex = "^" + regexParts.join("") + "$";
+        this.regex = new RegExp(regex, "g");
     }
 
-    match(pathname: string) {
-        let result = {};
+    public match(pathname: string) {
+        const result = {};
         this.regex.lastIndex = 0;
 
         const res = this.regex.exec(pathname);
@@ -133,4 +133,3 @@ export class Route {
         return result;
     }
 }
-

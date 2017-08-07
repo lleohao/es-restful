@@ -1,4 +1,4 @@
-import { isType, createError, RestfulErrorType } from './utils';
+import { createError, isType, RestfulErrorType } from './utils';
 
 /**
  * es-resuful error code 
@@ -113,10 +113,9 @@ interface ValidationError {
     };
 }
 
-
 const validation = (params: { [name: string]: ParaOptions }, requestData: { [key: string]: any }) => {
     const paramsKeys = Object.keys(params);
-    let result = {};
+    const result = {};
     let error: ValidationError;
 
     const flag = paramsKeys.every((key) => {
@@ -153,7 +152,9 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
         // check choices
         if (rule.choices) {
             try {
-                if ((typeof rule.choices === 'function') ? !rule.choices(value) : (rule.choices as any[]).indexOf(value) === -1) {
+                if ((typeof rule.choices === 'function') ?
+                    !rule.choices(value) :
+                    (rule.choices as any[]).indexOf(value) === -1) {
                     error = {
                         code: StatusCode.CHOICES_ERROR,
                         info: {
@@ -173,7 +174,7 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
                         value,
                         others: e.message
                     }
-                }
+                };
                 return false;
             }
         }
@@ -202,7 +203,7 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
                         value,
                         others: e.message
                     }
-                }
+                };
                 return false;
             }
         }
@@ -228,35 +229,37 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
 
 const genErrorMsg = (error: ValidationError) => {
     let message;
-    let info = error.info;
-    let wrap = (typeof info.value === 'string') ? ['"', '"'] : (Array.isArray(info.value)) ? ['[', ']'] : ['', ''];
+    const info = error.info;
+    const [l, r] = (typeof info.value === 'string') ? ['"', '"'] : (Array.isArray(info.value)) ? ['[', ']'] : ['', ''];
 
     switch (error.code) {
         case StatusCode.REQUIRED_ERROR:
             message = `The "${info.key}" are required.`;
             break;
         case StatusCode.COVER_ERROR:
-            message = `Corveration function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws an error: ${info.others}.`;
+            // tslint:disable-next-line:max-line-length
+            message = `Corveration function processing {${info.key}: ${l}${info.value}${r}} throws an error: ${info.others}.`;
             break;
         case StatusCode.CHOICES_RUN_ERROR:
-            message = `Choises function processing {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} throws an error: ${info.others}.`;
+            // tslint:disable-next-line:max-line-length
+            message = `Choises function processing {${info.key}: ${l}${info.value}${r}} throws an error: ${info.others}.`;
             break;
         case StatusCode.CHOICES_ERROR:
             if (typeof info.others === 'function') {
-                message = `The choices function check {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} is false.`;
+                message = `The choices function check {${info.key}: ${l}${info.value}${r}} is false.`;
             } else {
-                message = `The {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} is not in [${info.others.toString()}].`
+                message = `The {${info.key}: ${l}${info.value}${r}} is not in [${info.others.toString()}].`;
             }
             break;
         case StatusCode.TYPE_ERRPR:
-            message = `The {${info.key}: ${wrap[0]}${info.value}${wrap[1]}} type is not "${info.others}".`
+            message = `The {${info.key}: ${l}${info.value}${r}} type is not "${info.others}".`;
             break;
     }
 
     return {
         code: error.code,
-        message: message
-    }
+        message
+    };
 };
 
 export class ReqParams {
@@ -281,7 +284,7 @@ export class ReqParams {
             dset: null
         };
 
-        this.globalOpts = Object.assign({}, baseOpts, globalOpts)
+        this.globalOpts = Object.assign({}, baseOpts, globalOpts);
     }
 
     /**
@@ -313,11 +316,11 @@ export class ReqParams {
      * @param name      parameter name or parameter name array.
      */
     public remove(name: (string | string[])) {
-        let names = [].concat(name);
+        const names = [].concat(name);
 
-        names.forEach(name => {
-            if (this.params[name]) {
-                delete this.params[name];
+        names.forEach((n) => {
+            if (this.params[n]) {
+                delete this.params[n];
             }
         });
     }
@@ -334,4 +337,4 @@ export class ReqParams {
 
 export default {
     validation
-}
+};

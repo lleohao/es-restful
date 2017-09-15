@@ -191,6 +191,7 @@ describe('ReqParse', () => {
         });
 
         const cases = [
+            { c: { name: '*', o: {} }, i: { a: 1, b: 2 }, e: { a: 1, b: 2 } },
             { c: { name: 'no-options', o: {} }, i: {}, e: {} },
             { c: { name: 'no-options', o: {} }, i: { a: 'b', c: 1 }, e: {} },
             { c: { name: 'no-options', o: {} }, i: { 'no-options': 'b' }, e: { 'no-options': 'b' } },

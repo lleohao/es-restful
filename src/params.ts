@@ -333,6 +333,19 @@ export class ReqParams {
     public getParams(): { [name: string]: ParaOptions } {
         return this.params;
     }
+
+    /**
+     * Inherit other reqParams
+     * @param args 
+     */
+    public inherit(...args: ReqParams[]) {
+        args.forEach((reqParam) => {
+            const params = reqParam.getParams();
+            for (const key in params) {
+                this.add(key, params[key]);
+            }
+        });
+    }
 }
 
 export default {

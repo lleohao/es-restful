@@ -118,6 +118,10 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
     const result = {};
     let error: ValidationError;
 
+    if (params['*'] !== undefined) {
+        return requestData;
+    }
+
     const flag = paramsKeys.every((key) => {
         const rule = params[key];
         let value = requestData[key];

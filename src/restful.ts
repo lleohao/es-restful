@@ -55,6 +55,10 @@ export class Restful {
         return async (request: IncomingMessage, response: ServerResponse) => {
             const { urlPara, resource } = this.router.getResource(request.url);
 
+            if (this.options.debug) {
+                console.log(`${new Date()} ${request.method} ${request.url}`);
+            }
+
             if (resource === null) {
                 if (inside) {
                     this.finish(response, 404, `This path: "${request.url}" does not have a resource.`);
@@ -130,7 +134,9 @@ export class Restful {
         }
     }
 
-    public bindServer(server: Server) {
+    public bindServer(server: Server, options: RestfulOption = {}) {
+        this.options = Object.assign({}, this.options, options);
+
         server.on('request', this.requestHandle(false));
     }
 

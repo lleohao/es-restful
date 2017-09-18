@@ -15,7 +15,7 @@ export interface CORS {
 }
 
 export interface RestfulContructonOption {
-    header?: { [key: string]: any };
+    headers?: { [key: string]: any };
     CORS?: boolean | CORS;
 }
 
@@ -40,7 +40,7 @@ export class Restful {
     private router: Router;
 
     constructor(options: RestfulContructonOption = {}) {
-        let headers = options.header || {};
+        let headers = options.headers || {};
         headers = Object.assign(headers, this.generateCorsHeaders(options.CORS));
 
         this.options = Object.assign({}, defaultOptions, {
@@ -104,6 +104,7 @@ export class Restful {
             responesData['result'] = data;
         }
 
+        this.setHeaders(res, this.options.headers);
         res.writeHead(code, { 'Content-Type': 'Application/json' });
         res.write(JSON.stringify(responesData));
         res.end();
@@ -124,7 +125,7 @@ export class Restful {
             }
 
             if (request.method === 'OPTIONS') {
-                this.setHeaders(response, this.options.header);
+                this.setHeaders(response, this.options.headers);
                 response.end();
                 return;
             }

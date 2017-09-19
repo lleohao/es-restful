@@ -101,7 +101,7 @@ export class Restful {
                 message: data
             } : data;
         } else {
-            responesData['result'] = data;
+            responesData['data'] = data;
         }
 
         this.setHeaders(res, this.options.headers);

@@ -126,7 +126,7 @@ describe('Example tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        result: [{
+                        data: [{
                             'id': 0,
                             'title': 'todo1',
                             'completed': false
@@ -148,7 +148,7 @@ describe('Example tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        result: {
+                        data: {
                             'id': 1,
                             'title': 'add todo',
                             'completed': false
@@ -185,7 +185,7 @@ describe('Example tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        result: {
+                        data: {
                             'id': 1,
                             'title': 'add todo',
                             'completed': false
@@ -210,7 +210,7 @@ describe('Example tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        result: 'success'
+                        data: 'success'
                     })
                     done();
                 })
@@ -233,7 +233,7 @@ describe('Example tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        result: 'success'
+                        data: 'success'
                     })
                     done();
                 })
@@ -254,7 +254,7 @@ describe('Example tets', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
                         code: 200,
-                        result: [{
+                        data: [{
                             'id': 0,
                             'title': 'todo1',
                             'completed': false

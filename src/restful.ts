@@ -218,7 +218,16 @@ export class Restful {
         }
     }
 
-    public use() {
+    /**
+     * For express middleware
+     * 
+     * @returns 
+     * @example
+     * const app = express();
+     * const api = new Restful();
+     * app.use(api.ues());
+     */
+    public use(express) {
         return (req, res, next: () => void) => {
             this.requestHandle(false, next)(req, res);
         };

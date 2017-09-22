@@ -4,7 +4,7 @@ import params, { ParsedData, ReqParams } from './params';
 import { requestParse } from './requestParse';
 import { Resource } from './resource';
 import { Router } from './router';
-import { createError, RestfulErrorType } from './utils';
+import { createError, isType, RestfulErrorType } from './utils';
 
 export interface CORS {
     allowOrigin?: string;
@@ -110,7 +110,7 @@ export class Restful {
         res.end();
     }
 
-    private requestHandle(inside = true) {
+    private requestHandle(inside = true, next?: () => void) {
         const generateEnd = (response) => {
             return (data: any, code: number = 200) => {
                 this.finish(response, code, data);
@@ -133,8 +133,9 @@ export class Restful {
             if (resource === null) {
                 if (inside) {
                     this.finish(response, 404, `This path: "${request.url}" does not have a resource.`);
+                } else if (next) {
+                    next();
                 }
-
                 return;
             }
 
@@ -215,5 +216,11 @@ export class Restful {
         if (this.server !== undefined) {
             this.server.close();
         }
+    }
+
+    public use() {
+        return (req, res, next: () => void) => {
+            this.requestHandle(false, next)(req, res);
+        };
     }
 }

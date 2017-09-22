@@ -344,7 +344,7 @@ export class ReqParams {
                 }, ReqParams);
             }
 
-            if (option.dset && this.params[option.dset]) {
+            if (option && option.dset && this.params[option.dset]) {
                 throw createError({
                     message: `The parameter name: ${name}, dtet: ${option.dset} already exists.`
                 }, ReqParams);

@@ -81,6 +81,106 @@ describe('ReqParse', () => {
             parser.remove(['age', 'address', 'no']);
             should(parser.getParams()).be.eql({});
         });
+
+        it('inherit test', () => {
+            const baseParser = new ReqParams();
+            baseParser.add('username');
+            baseParser.add('password');
+
+            const childrenParser = new ReqParams();
+            childrenParser.inherit(baseParser);
+            childrenParser.add('operate');
+
+            should(childrenParser.getParams()).be.eql({
+                username: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+                password: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+                operate: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+            });
+
+            should.throws(() => {
+                childrenParser.add('username')
+            }, /The parameter name: username already exists\./);
+
+            childrenParser.remove('username');
+            should(childrenParser.getParams()).be.eql({
+                password: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+                operate: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+            });
+            should(baseParser.getParams()).be.eql({
+                username: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                },
+                password: {
+                    defaultVal: undefined,
+                    nullabled: true,
+                    required: false,
+                    type: 'any',
+                    choices: null,
+                    caseSensitive: false,
+                    trim: false,
+                    coveration: null,
+                    dset: null
+                }
+            });
+        });
     });
 
     describe('Validation', () => {
@@ -91,6 +191,7 @@ describe('ReqParse', () => {
         });
 
         const cases = [
+            { c: { name: '*', o: {} }, i: { a: 1, b: 2 }, e: { a: 1, b: 2 } },
             { c: { name: 'no-options', o: {} }, i: {}, e: {} },
             { c: { name: 'no-options', o: {} }, i: { a: 'b', c: 1 }, e: {} },
             { c: { name: 'no-options', o: {} }, i: { 'no-options': 'b' }, e: { 'no-options': 'b' } },

@@ -68,51 +68,6 @@ class Todo extends Resource {
     }
 }
 
-const q1 = JSON.parse(readFileSync('./q1.json').toString())['data'];
-const q2 = JSON.parse(readFileSync('./q2.json').toString())['data'];
-
-const questionParams = new ReqParams();
-questionParams.add('userId');
-questionParams.add('nums');
-questionParams.add('questionnaireId');
-questionParams.add('answers');
-
-class Question extends Resource {
-    get(render, { type }) {
-        if (type === '01') {
-            render(q1);
-        } else {
-            render(q2);
-        }
-    }
-
-    @Resource.addParser(questionParams)
-    post(render, postData) {
-        const req = request({
-            hostname: '118.31.44.95',
-            port: 8080,
-            path: '/dtea/questionnaire/answers',
-            method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }, (res) => {
-            const data = [];
-
-            res.on('data', (chunk) => {
-                data.push(chunk);
-            }).on('end', () => {
-                console.log(data.toString());
-
-                render(JSON.parse(data.toString()));
-            });
-        });
-
-        req.write(JSON.stringify(postData));
-        req.end();
-    }
-}
-
 const postParams = new ReqParams();
 postParams.add('title', {
     required: true,
@@ -138,8 +93,6 @@ class TodoList extends Resource {
 
 api.addSource(TodoList, '/todos')
 api.addSource(Todo, '/todos/<todoId>')
-api.addSource(Question, '/question');
-api.addSource(Question, '/question/<type>');
 
 const server = createServer();
 server.on('request', (req, res) => {
@@ -152,5 +105,5 @@ server.on('request', (req, res) => {
     }
 });
 
-api.bindServer(server);
+api.bindServer(server, { debug: true });
 server.listen(5050);

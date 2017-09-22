@@ -5,7 +5,7 @@ import { createError, RestfulError, RestfulErrorType } from './utils';
 const parseBodyData = (type: string, body: string) => {
     let data;
 
-    switch (type) {
+    switch (type.toLowerCase()) {
         case 'application/x-www-form-urlencoded':
             data = parse(body);
             break;

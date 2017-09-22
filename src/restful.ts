@@ -4,18 +4,34 @@ import params, { ParsedData, ReqParams } from './params';
 import { requestParse } from './requestParse';
 import { Resource } from './resource';
 import { Router } from './router';
-import { createError, RestfulErrorType } from './utils';
+import { createError, isType, RestfulErrorType } from './utils';
 
-export interface RestfulOption {
+export interface CORS {
+    allowOrigin?: string;
+    allowMethods?: string[];
+    allowHeaders?: string[];
+    allowCredentials?: boolean;
+    maxAge?: number;
+}
+
+export interface RestfulContructonOption {
+    headers?: { [key: string]: any };
+    CORS?: boolean | CORS;
+}
+
+export interface ResultfulRunOption {
     debug?: boolean;
     port?: number;
     hostname?: string;
 }
 
+export interface RestfulOption extends RestfulContructonOption, ResultfulRunOption { }
+
 const defaultOptions = {
     port: 5050,
     hostname: 'localhost',
-    debug: false
+    debug: false,
+    header: {}
 };
 
 export class Restful {
@@ -23,9 +39,57 @@ export class Restful {
     private server: Server;
     private router: Router;
 
-    constructor() {
-        this.options = Object.assign({}, defaultOptions);
+    constructor(options: RestfulContructonOption = {}) {
+        let headers = options.headers || {};
+        headers = Object.assign(headers, this.generateCorsHeaders(options.CORS));
+
+        this.options = Object.assign({}, defaultOptions, {
+            headers
+        });
         this.router = new Router();
+    }
+
+    private generateCorsHeaders(corsOptions: boolean | CORS) {
+        const defaultCorsHeader = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS, GET, POST, PUT, DELETE',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        };
+
+        if (corsOptions === undefined || !corsOptions) {
+            return {};
+        }
+
+        if (typeof corsOptions === 'boolean') {
+            return defaultCorsHeader;
+        }
+
+        const tmp = {};
+        if (corsOptions.allowCredentials) {
+            tmp['Access-Control-Allow-Credentials'] = true;
+        }
+        if (corsOptions.allowMethods) {
+            tmp['Access-Control-Request-Method'] = corsOptions.allowMethods.map((methods) => {
+                return methods.toUpperCase();
+            }).join(', ');
+        }
+        if (corsOptions.allowOrigin) {
+            tmp['Access-Control-Allow-Origin'] = corsOptions.allowOrigin;
+        }
+        if (corsOptions.maxAge) {
+            tmp['Access-Control-Max-Age'] = corsOptions.maxAge;
+        }
+        if (corsOptions.allowHeaders) {
+            tmp['Access-Control-Allow-Headers'] = corsOptions.allowHeaders.join(', ');
+        }
+
+        return Object.assign(defaultCorsHeader, tmp);
+    }
+
+    private setHeaders(res: ServerResponse, headers) {
+        for (const key in headers) {
+            res.setHeader(key, headers[key]);
+        }
     }
 
     private finish(res: ServerResponse, code: number, data: object | string) {
@@ -37,15 +101,16 @@ export class Restful {
                 message: data
             } : data;
         } else {
-            responesData['result'] = data;
+            responesData['data'] = data;
         }
 
+        this.setHeaders(res, this.options.headers);
         res.writeHead(code, { 'Content-Type': 'Application/json' });
         res.write(JSON.stringify(responesData));
         res.end();
     }
 
-    private requestHandle(inside = true) {
+    private requestHandle(inside = true, next?: () => void) {
         const generateEnd = (response) => {
             return (data: any, code: number = 200) => {
                 this.finish(response, code, data);
@@ -55,11 +120,22 @@ export class Restful {
         return async (request: IncomingMessage, response: ServerResponse) => {
             const { urlPara, resource } = this.router.getResource(request.url);
 
+            if (this.options.debug) {
+                console.log(`${new Date()} ${request.method} ${request.url}`);
+            }
+
+            if (request.method === 'OPTIONS') {
+                this.setHeaders(response, this.options.headers);
+                response.end();
+                return;
+            }
+
             if (resource === null) {
                 if (inside) {
                     this.finish(response, 404, `This path: "${request.url}" does not have a resource.`);
+                } else if (next) {
+                    next();
                 }
-
                 return;
             }
 
@@ -112,7 +188,7 @@ export class Restful {
         }
     }
 
-    public start(options: RestfulOption = {}) {
+    public start(options: ResultfulRunOption = {}) {
         this.options = Object.assign({}, this.options, options);
 
         if (this.router.isEmpty()) {
@@ -130,7 +206,9 @@ export class Restful {
         }
     }
 
-    public bindServer(server: Server) {
+    public bindServer(server: Server, options: ResultfulRunOption = {}) {
+        this.options = Object.assign({}, this.options, options);
+
         server.on('request', this.requestHandle(false));
     }
 
@@ -138,5 +216,20 @@ export class Restful {
         if (this.server !== undefined) {
             this.server.close();
         }
+    }
+
+    /**
+     * For express middleware
+     * 
+     * @returns 
+     * @example
+     * const app = express();
+     * const api = new Restful();
+     * app.use(api.ues());
+     */
+    public use(express) {
+        return (req, res, next: () => void) => {
+            this.requestHandle(false, next)(req, res);
+        };
     }
 }

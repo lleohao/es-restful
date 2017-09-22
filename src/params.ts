@@ -88,6 +88,11 @@ export interface ParaOptions {
     dset?: string;
 }
 
+export interface ParaOptionObject {
+    name: string;
+    option?: ParaOptions;
+}
+
 /**
  * Error callback function.
  */
@@ -117,6 +122,10 @@ const validation = (params: { [name: string]: ParaOptions }, requestData: { [key
     const paramsKeys = Object.keys(params);
     const result = {};
     let error: ValidationError;
+
+    if (params['*'] !== undefined) {
+        return requestData;
+    }
 
     const flag = paramsKeys.every((key) => {
         const rule = params[key];
@@ -269,20 +278,38 @@ export class ReqParams {
     /**
      * Create reqparser instance.
      * 
-     * @param [globalOpts={}]   Global settings are overridden by zone settings
+     * @param {(ParaOptionObject[] | ParaOptions)}  options             Set parameters or global settings
+     *                                                                  global settings are overridden by zone settings
+     * @param {ParaOptions}                         [globalOpts={}]     Global settings are overridden by zone settings
+     * 
+     * @example
+     * // normal params
+     * const params = new ReqParams();
+     * // set global options
+     * const params = new ReqParams({defaultVal: 'hh'});
+     * // set params
+     * const params = new ReqParams([{name: 'name', option: {type: 'string'}}])
+     * // set params & global options
+     * const params = new ReqParams([{name: 'name', option: {type: 'string'}}], {defaultVal: 'hh'})
      */
-    constructor(globalOpts: ParaOptions = {}) {
+    constructor(options: ParaOptionObject[] | ParaOptions = {}, globalOpts: ParaOptions = {}) {
         const baseOpts = {
+            caseSensitive: false,
+            choices: null,
+            coveration: null,
             defaultVal: undefined,
+            dset: null,
             nullabled: true,
             required: false,
-            type: 'any',
-            choices: null,
-            caseSensitive: false,
             trim: false,
-            coveration: null,
-            dset: null
+            type: 'any'
         };
+
+        if (Array.isArray(options)) {
+            this.add(options);
+        } else {
+            globalOpts = options;
+        }
 
         this.globalOpts = Object.assign({}, baseOpts, globalOpts);
     }
@@ -290,24 +317,42 @@ export class ReqParams {
     /**
      * Add parameters.
      * 
-     * @param name      parameter name
-     * @param [opts]    parameter options
+     * @param {(string | ParaOptionObject[])}  parameters      parameter name or paraoptions list
+     * @param {ParaOptions}                    [opts={}]       parameter options
+     * 
+     * @example
+     * // add one param 
+     * reqParams.add('name', {type:'string'});
+     * reqParams.add('age', {type:'number'});
+     * // add more params
+     * reqParam.add([{name: 'name', option: {type: 'string'}}, {name:'age', option:{type:'number'}}])
      */
-    public add(name: string, opts?: ParaOptions) {
-        if (this.params[name]) {
-            throw createError({
-                message: `The parameter name: ${name} already exists.`
-            }, ReqParams);
+    public add(parameters: string | ParaOptionObject[], opts: ParaOptions = {}) {
+        if (!Array.isArray(parameters)) {
+            parameters = [{
+                name: parameters,
+                option: opts
+            }];
         }
 
-        if (opts && opts.dset && this.params[opts.dset]) {
-            throw createError({
-                message: `The parameter name: ${name}, dtet: ${opts.dset} already exists.`
-            }, ReqParams);
-        }
+        parameters.forEach((parameter) => {
+            const { name, option } = parameter;
 
-        opts = Object.assign({}, this.globalOpts, opts);
-        this.params[name] = opts;
+            if (this.params[name]) {
+                throw createError({
+                    message: `The parameter name: ${name} already exists.`
+                }, ReqParams);
+            }
+
+            if (option && option.dset && this.params[option.dset]) {
+                throw createError({
+                    message: `The parameter name: ${name}, dtet: ${option.dset} already exists.`
+                }, ReqParams);
+            }
+
+            opts = Object.assign({}, this.globalOpts, option);
+            this.params[name] = opts;
+        });
     }
 
     /**
@@ -332,6 +377,19 @@ export class ReqParams {
      */
     public getParams(): { [name: string]: ParaOptions } {
         return this.params;
+    }
+
+    /**
+     * Inherit other reqParams
+     * @param args 
+     */
+    public inherit(...args: ReqParams[]) {
+        args.forEach((reqParam) => {
+            const params = reqParam.getParams();
+            for (const key in params) {
+                this.add(key, params[key]);
+            }
+        });
     }
 }
 

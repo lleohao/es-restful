@@ -30,8 +30,5 @@
         "no-string-literal": false,
         "forin": false,
         "no-console": [false]
-    },
-    "rulesDirectory": [
-        "src"
-    ]
+    }
 }

@@ -183,7 +183,7 @@ describe('Restful', () => {
                 }).on('end', () => {
                     should(JSON.parse(data.toString())).be.eql({
                         code: 200,
-                        result: 'restful request'
+                        data: 'restful request'
                     })
                     server.close();
                     done();

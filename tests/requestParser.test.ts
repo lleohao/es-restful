@@ -9,99 +9,204 @@ const urlencoded = 1;
 const json = 2;
 
 describe('RequestParse', () => {
-    const cases = [
-        {
-            path: '/get',
-            e: {}
+    const haveBodyCases = {
+        jsonParserTest: {
+            herder: ['application/json'],
+            _cases: [
+                {
+                    path: '/',
+                    data: {
+                        name: 'lleohao'
+                    },
+                    e: {
+                        query: {},
+                        data: {
+                            name: 'lleohao'
+                        }
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: {
+                        name: 'lleohao'
+                    },
+                    e: {
+                        query: {
+                            age: '22'
+                        },
+                        data: {
+                            name: 'lleohao'
+                        }
+                    }
+                }
+            ]
         },
-        {
-            path: '/get?name',
-            e: {
-                name: ''
-            },
+        textParserTest: {
+            herder: ['text/palin', 'text/xml'],
+            _cases: [
+                {
+                    path: '/',
+                    data: '<author name="lleohao">',
+                    e: {
+                        query: {},
+                        data: '<author name="lleohao">'
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: '<author name="lleohao">',
+                    e: {
+                        query: {
+                            age: '22'
+                        },
+                        data: '<author name="lleohao">'
+                    }
+                }
+            ]
         },
-        {
-            path: '/get?name=',
-            e: {
-                name: ''
-            }
+        urlencodedParserTest: {
+            herder: ['application/x-www-form-urlencoded'],
+            _cases: [
+                {
+                    path: '/',
+                    data: 'name=lleohao',
+                    e: {
+                        query: {},
+                        data: {
+                            name: 'lleohao'
+                        }
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: 'name=lleohao',
+                    e: {
+                        query: {
+                            age: '22'
+                        },
+                        data: {
+                            name: 'lleohao'
+                        }
+                    }
+                }
+            ]
         },
-        {
-            path: '/get?name=lleohao',
-            e: {
-                name: 'lleohao'
-            }
-        },
-        {
-            path: '/get?name=lleohao&age=22',
-            e: {
-                name: 'lleohao',
-                age: '22'
-            }
-        },
-        {
-            path: '/post/with/x-www-form-urlencoded',
-            e: {
-                name: 'lleohao'
-            },
-            type: urlencoded,
-        },
-        {
-            path: '/post/with/json',
-            e: {
-                name: 'lleohao'
-            },
-            type: json,
+        rawParserTest: {
+            herder: ['any/any', 'multipart/form-data'],
+            _cases: [
+                {
+                    path: '/',
+                    data: 'datatatatatattata',
+                    e: {
+                        query: {},
+                        data: 'datatatatatattata'
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: 'datatatatatattata',
+                    e: {
+                        query: {
+                            age: '22'
+                        },
+                        data: 'datatatatatattata'
+                    }
+                }
+            ]
         }
-    ];
+    };
 
-    cases.forEach(c => {
-        it(c.path, () => {
-            let server = createServer(async (req, res) => {
-                should(requestParse(req)).be.fulfilledWith(c.e);
+    const noBodyCases = [
+        {
+            method: 'GET',
+            path: '/',
+            e: {
+                query: {},
+                data: {}
+            }
+        },
+        {
+            method: 'GET',
+            path: '/?name=lleohao',
+            e: {
+                query: {
+                    name: 'lleohao'
+                },
+                data: {}
+            }
+        },
+        {
+            method: 'DELETE',
+            path: '/',
+            e: {
+                query: {},
+                data: {}
+            }
+        },
+        {
+            method: 'DELETE',
+            path: '/?name=lleohao',
+            e: {
+                query: {
+                    name: 'lleohao'
+                },
+                data: {}
+            }
+        }
+    ]
 
-                res.end();
-                server.close()
+    noBodyCases.forEach(({ method, path, e }) => {
+        it(` method: ${method}, path: ${path}`, (done) => {
+            let server = createServer((req, res) => {
+                requestParse(req, (err, data) => {
+                    should(data).be.eql(e);
+
+                    done();
+                    res.end();
+                    server.close();
+                });
             });
             server.listen(5050);
 
-            let reqData = c.e;
-            let type = c['type'];
-            let req = request({ host: '127.0.0.1', port: 5050, path: c.path, method: type !== undefined ? 'POST' : 'GET' });
-
-
-            if (reqData !== undefined) {
-                if (c['type'] === urlencoded) {
-                    req.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    reqData = stringify(reqData);
-                } else {
-                    req.setHeader('Content-Type', 'application/json');
-                    reqData = JSON.stringify(reqData);
-                }
-
-                req.write(reqData);
-            }
+            let req = request({ host: '127.0.0.1', port: 5050, path: path, method });
 
             req.end();
-        })
+        });
     });
 
-    it('post unsupported content-type', () => {
-        let server = createServer(async (req, res) => {
-            should(requestParse(req)).be.rejectedWith('This request Content-Type: test-ct is not supported.')
+    for (const testName in haveBodyCases) {
+        const { herder, _cases } = haveBodyCases[testName];
 
-            res.end();
-            server.close()
+        describe(testName, () => {
+            _cases.forEach(({ path, e, data }) => {
+                herder.forEach((h) => {
+                    it(`path: ${path}, header: ${h}`, (done) => {
+                        let server = createServer((req, res) => {
+                            requestParse(req, (err, data) => {
+                                should(data).be.eql(e);
+
+                                done();
+                                res.end();
+                                server.close();
+                            });
+                        });
+                        server.listen(5050);
+
+                        let req = request({ host: '127.0.0.1', port: 5050, path: path, method: 'POST' });
+                        req.setHeader('Content-Type', h);
+
+                        let reqData = data;
+
+                        if (/json/i.test(testName)) {
+                            reqData = JSON.stringify(data);
+                        }
+
+                        req.write(reqData);
+
+                        req.end();
+                    });
+                });
+            });
         });
-        server.listen(5050);
-
-        let req = request({ host: '127.0.0.1', port: 5050, path: '/', method: 'POST' });
-        let reqData = {
-            name: 'lleohao'
-        }
-        req.setHeader('Content-Type', 'test-ct');
-        req.write(JSON.stringify(reqData));
-
-        req.end();
-    })
+    }
 });

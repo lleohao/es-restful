@@ -1,7 +1,13 @@
 const contentTypeRegexp = /^(.*?)\/(.*?)((?:[\t ]*;).*)?$/;
 const paramsTrim = /[\t ]*/g;
 
-const contentTypeParser = (contentType: string): { type: string, subType: string, params: any } => {
+export interface ContentType {
+    type: string;
+    subType: string;
+    params: any;
+}
+
+const contentTypeParser = (contentType: string = 'text/plain'): ContentType => {
     const contentTypeMatch = contentTypeRegexp.exec(contentType);
     const [, type, subType, _params] = contentTypeMatch;
     let params;

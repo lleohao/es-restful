@@ -1,66 +1,70 @@
 import { IncomingMessage } from 'http';
-import { parse } from 'querystring';
-import { createError, RestfulError, RestfulErrorType } from './utils';
+import contentTypeParser, { ContentType } from './helper/contentTypeParser';
+import * as parser from './parser';
 
-const queryParser = (url: string): {} => {
-    url = decodeURIComponent(url);
+export interface QueryData {
+    [key: string]: string;
+}
 
-    const index = url.indexOf('?');
+export interface BodyData {
+    [key: string]: any;
+}
 
-    const queryStr = index === -1 ? '' : url.substr(index + 1);
-    return parse(queryStr);
-};
+export interface RequestData {
+    query: QueryData;
+    data: BodyData | string;
+}
 
-const parseBodyData = (type: string, body: string) => {
-    let data;
+const NO_BODY_METHODS = ['GET', 'DELETE'];
 
-    switch (type.toLowerCase()) {
-        case 'text/plain':
-        case 'application/x-www-form-urlencoded':
-            data = parse(body);
-            break;
-        case 'application/json':
-            try {
-                data = body === '' ? {} : JSON.parse(body);
-            } catch (error) {
-                data = createError({
-                    type: RestfulErrorType.REQUEST,
-                    message: error.message,
-                }, parseBodyData);
-            }
-            break;
-        default:
-            data = createError({
-                type: RestfulErrorType.REQUEST,
-                message: `This request "Content-Type": "${type}" is not supported.`,
-                statusCode: 403
-            }, parseBodyData);
+function getParser(contentType: ContentType) {
+    if (contentType.type === 'text') {
+        return parser.textParser;
     }
 
-    return data;
-};
+    if (contentType.subType === 'json') {
+        return parser.jsonParser;
+    }
 
-export const requestParse = (req: IncomingMessage) => {
-    return new Promise((reject, reslove) => {
-        // GET and DELETE method no body
-        if (/get|delete/i.test(req.method)) {
-            reslove(queryParser(req.url));
-        } else {
-            const contentType: string = req.headers['content-type'] || 'application/x-www-form-urlencoded';
+    if (contentType.subType === 'x-www-form-urlencoded') {
+        return parser.urlencodeParser;
+    }
 
-            const body: Buffer[] = [];
+    return parser.rawParser;
+}
 
-            req.on('data', (chunk) => {
-                body.push(chunk as Buffer);
-            }).on('end', () => {
-                const bodyData = parseBodyData(contentType, body.toString());
+export const requestParse = (req: IncomingMessage, callback: (err: Error, data: RequestData) => void) => {
+    const { url, method, headers } = req;
 
-                if (bodyData instanceof RestfulError) {
-                    throw bodyData;
+    const query = parser.queryParser(url);
+
+    if (NO_BODY_METHODS.indexOf(method) === -1) {
+        let body = '';
+        const contentType = contentTypeParser(headers['content-type']);
+        const bodyParser = getParser(contentType);
+
+        req.on('data', onData);
+        req.on('error', onError);
+        req.on('end', onEnd);
+
+        function onData(chunk) {
+            body += chunk;
+        }
+
+        function onError(err) {
+            callback(err, null);
+        }
+
+        function onEnd() {
+            bodyParser(body, (err, data) => {
+                if (err) {
+                    callback(err, null);
                 } else {
-                    reject(bodyData);
+                    callback(null, { query, data });
                 }
             });
         }
-    });
+    } else {
+        callback(null, { query, data: {} });
+    }
 };

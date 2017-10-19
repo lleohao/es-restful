@@ -47,7 +47,7 @@ export interface ParaOptions {
      * [1,2,3] => 1-2-3
      * 
      */
-    type?: "number" | "boolean" | "object" | "array" | "any" | "string" | string;
+    type?: 'number' | 'boolean' | 'object' | 'array' | 'any' | 'string' | string;
     /**
      * Optional range of parameters.
      * 

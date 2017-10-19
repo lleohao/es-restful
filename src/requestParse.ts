@@ -2,16 +2,26 @@ import { IncomingMessage } from 'http';
 import { parse } from 'querystring';
 import { createError, RestfulError, RestfulErrorType } from './utils';
 
+const queryParser = (url: string) => {
+    url = decodeURIComponent(url);
+
+    const index = url.indexOf('?');
+
+    const queryStr = index === -1 ? '' : url.substr(index + 1);
+    return parse(queryStr);
+};
+
 const parseBodyData = (type: string, body: string) => {
     let data;
 
     switch (type.toLowerCase()) {
+        case 'text/plain':
         case 'application/x-www-form-urlencoded':
             data = parse(body);
             break;
         case 'application/json':
             try {
-                data = body === "" ? {} : JSON.parse(body);
+                data = body === '' ? {} : JSON.parse(body);
             } catch (error) {
                 data = createError({
                     type: RestfulErrorType.REQUEST,
@@ -32,19 +42,11 @@ const parseBodyData = (type: string, body: string) => {
 
 export const requestParse = (req: IncomingMessage) => {
     return new Promise((reject, reslove) => {
-        if (req.method === 'GET') {
-            const url = decodeURIComponent(req.url);
-            const index = url.indexOf('?');
-
-            const queryStr = index === -1 ? '' : url.substr(index + 1);
-            const data = parse(queryStr);
-
-            reject(data);
+        // GET and DELETE method no body
+        if (/get|delete/i.test(req.method)) {
+            reslove(queryParser(req.url));
         } else {
-            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/);
-            if (contentType) {
-                contentType = contentType[0];
-            }
+            const contentType: string = req.headers['content-type'] || 'application/x-www-form-urlencoded';
 
             const body: Buffer[] = [];
 

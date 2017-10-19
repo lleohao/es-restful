@@ -1,7 +1,7 @@
-import { parse } from "url";
+import { parse } from 'url';
 
-import { createError, RestfulErrorType } from "../utils";
-import { CustomResource, Route } from "./route";
+import { createError, RestfulErrorType } from '../utils';
+import { CustomResource, Route } from './route';
 
 /**
  * Sort routerList by weight.

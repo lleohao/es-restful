@@ -14,7 +14,6 @@
         "interface-name": [
             false
         ],
-        "no-empty-interface": false,
         "quotemark": [
             true,
             "single"
@@ -31,6 +30,7 @@
         "no-string-literal": false,
         "forin": false,
         "no-console": [false],
-        "variable-name": [false]
+        "variable-name": [false],
+        "no-empty": false
     }
 }

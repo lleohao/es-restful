@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import { parse } from 'querystring';
 import { createError, RestfulError, RestfulErrorType } from './utils';
 
-const queryParser = (url: string) => {
+const queryParser = (url: string): {} => {
     url = decodeURIComponent(url);
 
     const index = url.indexOf('?');

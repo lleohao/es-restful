@@ -7,7 +7,7 @@ export interface ContentType {
     params: any;
 }
 
-const contentTypeParser = (contentType: string = 'text/plain'): ContentType => {
+export const contentTypeParser = (contentType: string = 'text/plain'): ContentType => {
     const contentTypeMatch = contentTypeRegexp.exec(contentType);
     const [, type, subType, _params] = contentTypeMatch;
     let params;
@@ -22,5 +22,3 @@ const contentTypeParser = (contentType: string = 'text/plain'): ContentType => {
         type, subType, params
     };
 };
-
-export default contentTypeParser;

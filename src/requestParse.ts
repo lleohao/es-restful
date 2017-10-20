@@ -1,6 +1,7 @@
 import { IncomingMessage } from 'http';
-import contentTypeParser, { ContentType } from './helper/contentTypeParser';
+import { ContentType, contentTypeParser } from './helper';
 import * as parser from './parser';
+import { createError, RestfulErrorType } from './utils';
 
 export interface QueryData {
     [key: string]: string;
@@ -33,38 +34,45 @@ function getParser(contentType: ContentType) {
     return parser.rawParser;
 }
 
-export const requestParse = (req: IncomingMessage, callback: (err: Error, data: RequestData) => void) => {
+export const requestParse = (req: IncomingMessage): Promise<RequestData> => {
     const { url, method, headers } = req;
-
     const query = parser.queryParser(url);
 
-    if (NO_BODY_METHODS.indexOf(method) === -1) {
-        let body = '';
-        const contentType = contentTypeParser(headers['content-type']);
-        const bodyParser = getParser(contentType);
+    return new Promise((resolve, reject) => {
+        if (NO_BODY_METHODS.indexOf(method) === -1) {
+            let body = '';
+            const contentType = contentTypeParser(headers['content-type']);
+            const bodyParser = getParser(contentType);
 
-        req.on('data', onData);
-        req.on('error', onError);
-        req.on('end', onEnd);
+            req.on('data', onData);
+            req.on('error', onError);
+            req.on('end', onEnd);
 
-        function onData(chunk) {
-            body += chunk;
+            function onData(chunk) {
+                body += chunk;
+            }
+
+            function onError(err) {
+                reject(createError({
+                    type: RestfulErrorType.REQUEST,
+                    message: err.message,
+                }, requestParse));
+            }
+
+            function onEnd() {
+                bodyParser(body, (err, data) => {
+                    if (err) {
+                        reject(createError({
+                            type: RestfulErrorType.REQUEST,
+                            message: err.message,
+                        }, requestParse));
+                    } else {
+                        resolve({ query, data });
+                    }
+                });
+            }
+        } else {
+            resolve({ query, data: {} });
         }
-
-        function onError(err) {
-            callback(err, null);
-        }
-
-        function onEnd() {
-            bodyParser(body, (err, data) => {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, { query, data });
-                }
-            });
-        }
-    } else {
-        callback(null, { query, data: {} });
-    }
+    });
 };

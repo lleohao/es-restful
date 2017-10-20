@@ -1,4 +1,4 @@
-import contentTypeParser from '../../lib/helper/contentTypeParser';
+import { contentTypeParser } from '../../lib/helper';
 import should = require('should');
 
 

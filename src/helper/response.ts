@@ -7,7 +7,7 @@ export interface ResponseOption {
 }
 
 export class ResponseHandle {
-    private headers: {};
+    private headers = {};
 
     constructor({ headers, CORS }: ResponseOption) {
         headers = headers || {};
@@ -29,7 +29,7 @@ export class ResponseHandle {
         }
     }
 
-    public finish(res: ServerResponse, status: number, data: object | string, headers = {}) {
+    public finish(res: ServerResponse, data: object | string, status: number, headers = {}) {
         let responesData;
         if (status >= 400) {
             responesData = this.generateErrorData(data);

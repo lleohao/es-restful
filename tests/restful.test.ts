@@ -181,10 +181,7 @@ describe('Restful', () => {
                 res.on('data', (chunk) => {
                     data.push(chunk);
                 }).on('end', () => {
-                    should(JSON.parse(data.toString())).be.eql({
-                        code: 200,
-                        data: 'restful request'
-                    })
+                    should(JSON.parse(data.toString())).be.eql('restful request')
                     server.close();
                     done();
                 })

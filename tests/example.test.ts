@@ -124,14 +124,11 @@ describe('Example tets', () => {
                 })
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        data: [{
-                            'id': 0,
-                            'title': 'todo1',
-                            'completed': false
-                        }]
-                    });
+                    should(data).be.eql([{
+                        'id': 0,
+                        'title': 'todo1',
+                        'completed': false
+                    }]);
                     done();
                 })
             })
@@ -147,12 +144,9 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        code: 200,
-                        data: {
-                            'id': 1,
-                            'title': 'add todo',
-                            'completed': false
-                        }
+                        'id': 1,
+                        'title': 'add todo',
+                        'completed': false
                     });
                     done();
                 })
@@ -184,12 +178,9 @@ describe('Example tets', () => {
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
                     should(data).be.eql({
-                        code: 200,
-                        data: {
-                            'id': 1,
-                            'title': 'add todo',
-                            'completed': false
-                        }
+                        'id': 1,
+                        'title': 'add todo',
+                        'completed': false
                     });
                     done();
                 })
@@ -208,14 +199,12 @@ describe('Example tets', () => {
                 })
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        data: 'success'
-                    })
+                    should(data).be.eql('success')
                     done();
                 })
             });
 
+            req.write(JSON.stringify({}));
             req.end();
         })
 
@@ -231,10 +220,7 @@ describe('Example tets', () => {
                 })
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        data: 'success'
-                    })
+                    should(data).be.eql('success');
                     done();
                 })
             });
@@ -252,14 +238,11 @@ describe('Example tets', () => {
                 })
                 res.on('end', () => {
                     data = JSON.parse(data.toString());
-                    should(data).be.eql({
-                        code: 200,
-                        data: [{
-                            'id': 0,
-                            'title': 'todo1',
-                            'completed': false
-                        }]
-                    })
+                    should(data).be.eql([{
+                        'id': 0,
+                        'title': 'todo1',
+                        'completed': false
+                    }])
                     done();
                 })
             })

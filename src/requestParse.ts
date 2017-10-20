@@ -1,19 +1,15 @@
 import { IncomingMessage } from 'http';
 import { ContentType, contentTypeParser } from './helper';
 import * as parser from './parser';
-import { createError, RestfulErrorType } from './utils';
-
-export interface QueryData {
-    [key: string]: string;
-}
+import { createError, isType, RestfulErrorType } from './utils';
 
 export interface BodyData {
     [key: string]: any;
 }
 
 export interface RequestData {
-    query: QueryData;
-    data: BodyData | string;
+    data: BodyData;
+    rawData: any;
 }
 
 const NO_BODY_METHODS = ['GET', 'DELETE'];
@@ -67,12 +63,23 @@ export const requestParse = (req: IncomingMessage): Promise<RequestData> => {
                             message: err.message,
                         }, requestParse));
                     } else {
-                        resolve({ query, data });
+                        let rawData = null;
+
+                        if (isType(data, 'object')) {
+                            data = Object.assign(query, data);
+                        } else {
+                            rawData = data;
+                            data = query;
+                        }
+                        resolve({ data, rawData });
                     }
                 });
             }
         } else {
-            resolve({ query, data: {} });
+            resolve({
+                data: query,
+                rawData: null
+            });
         }
     });
 };

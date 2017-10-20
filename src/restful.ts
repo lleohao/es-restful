@@ -40,11 +40,11 @@ export class Restful {
         const res = this.responseHandle;
         const generateEnd = (response) => {
             return (data: any, code = 200, headers = {}) => {
-                res.finish(response, code, headers, data);
+                res.finish(response, data, code, headers);
             };
         };
 
-        return (request: IncomingMessage, response: ServerResponse) => {
+        return async (request: IncomingMessage, response: ServerResponse) => {
             const { urlPara, resource } = this.router.getResource(request.url);
 
             if (this.options.debug) {
@@ -58,7 +58,7 @@ export class Restful {
 
             if (resource === null) {
                 if (inside) {
-                    res.finish(response, 404, `This path: "${request.url}" does not have a resource.`);
+                    res.finish(response, `This path: "${request.url}" does not have a resource.`, 404);
                 } else if (next) {
                     next();
                 }
@@ -66,44 +66,39 @@ export class Restful {
             }
 
             const methodFunction = resource.getMethodProcess(request.method);
-            requestParse(request, (err, data) => {
-                if (err) {
-
-                } else {
-
-                }
-            });
 
             if (methodFunction) {
                 try {
-                    // const requestData = requestParse(request);
-                    // const result = methodFunction['params'] ?
-                    //     params.validation(methodFunction['params'].getParams(), requestData) : {};
-                    const callArgument: any[] = [generateEnd(response)];
+                    const requestData = await requestParse(request);
+                    let result;
+                    if (!requestData.rawData && methodFunction['params']) {
+                        result = params.validation(methodFunction['params'].getParams(), requestData.data);
+                    } else {
+                        result = requestData.rawData;
+                    }
+
+                    const callArgument: any[] = [generateEnd(response), result];
 
                     if (Object.keys(urlPara).length > 0) {
-                        callArgument.push(urlPara);
+                        callArgument.splice(1, 0, urlPara);
                     }
-                    // if (result !== null) {
-                    //     callArgument.push(result);
-                    // }
 
                     methodFunction.apply(null, callArgument);
                 } catch (err) {
                     switch (err.type) {
                         case RestfulErrorType.PARAMS:
-                            res.finish(response, 400, {
+                            res.finish(response, {
                                 code: err.code,
                                 message: err.message
-                            });
+                            }, 400);
                             break;
                         case RestfulErrorType.REQUEST:
-                            res.finish(response, err.statusCode, `Request parse throws a error: ${err.message}.`);
+                            res.finish(response, `Request parse throws a error: ${err.message}.`, err.statusCode);
                             break;
                     }
                 }
             } else {
-                res.finish(response, 403, `This path: "${request.url}", method: "${request.method}" is undefined.`);
+                res.finish(response, `This path: "${request.url}", method: "${request.method}" is undefined.`, 403);
             }
         };
     }

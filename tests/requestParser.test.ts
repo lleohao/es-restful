@@ -19,10 +19,10 @@ describe('RequestParse', () => {
                         name: 'lleohao'
                     },
                     e: {
-                        query: {},
                         data: {
                             name: 'lleohao'
-                        }
+                        },
+                        rawData: null
                     }
                 },
                 {
@@ -31,10 +31,9 @@ describe('RequestParse', () => {
                         name: 'lleohao'
                     },
                     e: {
-                        query: {
-                            age: '22'
-                        },
+                        rawData: null,
                         data: {
+                            age: '22',
                             name: 'lleohao'
                         }
                     }
@@ -48,18 +47,18 @@ describe('RequestParse', () => {
                     path: '/',
                     data: '<author name="lleohao">',
                     e: {
-                        query: {},
-                        data: '<author name="lleohao">'
+                        data: {},
+                        rawData: '<author name="lleohao">'
                     }
                 },
                 {
                     path: '/?age=22',
                     data: '<author name="lleohao">',
                     e: {
-                        query: {
+                        data: {
                             age: '22'
                         },
-                        data: '<author name="lleohao">'
+                        rawData: '<author name="lleohao">'
                     }
                 }
             ]
@@ -71,7 +70,7 @@ describe('RequestParse', () => {
                     path: '/',
                     data: 'name=lleohao',
                     e: {
-                        query: {},
+                        rawData: null,
                         data: {
                             name: 'lleohao'
                         }
@@ -81,10 +80,9 @@ describe('RequestParse', () => {
                     path: '/?age=22',
                     data: 'name=lleohao',
                     e: {
-                        query: {
-                            age: '22'
-                        },
+                        rawData: null,
                         data: {
+                            age: '22',
                             name: 'lleohao'
                         }
                     }
@@ -98,18 +96,18 @@ describe('RequestParse', () => {
                     path: '/',
                     data: 'datatatatatattata',
                     e: {
-                        query: {},
-                        data: 'datatatatatattata'
+                        data: {},
+                        rawData: 'datatatatatattata'
                     }
                 },
                 {
                     path: '/?age=22',
                     data: 'datatatatatattata',
                     e: {
-                        query: {
+                        data: {
                             age: '22'
                         },
-                        data: 'datatatatatattata'
+                        rawData: 'datatatatatattata'
                     }
                 }
             ]
@@ -121,25 +119,25 @@ describe('RequestParse', () => {
             method: 'GET',
             path: '/',
             e: {
-                query: {},
-                data: {}
+                data: {},
+                rawData: null
             }
         },
         {
             method: 'GET',
             path: '/?name=lleohao',
             e: {
-                query: {
+                data: {
                     name: 'lleohao'
                 },
-                data: {}
+                rawData: null
             }
         },
         {
             method: 'DELETE',
             path: '/',
             e: {
-                query: {},
+                rawData: null,
                 data: {}
             }
         },
@@ -147,30 +145,28 @@ describe('RequestParse', () => {
             method: 'DELETE',
             path: '/?name=lleohao',
             e: {
-                query: {
+                data: {
                     name: 'lleohao'
                 },
-                data: {}
+                rawData: null
             }
         }
     ]
 
-    noBodyCases.forEach(({ method, path, e }) => {
+    noBodyCases.forEach(({ method, path, e }, i) => {
         it(` method: ${method}, path: ${path}`, (done) => {
-            let server = createServer((req, res) => {
-                requestParse(req, (err, data) => {
-                    should(data).be.eql(e);
+            const port = 7070 + i;
+            let server = createServer(async (req, res) => {
+                const data = await requestParse(req);
+                res.end();
 
-                    done();
-                    res.end();
-                    server.close();
-                });
+                should(data).be.deepEqual(e);
+                done();
+                server.close();
             });
-            server.listen(5050);
+            server.listen(port);
 
-            let req = request({ host: '127.0.0.1', port: 5050, path: path, method });
-
-            req.end();
+            request({ host: '127.0.0.1', port, path, method }).end()
         });
     });
 
@@ -179,20 +175,20 @@ describe('RequestParse', () => {
 
         describe(testName, () => {
             _cases.forEach(({ path, e, data }) => {
-                herder.forEach((h) => {
+                herder.forEach((h, i) => {
+                    const port = 6060 + i;
                     it(`path: ${path}, header: ${h}`, (done) => {
-                        let server = createServer((req, res) => {
-                            requestParse(req, (err, data) => {
-                                should(data).be.eql(e);
+                        let server = createServer(async (req, res) => {
+                            const data = await requestParse(req);
+                            should(data).be.eql(e);
 
-                                done();
-                                res.end();
-                                server.close();
-                            });
+                            done();
+                            res.end();
+                            server.close();
                         });
-                        server.listen(5050);
+                        server.listen(port);
 
-                        let req = request({ host: '127.0.0.1', port: 5050, path: path, method: 'POST' });
+                        let req = request({ host: '127.0.0.1', port, path: path, method: 'POST' });
                         req.setHeader('Content-Type', h);
 
                         let reqData = data;

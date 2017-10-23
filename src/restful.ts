@@ -95,6 +95,8 @@ export class Restful {
                         case RestfulErrorType.REQUEST:
                             res.finish(response, `Request parse throws a error: ${err.message}.`, err.statusCode);
                             break;
+                        default:
+                            res.finish(response, `Unexpected error: ${err.message}`, 500);
                     }
                 }
             } else {

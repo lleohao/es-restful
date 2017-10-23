@@ -9,99 +9,200 @@ const urlencoded = 1;
 const json = 2;
 
 describe('RequestParse', () => {
-    const cases = [
-        {
-            path: '/get',
-            e: {}
-        },
-        {
-            path: '/get?name',
-            e: {
-                name: ''
-            },
-        },
-        {
-            path: '/get?name=',
-            e: {
-                name: ''
-            }
-        },
-        {
-            path: '/get?name=lleohao',
-            e: {
-                name: 'lleohao'
-            }
-        },
-        {
-            path: '/get?name=lleohao&age=22',
-            e: {
-                name: 'lleohao',
-                age: '22'
-            }
-        },
-        {
-            path: '/post/with/x-www-form-urlencoded',
-            e: {
-                name: 'lleohao'
-            },
-            type: urlencoded,
-        },
-        {
-            path: '/post/with/json',
-            e: {
-                name: 'lleohao'
-            },
-            type: json,
-        }
-    ];
-
-    cases.forEach(c => {
-        it(c.path, () => {
-            let server = createServer(async (req, res) => {
-                should(requestParse(req)).be.fulfilledWith(c.e);
-
-                res.end();
-                server.close()
-            });
-            server.listen(5050);
-
-            let reqData = c.e;
-            let type = c['type'];
-            let req = request({ host: '127.0.0.1', port: 5050, path: c.path, method: type !== undefined ? 'POST' : 'GET' });
-
-
-            if (reqData !== undefined) {
-                if (c['type'] === urlencoded) {
-                    req.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    reqData = stringify(reqData);
-                } else {
-                    req.setHeader('Content-Type', 'application/json');
-                    reqData = JSON.stringify(reqData);
+    const haveBodyCases = {
+        jsonParserTest: {
+            herder: ['application/json'],
+            _cases: [
+                {
+                    path: '/',
+                    data: {
+                        name: 'lleohao'
+                    },
+                    e: {
+                        data: {
+                            name: 'lleohao'
+                        },
+                        rawData: null
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: {
+                        name: 'lleohao'
+                    },
+                    e: {
+                        rawData: null,
+                        data: {
+                            age: '22',
+                            name: 'lleohao'
+                        }
+                    }
                 }
+            ]
+        },
+        textParserTest: {
+            herder: ['text/palin', 'text/xml'],
+            _cases: [
+                {
+                    path: '/',
+                    data: '<author name="lleohao">',
+                    e: {
+                        data: {},
+                        rawData: '<author name="lleohao">'
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: '<author name="lleohao">',
+                    e: {
+                        data: {
+                            age: '22'
+                        },
+                        rawData: '<author name="lleohao">'
+                    }
+                }
+            ]
+        },
+        urlencodedParserTest: {
+            herder: ['application/x-www-form-urlencoded'],
+            _cases: [
+                {
+                    path: '/',
+                    data: 'name=lleohao',
+                    e: {
+                        rawData: null,
+                        data: {
+                            name: 'lleohao'
+                        }
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: 'name=lleohao',
+                    e: {
+                        rawData: null,
+                        data: {
+                            age: '22',
+                            name: 'lleohao'
+                        }
+                    }
+                }
+            ]
+        },
+        rawParserTest: {
+            herder: ['any/any', 'multipart/form-data'],
+            _cases: [
+                {
+                    path: '/',
+                    data: 'datatatatatattata',
+                    e: {
+                        data: {},
+                        rawData: 'datatatatatattata'
+                    }
+                },
+                {
+                    path: '/?age=22',
+                    data: 'datatatatatattata',
+                    e: {
+                        data: {
+                            age: '22'
+                        },
+                        rawData: 'datatatatatattata'
+                    }
+                }
+            ]
+        }
+    };
 
-                req.write(reqData);
+    const noBodyCases = [
+        {
+            method: 'GET',
+            path: '/',
+            e: {
+                data: {},
+                rawData: null
             }
+        },
+        {
+            method: 'GET',
+            path: '/?name=lleohao',
+            e: {
+                data: {
+                    name: 'lleohao'
+                },
+                rawData: null
+            }
+        },
+        {
+            method: 'DELETE',
+            path: '/',
+            e: {
+                rawData: null,
+                data: {}
+            }
+        },
+        {
+            method: 'DELETE',
+            path: '/?name=lleohao',
+            e: {
+                data: {
+                    name: 'lleohao'
+                },
+                rawData: null
+            }
+        }
+    ]
 
-            req.end();
-        })
+    noBodyCases.forEach(({ method, path, e }, i) => {
+        it(` method: ${method}, path: ${path}`, (done) => {
+            const port = 7070 + i;
+            let server = createServer(async (req, res) => {
+                const data = await requestParse(req);
+                res.end();
+
+                should(data).be.deepEqual(e);
+                done();
+                server.close();
+            });
+            server.listen(port);
+
+            request({ host: '127.0.0.1', port, path, method }).end()
+        });
     });
 
-    it('post unsupported content-type', () => {
-        let server = createServer(async (req, res) => {
-            should(requestParse(req)).be.rejectedWith('This request Content-Type: test-ct is not supported.')
+    for (const testName in haveBodyCases) {
+        const { herder, _cases } = haveBodyCases[testName];
 
-            res.end();
-            server.close()
+        describe(testName, () => {
+            _cases.forEach(({ path, e, data }) => {
+                herder.forEach((h, i) => {
+                    const port = 6060 + i;
+                    it(`path: ${path}, header: ${h}`, (done) => {
+                        let server = createServer(async (req, res) => {
+                            const data = await requestParse(req);
+                            should(data).be.eql(e);
+
+                            done();
+                            res.end();
+                            server.close();
+                        });
+                        server.listen(port);
+
+                        let req = request({ host: '127.0.0.1', port, path: path, method: 'POST' });
+                        req.setHeader('Content-Type', h);
+
+                        let reqData = data;
+
+                        if (/json/i.test(testName)) {
+                            reqData = JSON.stringify(data);
+                        }
+
+                        req.write(reqData);
+
+                        req.end();
+                    });
+                });
+            });
         });
-        server.listen(5050);
-
-        let req = request({ host: '127.0.0.1', port: 5050, path: '/', method: 'POST' });
-        let reqData = {
-            name: 'lleohao'
-        }
-        req.setHeader('Content-Type', 'test-ct');
-        req.write(JSON.stringify(reqData));
-
-        req.end();
-    })
+    }
 });

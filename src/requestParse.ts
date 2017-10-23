@@ -1,63 +1,84 @@
 import { IncomingMessage } from 'http';
-import { parse } from 'querystring';
-import { createError, RestfulError, RestfulErrorType } from './utils';
+import { ContentType, contentTypeParser } from './helper';
+import * as parser from './parser';
+import { createError, isType, RestfulErrorType } from './utils';
 
-const parseBodyData = (type: string, body: string) => {
-    let data;
+export interface BodyData {
+    [key: string]: any;
+}
 
-    switch (type.toLowerCase()) {
-        case 'application/x-www-form-urlencoded':
-            data = parse(body);
-            break;
-        case 'application/json':
-            try {
-                data = body === "" ? {} : JSON.parse(body);
-            } catch (error) {
-                data = createError({
-                    type: RestfulErrorType.REQUEST,
-                    message: error.message,
-                }, parseBodyData);
-            }
-            break;
-        default:
-            data = createError({
-                type: RestfulErrorType.REQUEST,
-                message: `This request "Content-Type": "${type}" is not supported.`,
-                statusCode: 403
-            }, parseBodyData);
+export interface RequestData {
+    data: BodyData;
+    rawData: any;
+}
+
+const NO_BODY_METHODS = ['GET', 'DELETE'];
+
+function getParser(contentType: ContentType) {
+    if (contentType.type === 'text') {
+        return parser.textParser;
     }
 
-    return data;
-};
+    if (contentType.subType === 'json') {
+        return parser.jsonParser;
+    }
 
-export const requestParse = (req: IncomingMessage) => {
-    return new Promise((reject, reslove) => {
-        if (req.method === 'GET') {
-            const url = decodeURIComponent(req.url);
-            const index = url.indexOf('?');
+    if (contentType.subType === 'x-www-form-urlencoded') {
+        return parser.urlencodeParser;
+    }
 
-            const queryStr = index === -1 ? '' : url.substr(index + 1);
-            const data = parse(queryStr);
+    return parser.rawParser;
+}
 
-            reject(data);
-        } else {
-            let contentType: string = req.headers['content-type'].match(/\b(\w+)\/(\w+)\b/);
-            if (contentType) {
-                contentType = contentType[0];
+export const requestParse = (req: IncomingMessage): Promise<RequestData> => {
+    const { url, method, headers } = req;
+    const query = parser.queryParser(url);
+
+    return new Promise((resolve, reject) => {
+        if (NO_BODY_METHODS.indexOf(method) === -1) {
+            let body = '';
+            const contentType = contentTypeParser(headers['content-type']);
+            const bodyParser = getParser(contentType);
+
+            req.on('data', onData);
+            req.on('error', onError);
+            req.on('end', onEnd);
+
+            function onData(chunk) {
+                body += chunk;
             }
 
-            const body: Buffer[] = [];
+            function onError(err) {
+                reject(createError({
+                    type: RestfulErrorType.REQUEST,
+                    message: err.message,
+                }, requestParse));
+            }
 
-            req.on('data', (chunk) => {
-                body.push(chunk as Buffer);
-            }).on('end', () => {
-                const bodyData = parseBodyData(contentType, body.toString());
+            function onEnd() {
+                bodyParser(body, (err, data) => {
+                    if (err) {
+                        reject(createError({
+                            type: RestfulErrorType.REQUEST,
+                            message: err.message,
+                        }, requestParse));
+                    } else {
+                        let rawData = null;
 
-                if (bodyData instanceof RestfulError) {
-                    throw bodyData;
-                } else {
-                    reject(bodyData);
-                }
+                        if (isType(data, 'object')) {
+                            data = Object.assign(query, data);
+                        } else {
+                            rawData = data;
+                            data = query;
+                        }
+                        resolve({ data, rawData });
+                    }
+                });
+            }
+        } else {
+            resolve({
+                data: query,
+                rawData: null
             });
         }
     });

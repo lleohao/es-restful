@@ -1,83 +1,87 @@
 # es-restful
 > easy & simple nodejs restful server framework
-
-用于快速构建 restful 服务器的框架, 基于typescript开发
+>
+> 用于快速构建 restful 服务器的框架, 基于Typescript开发
 
 
 
 ## 特性
 
-* 基于typescript开发
-* API简单, 可以快速上手
-* 源码也简单, 可以随意扩展
+* 以资源（resource）为核心的设计模式，简介、高效的开发restful服务器
+* 支持动态路由, 根据不同的请求执行对应的处理逻辑
+* 完善的参数处理，帮助开发者从参数的验证、转换中摆脱出来
+* 可作为Express中间件使用
+* 基于Typescript开发，编码时有完善的自动提示
 
 
 
 
 
-## 快速上手
+## 快速入门
+### 安装
 
-1. 安装 `npm install es-restful`
+1. 使用`npm`安装 `npm install es-restful --save`
 
-2. 编写服务器
-
-   ```javascript
-   import { Restful, Resource } from 'es-restful';
-
-   const api = new Restful();
-   // 声明一个resource类
-   class SayHello extends Resource {
-       get({name}) {
-         	return {
-           	    data: `hello ${name}.`
-            };
-       }
-   }
-
-   api.addSource(SayHello, '/hello/<name>');
-   api.start();
-   ```
-
-3. 测试结果
-
-   ```curl
-   curl localhost:5050/hello/lleohao ==> hello lleohao
-   ```
-
-
-> 阅读[快速指南](//lleohao.github.io/restful/#/guide)可以更快上手
+2. 使用`yarn`安装 `yarn add es-restful`
 
 
 
-## 更完整的例子, 构建一个 todos 服务器
+
+### 一个最小的API服务器
+
+```javascript
+import { Resource, Restful } from 'es-restful';
+
+const api = new Restful();
+// 声明一个resource类
+class SayHello extends Resource {
+    get(end, { name }) {
+        end({
+            data: `hello ${name}`
+        });
+    }
+}
+
+api.addSource(SayHello, '/hello/<name>');
+
+api.start({ debug: true });
+```
+
+将上述代码保存为`api.ts`并使用[ts-node](https://github.com/TypeStrong/ts-node)来执行这个文件。
+
+需要注意的是这里我们开启了调试模式，这个模式下可以查看到服务器请求情况。调式模式绝不能在生产模式中开启。
+
+```
+$ ts-node app.ts
+The server is running localhost:5050
+```
+
+现在通过`curl`测试一下服务器
+
+```shell
+$ curl http://localhost:5050/hello/lleohao
+{"data":"hello lleohao"}
+```
+
+
+
+### 更完整的例子, 构建一个代办事项应用程序的服务器
+
 
 > 代码在 example 文件夹下, 运行前需要先编译
 
 ```javascript
-import { Parser, Restful, Resource } from '../lib/index';
+import { ReqParams, Resource, Restful } from 'es-restful';
 
 const api = new Restful();
-
-interface TodoItem {
-    id: number;
-    title: string;
-    completed: boolean;
-}
-
-let TODOS: TodoItem[] = [{
+const TODOS = [{
     id: 0,
-    title: 'init todo',
+    title: 'todo-0',
     completed: false
 }];
 let COUNT_ID = 0;
 
-
-/**
- * 
- * 
- * @param {number} todoId
- */
-let indexOf = function (todoId: number) {
+const indexOf = (todoId: number) => {
     let index, len = TODOS.length;
     for (index = 0; index < len; index++) {
         if (TODOS[index].id === todoId) {
@@ -92,125 +96,108 @@ let indexOf = function (todoId: number) {
     }
 };
 
-
 class Todo extends Resource {
-    get({todoId}) {
+    get(render, { todoId }) {
         todoId = parseInt(todoId);
         let item = TODOS.filter((item) => {
             return item.id === todoId;
-        });
+        })
 
         if (item.length === 0) {
-            return {
-                data: `The item for the id:${todoId} does not exist`,
-                code: 404
-            }
+            render(`The item for the id:${todoId} does not exist`, 404);
         } else {
-            return {
-                data: item[0]
-            }
+            render(item[0]);
         }
     }
 
-    delete({todoId}) {
+    delete(render, { todoId }) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return {
-                data: `The item for the id:${todoId} does not exist`,
-                code: 404
-            }
+
+            render(`The item for the id:${todoId} does not exist`, 404);
         } else {
-            TODOS.splice(index, 1);
-            return {
-                data: 'success'
-            }
+            setTimeout(() => {
+                TODOS.splice(index, 1);
+                render('success');
+            }, 10)
         }
     }
 
-    put({todoId}) {
+    put(render, { todoId }, { completed }) {
         todoId = parseInt(todoId);
         let index = indexOf(todoId);
 
         if (index === -1) {
-            return {
-                data: `The item for the id:${todoId} does not exist`,
-                code: 404
-            }
+
+            render(`The item for the id:${todoId} does not exist`, 404)
         } else {
-            TODOS[index].completed = !TODOS[index].completed;
-            return {
-                data: 'success'
-            }
+            TODOS[index].completed = completed;
+            render('success');
         }
     }
 }
 
+const postParams = new ReqParams();
+postParams.add('title', {
+    required: true,
+    type: 'string'
+});
 class TodoList extends Resource {
-    parser: Parser;
-
-    constructor () {
-        super();
-        this.parser = new Parser();
-        this.parser.addParam('title', {
-            required: true,
-            type: 'string'
-        });
+    get(render) {
+        render(TODOS);
     }
 
-    get() {
-        return {
-            data: TODOS
-        };
-    }
+    @Resource.addParser(postParams)
+    post(render, { title }) {
+        const item = {
+            id: ++COUNT_ID,
+            title: title,
+            completed: false
 
-    @Resource.async()
-    @Resource.addParser(this.parser)
-    post({title}, _return) {
-        setTimeout(() => {
-            let item = {
-                id: ++COUNT_ID,
-                title: title,
-                completed: false
-
-            };
-            TODOS.push(item);
-            _return({
-                data: item
-            });
-        }, 1000)
+        }
+        TODOS.push(item);
+        render(item);
     }
 }
 
-api.addSource(TodoList, '/todos');
-api.addSource(Todo, '/todos/<todoId>');
+api.addSource(TodoList, '/todos')
+api.addSource(Todo, '/todos/<todoId>')
 
 api.start({ debug: true });
 ```
+
+
 
 测试结果
 
 ```curl
 // 获取所有列表
 curl localhost:5050/todos 
-{"code":200,"message":"success","data":[{"id":0,"title":"init todo","completed":false}]}
+[{"id":0,"title":"todo-0","completed":false}]
 
 // 获取指定id=0的todo详情
 curl localhost:5050/todos/0
-{"code":200,"message":"success","data":{"id":0,"title":"init todo","completed":false}}
+{"id":0,"title":"todo-0","completed":false}
 
 // 新建 todo
-curl -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -H "Postman-Token: 3934a3b3-58b2-223 4-30be-6b213c722f23" -d '{ "title": "hh" }' http://localhost:5050/todos
-{"code":200,"message":"success","data":{"id":1,"title":"hh","completed":false}}
+curl -X POST \
+  http://localhost:5050/todos \
+  -H "Content-Type: application/json" \
+  -d '{ "title": "add todo" }' 
+{"id":1,"title":"add todo","completed":false}
 
 // 删除id=0的todo
 curl -X DELETE localhost:5050/todos/0
-{"code":200,"message":"success","data":"success"}
+{"data":"success"}
 
 // 更新id=1的todo状态
-curl -X PUT localhost:5050/todos/1
-{"code":200,"message":"success","data":"success"}
+curl -X PUT \
+  http://localhost:5050/todos/1 \
+  -H 'content-type: application/json' \
+  -d '{"completed":true}'
+{"data":"success"}
 ```
 
-更详细的功能可以查阅[快速指南](//lleohao.github.io/restful/#/guide)
+更详细的功能可以查阅[快速指南](/zh-cn/guide)

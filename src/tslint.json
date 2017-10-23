@@ -3,6 +3,9 @@
     "extends": [
         "tslint:recommended"
     ],
+    "exclude": [
+        "app.ts"
+    ],
     "jsRules": {},
     "rules": {
         "no-trailing-whitespace": [

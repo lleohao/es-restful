@@ -1,4 +1,5 @@
-- [快速入门](zh-cn/)
+- [新手入门](zh-cn/)
+- [快速指南](zh-cn/guide)
+- [动态路由](zh-cn/route)
 - [请求解析](zh-cn/reqparams)
-- [实例](zh-cn/guide)
 - [API文档](zh-cn/api/)

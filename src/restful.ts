@@ -1,4 +1,4 @@
-import { createServer, IncomingMessage, Server, ServerResponse, } from 'http';
+import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 
 import { CORSConfig } from './helper/cors';
 import { ResponseHandle, ResponseOption } from './helper/response';
@@ -8,7 +8,7 @@ import { Resource } from './resource';
 import { Router } from './router';
 import { createError, isType, RestfulErrorType } from './utils';
 
-export interface RestfulContructonOption extends ResponseOption { }
+export interface RestfulContructonOption extends ResponseOption {}
 
 export interface ResultfulRunOption {
     debug?: boolean;
@@ -16,7 +16,9 @@ export interface ResultfulRunOption {
     hostname?: string;
 }
 
-export interface RestfulOption extends RestfulContructonOption, ResultfulRunOption { }
+export interface RestfulOption
+    extends RestfulContructonOption,
+        ResultfulRunOption {}
 
 const defaultOptions = {
     port: 5050,
@@ -38,7 +40,7 @@ export class Restful {
 
     private requestHandle(inside = true, next?: () => void) {
         const res = this.responseHandle;
-        const generateEnd = (response) => {
+        const generateEnd = response => {
             return (data: any, code = 200, headers = {}) => {
                 res.finish(response, data, code, headers);
             };
@@ -58,7 +60,11 @@ export class Restful {
 
             if (resource === null) {
                 if (inside) {
-                    res.finish(response, `This path: "${request.url}" does not have a resource.`, 404);
+                    res.finish(
+                        response,
+                        `This path: "${request.url}" does not have a resource.`,
+                        404
+                    );
                 } else if (next) {
                     next();
                 }
@@ -72,7 +78,10 @@ export class Restful {
                     const requestData = await requestParse(request);
                     let result;
                     if (!requestData.rawData && methodFunction['params']) {
-                        result = params.validation(methodFunction['params'].getParams(), requestData.data);
+                        result = params.validation(
+                            methodFunction['params'].getParams(),
+                            requestData.data
+                        );
                     } else {
                         result = requestData.rawData;
                     }
@@ -87,31 +96,47 @@ export class Restful {
                 } catch (err) {
                     switch (err.type) {
                         case RestfulErrorType.PARAMS:
-                            res.finish(response, {
-                                code: err.code,
-                                message: err.message
-                            }, 400);
+                            res.finish(
+                                response,
+                                {
+                                    code: err.code,
+                                    message: err.message
+                                },
+                                400
+                            );
                             break;
                         case RestfulErrorType.REQUEST:
-                            res.finish(response, `Request parse throws a error: ${err.message}.`, err.statusCode);
+                            res.finish(
+                                response,
+                                `Request parse throws a error: ${err.message}.`,
+                                err.statusCode
+                            );
                             break;
                     }
                 }
             } else {
-                res.finish(response, `This path: "${request.url}", method: "${request.method}" is undefined.`, 403);
+                res.finish(
+                    response,
+                    `This path: "${request.url}", method: "${
+                        request.method
+                    }" is undefined.`,
+                    403
+                );
             }
         };
     }
 
-    public add<T extends Resource>(R: { new(): T }, path: string) {
+    public add<T extends Resource>(R: { new (): T }, path: string) {
         this.addSource(R, path);
     }
 
-    public addSource<T extends Resource>(R: { new(): T }, path: string) {
+    public addSource<T extends Resource>(R: { new (): T }, path: string) {
         this.router.addRoute(path, R);
     }
 
-    public addSourceMap<T extends Resource>(resourceMap: { [path: string]: { new(): T } }) {
+    public addSourceMap<T extends Resource>(resourceMap: {
+        [path: string]: { new (): T };
+    }) {
         for (const path in resourceMap) {
             this.addSource(resourceMap[path], path);
         }
@@ -121,9 +146,12 @@ export class Restful {
         this.options = Object.assign({}, this.options, options);
 
         if (this.router.isEmpty()) {
-            throw createError({
-                message: 'There can not be any proxied resources.'
-            }, this.start);
+            throw createError(
+                {
+                    message: 'There can not be any proxied resources.'
+                },
+                this.start
+            );
         }
         this.server = createServer();
         this.server.on('request', this.requestHandle(true));
@@ -149,14 +177,14 @@ export class Restful {
 
     /**
      * For express middleware
-     * 
-     * @returns 
+     *
+     * @returns
      * @example
      * const app = express();
      * const api = new Restful();
      * app.use(api.ues());
      */
-    public use(express) {
+    public use() {
         return (req, res, next: () => void) => {
             this.requestHandle(false, next)(req, res);
         };

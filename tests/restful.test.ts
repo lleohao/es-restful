@@ -1,6 +1,5 @@
 import { get, request, createServer, Server } from 'http';
-import { Restful, ReqParams, Resource } from '../lib';
-import should = require('should');
+import { Restful, ReqParams, Resource } from '../src';
 
 describe('Restful', () => {
   describe('API', () => {
@@ -8,9 +7,9 @@ describe('Restful', () => {
 
     it('can throw error with not add resource', () => {
       const api = new Restful();
-      should.throws(() => {
+      expect(() => {
         api.start({ port: 5050 });
-      }, /There can not be any proxied resources\./);
+      }).toThrow(/There can not be any proxied resources\./);
     });
 
     class Todos extends Resource {
@@ -21,6 +20,7 @@ describe('Restful', () => {
 
     const parser = new ReqParams();
     parser.add('title');
+
     class Demo extends Resource {
       @Resource.addParser(parser)
       post(render, { title }) {
@@ -34,14 +34,14 @@ describe('Restful', () => {
     api.start({ port: 5050 });
 
     it('can throws error with add same path', () => {
-      should.throws(() => {
+      expect(() => {
         api.addSource(Todos, '/todos');
-      });
+      }).toThrow();
     });
 
     it('can start server', done => {
       get('http://localhost:5050/todos', res => {
-        should(res.statusCode).be.eql(200);
+        expect(res.statusCode).toEqual(200);
         done();
       });
     });
@@ -58,7 +58,7 @@ describe('Restful', () => {
           }
         },
         res => {
-          should(res.statusCode).be.eql(200);
+          expect(res.statusCode).toEqual(200);
           done();
         }
       );
@@ -66,7 +66,7 @@ describe('Restful', () => {
       req.end();
     });
 
-    after(() => {
+    afterAll(() => {
       api.stop();
     });
 
@@ -82,6 +82,7 @@ describe('Restful', () => {
           render('restful request2');
         }
       }
+
       const api = new Restful();
 
       api.addSourceMap({
@@ -97,7 +98,7 @@ describe('Restful', () => {
             path: '/test1'
           },
           res => {
-            should(res.statusCode).be.eql(200);
+            expect(res.statusCode).toEqual(200);
             done();
           }
         );
@@ -110,13 +111,13 @@ describe('Restful', () => {
             path: '/test2'
           },
           res => {
-            should(res.statusCode).be.eql(200);
+            expect(res.statusCode).toEqual(200);
             done();
           }
         );
       });
 
-      after(() => {
+      afterAll(() => {
         api.stop();
       });
     });
@@ -124,6 +125,7 @@ describe('Restful', () => {
 
   describe('access undefined resource', () => {
     const api = new Restful();
+
     class Books extends Resource {
       get(render, { id, page }) {
         render({
@@ -132,6 +134,7 @@ describe('Restful', () => {
         });
       }
     }
+
     api.addSource(Books, '/books/<id>/<page>');
     api.start({ port: 5054 });
 
@@ -143,7 +146,7 @@ describe('Restful', () => {
           method: 'post'
         },
         res => {
-          should(res.statusCode).be.eql(403);
+          expect(res.statusCode).toEqual(403);
           done();
         }
       );
@@ -157,14 +160,14 @@ describe('Restful', () => {
           path: '/book'
         },
         res => {
-          should(res.statusCode).be.eql(404);
+          expect(res.statusCode).toEqual(404);
           done();
         }
       );
       req.end();
     });
 
-    after(() => {
+    afterAll(() => {
       api.stop();
     });
   });
@@ -199,7 +202,7 @@ describe('Restful', () => {
               data.push(chunk);
             })
             .on('end', () => {
-              should(JSON.parse(data.toString())).be.eql('restful request');
+              expect(JSON.parse(data.toString())).toEqual('restful request');
               server.close();
               done();
             });

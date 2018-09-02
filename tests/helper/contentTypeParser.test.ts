@@ -1,5 +1,4 @@
 import { contentTypeParser } from '../../lib/helper';
-import should = require('should');
 
 describe('contentTypeParser', () => {
   const cases = [
@@ -111,7 +110,7 @@ describe('contentTypeParser', () => {
 
   cases.forEach(_case => {
     it(_case.c, () => {
-      should(contentTypeParser(_case.c)).be.deepEqual(_case.e);
+      expect(contentTypeParser(_case.c)).toEqual(_case.e);
     });
   });
 });

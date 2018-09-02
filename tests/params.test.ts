@@ -1,6 +1,5 @@
-import should = require('should');
 import p from '../lib/params';
-import { ReqParams, StatusCode } from '../lib';
+import { ReqParams, StatusCode } from '../src';
 
 describe('ReqParse', () => {
   describe('API', () => {
@@ -14,7 +13,7 @@ describe('ReqParse', () => {
       parser.add('name');
       parser.add('age', { type: 'number' });
 
-      should(parser.getParams()).be.eql({
+      expect(parser.getParams()).toEqual({
         name: {
           defaultVal: undefined,
           nullabled: true,
@@ -38,12 +37,12 @@ describe('ReqParse', () => {
           type: 'number'
         }
       });
-      should.throws(() => {
+      expect(() => {
         parser.add('name');
-      }, /The parameter name: name already exists\./);
-      should.throws(() => {
+      }).toThrow(/The parameter name: name already exists\./);
+      expect(() => {
         parser.add('zh-name', { dset: 'name' });
-      }, /The parameter name: zh-name, dtet: name already exists./);
+      },).toThrow(/The parameter name: zh-name, dtet: name already exists./);
     });
 
     it('remove test', () => {
@@ -52,7 +51,7 @@ describe('ReqParse', () => {
       parser.add('address');
 
       parser.remove('name');
-      should(parser.getParams()).be.eql({
+      expect(parser.getParams()).toEqual({
         address: {
           defaultVal: undefined,
           nullabled: true,
@@ -78,7 +77,7 @@ describe('ReqParse', () => {
       });
 
       parser.remove(['age', 'address', 'no']);
-      should(parser.getParams()).be.eql({});
+      expect(parser.getParams()).toEqual({});
     });
 
     it('inherit test', () => {
@@ -90,7 +89,7 @@ describe('ReqParse', () => {
       childrenParser.inherit(baseParser);
       childrenParser.add('operate');
 
-      should(childrenParser.getParams()).be.eql({
+      expect(childrenParser.getParams()).toEqual({
         username: {
           defaultVal: undefined,
           nullabled: true,
@@ -126,12 +125,12 @@ describe('ReqParse', () => {
         }
       });
 
-      should.throws(() => {
+      expect(() => {
         childrenParser.add('username');
-      }, /The parameter name: username already exists\./);
+      }).toThrow(/The parameter name: username already exists\./);
 
       childrenParser.remove('username');
-      should(childrenParser.getParams()).be.eql({
+      expect(childrenParser.getParams()).toEqual({
         password: {
           defaultVal: undefined,
           nullabled: true,
@@ -155,7 +154,7 @@ describe('ReqParse', () => {
           dset: null
         }
       });
-      should(baseParser.getParams()).be.eql({
+      expect(baseParser.getParams()).toEqual({
         username: {
           defaultVal: undefined,
           nullabled: true,
@@ -205,55 +204,55 @@ describe('ReqParse', () => {
       {
         c: { name: 'type-number', o: { type: 'number' } },
         i: {},
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-number: undefined} type is not "number".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-number: undefined} type is not "number".' }
       },
       {
         c: { name: 'type-number', o: { type: 'number' } },
         i: { 'type-number': '1' },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-number: "1"} type is not "number".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-number: "1"} type is not "number".' }
       },
       { c: { name: 'type-number', o: { type: 'number' } }, i: { 'type-number': 1 }, e: { 'type-number': 1 } },
       {
         c: { name: 'type-string', o: { type: 'string' } },
         i: {},
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-string: undefined} type is not "string".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-string: undefined} type is not "string".' }
       },
       {
         c: { name: 'type-string', o: { type: 'string' } },
         i: { 'type-string': 1 },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-string: 1} type is not "string".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-string: 1} type is not "string".' }
       },
       { c: { name: 'type-string', o: { type: 'string' } }, i: { 'type-string': '1' }, e: { 'type-string': '1' } },
       {
         c: { name: 'type-boolean', o: { type: 'boolean' } },
         i: {},
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-boolean: undefined} type is not "boolean".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-boolean: undefined} type is not "boolean".' }
       },
       {
         c: { name: 'type-boolean', o: { type: 'boolean' } },
         i: { 'type-boolean': 'false' },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-boolean: "false"} type is not "boolean".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-boolean: "false"} type is not "boolean".' }
       },
       {
         c: { name: 'type-boolean', o: { type: 'boolean' } },
         i: { 'type-boolean': '' },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-boolean: ""} type is not "boolean".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-boolean: ""} type is not "boolean".' }
       },
       { c: { name: 'type-boolean', o: { type: 'boolean' } }, i: { 'type-boolean': true }, e: { 'type-boolean': true } },
       {
         c: { name: 'type-object', o: { type: 'object' } },
         i: {},
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-object: undefined} type is not "object".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-object: undefined} type is not "object".' }
       },
       {
         c: { name: 'type-object', o: { type: 'object' } },
         i: { 'type-object': 'false' },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-object: "false"} type is not "object".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-object: "false"} type is not "object".' }
       },
       {
         c: { name: 'type-object', o: { type: 'object' } },
         i: { 'type-object': [1, 2] },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-object: [1,2]} type is not "object".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-object: [1,2]} type is not "object".' }
       },
       {
         c: { name: 'type-object', o: { type: 'object' } },
@@ -263,17 +262,17 @@ describe('ReqParse', () => {
       {
         c: { name: 'type-array', o: { type: 'array' } },
         i: {},
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-array: undefined} type is not "array".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-array: undefined} type is not "array".' }
       },
       {
         c: { name: 'type-array', o: { type: 'array' } },
         i: { 'type-array': 'false' },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-array: "false"} type is not "array".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-array: "false"} type is not "array".' }
       },
       {
         c: { name: 'type-array', o: { type: 'array' } },
         i: { 'type-array': { a: '2' } },
-        err: { code: StatusCode.TYPE_ERRPR, message: 'The {type-array: [object Object]} type is not "array".' }
+        err: { code: StatusCode.TYPE_ERROR, message: 'The {type-array: [object Object]} type is not "array".' }
       },
       { c: { name: 'type-array', o: { type: 'array' } }, i: { 'type-array': [1, 2] }, e: { 'type-array': [1, 2] } },
       { c: { name: 'dset', o: { dset: 'dset2' } }, i: { dset: '1' }, e: { dset2: '1' } },
@@ -344,7 +343,7 @@ describe('ReqParse', () => {
         i: { choices: 1 },
         err: {
           code: StatusCode.CHOICES_RUN_ERROR,
-          message: 'Choises function processing {choices: 1} throws a error: Error: error.'
+          message: 'Choises function processing {choices: 1} throws an error: error.'
         }
       },
       {
@@ -360,7 +359,7 @@ describe('ReqParse', () => {
         err: {
           code: StatusCode.COVER_ERROR,
           message:
-            'Corveration function processing {coveration: "11"} throws a error: TypeError: input.join is not a function.'
+            'Corveration function processing {coveration: "11"} throws an error: input.join is not a function.'
         }
       },
       {
@@ -382,11 +381,11 @@ describe('ReqParse', () => {
         parser.add(_case.c.name, _case.c.o);
 
         if (_case['err']) {
-          should.throws(() => {
+          expect(() => {
             p.validation(parser.getParams(), _case.i);
-          }, _case['err'].message);
+          }, ).toThrow(_case['err'].message);
         } else {
-          should(p.validation(parser.getParams(), _case.i)).be.eql(_case['e']);
+          expect(p.validation(parser.getParams(), _case.i)).toEqual(_case['e']);
         }
       });
     });

@@ -1,5 +1,4 @@
-import * as should from 'should';
-import { isType } from '../lib/utils';
+import { isType } from '../src/utils';
 
 describe('utils.ts test', () => {
   const cases = [
@@ -36,7 +35,7 @@ describe('utils.ts test', () => {
 
   cases.forEach(_case => {
     it(_case.v + ': ' + _case.type, () => {
-      should(isType(_case.v, _case.type)).be.eql(_case.e);
+      expect(isType(_case.v, _case.type)).toEqual(_case.e);
     });
   });
 });

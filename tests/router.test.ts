@@ -1,6 +1,5 @@
-import { Router } from '../lib/router';
-import { Resource } from '../lib/resource';
-import should = require('should');
+import { Router } from '../src/router';
+import { Resource } from '../src';
 
 const nullResult = {
   urlPara: null,
@@ -82,7 +81,8 @@ const cases = [
   }
 ];
 
-class TestResource extends Resource {}
+class TestResource extends Resource {
+}
 
 class ThrowErrResource extends Resource {
   constructor() {
@@ -102,53 +102,53 @@ describe('Router', () => {
   });
 
   it('add two same path resource', () => {
-    should.throws(() => {
+    expect(() => {
       router.addRoute('/same', TestResource);
       router.addRoute('/same', TestResource);
-    }, /Source path: \/same used twice./);
+    }).toThrow(/Source path: \/same used twice./);
   });
 
   it('add will throw error resource', () => {
     const router = new Router();
-    should.throws(() => {
+    expect(() => {
       router.addRoute('/test', ThrowErrResource);
-    }, /Instance Resource: "ThrowErrResource" throws an error: "Throw constructor error\."\./);
+    }).toThrow(/Instance Resource: "ThrowErrResource" throws an error: "Throw constructor error\."\./);
   });
 
   it('add two same varibale in path', () => {
     const router = new Router();
 
-    should.throws(() => {
+    expect(() => {
       router.addRoute('/same/<same>/<same>', TestResource);
-    }, /Url variable name: "same" used twice\./);
-    should.throws(() => {
+    }).toThrow(/Url variable name: "same" used twice\./);
+    expect(() => {
       router.addRoute('/same1/<int:same>/<same>', TestResource);
-    }, /Url variable name: "same" used twice\./);
-    should.throws(() => {
+    }).toThrow(/Url variable name: "same" used twice\./);
+    expect(() => {
       router.addRoute('/same2/<int:same>/<str:same>', TestResource);
-    }, /Url variable name: "same" used twice\./);
+    }).toThrow(/Url variable name: "same" used twice\./);
   });
 
   it('add error path', () => {
     const router = new Router();
 
-    should.throws(() => {
+    expect(() => {
       router.addRoute('/error/>', TestResource);
-    }, /Malformed url rule: \/error\/> \./);
-    should.throws(() => {
+    }).toThrow(/Malformed url rule: \/error\/> \./);
+    expect(() => {
       router.addRoute('/error<', TestResource);
-    }, /Malformed url rule: \/error< \./);
-    should.throws(() => {
+    }).toThrow(/Malformed url rule: \/error< \./);
+    expect(() => {
       router.addRoute('/error/<name<>>', TestResource);
-    }, /Malformed url rule: \/error\/<name<>> \./);
+    }).toThrow(/Malformed url rule: \/error\/<name<>> \./);
   });
 
   it('add undefined converter type', () => {
     const router = new Router();
 
-    should.throws(() => {
+    expect(() => {
       router.addRoute('/error/<string:s>', TestResource);
-    }, /Converter type: 'string' is undefined\./);
+    }).toThrow( /Converter type: 'string' is undefined\./);
   });
 
   describe('Parse', () => {
@@ -161,10 +161,10 @@ describe('Router', () => {
           it(_c, () => {
             let result = router.getResource(_c);
             if (c.e[index] !== null) {
-              should(result.urlPara).be.eql(c.e[index]);
-              should(result.resource).be.instanceOf(TestResource);
+              expect(result.urlPara).toEqual(c.e[index]);
+              expect(result.resource).toBeInstanceOf(TestResource);
             } else {
-              should(result).be.eql(nullResult);
+              expect(result).toEqual(nullResult);
             }
           });
         });

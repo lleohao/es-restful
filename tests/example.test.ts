@@ -1,6 +1,5 @@
 import { get, request } from 'http';
-import { Restful, ReqParams, Resource } from '../lib';
-import should = require('should');
+import { Restful, ReqParams, Resource } from '../src';
 
 interface TodoItem {
   id: number;
@@ -11,7 +10,7 @@ interface TodoItem {
 describe('Example test', () => {
   const api = new Restful();
 
-  before(() => {
+  beforeAll(() => {
     const TODO: TodoItem[] = [
       {
         id: 0,
@@ -106,7 +105,7 @@ describe('Example test', () => {
     api.start({ port: 5051 });
   });
 
-  after(() => {
+  afterAll(() => {
     api.stop();
   });
 
@@ -125,7 +124,7 @@ describe('Example test', () => {
         });
         res.on('end', () => {
           data = JSON.parse(data.toString());
-          should(data).be.eql([
+          expect(data).toEqual([
             {
               id: 0,
               title: 'todo1',
@@ -146,7 +145,7 @@ describe('Example test', () => {
         });
         res.on('end', () => {
           data = JSON.parse(data.toString());
-          should(data).be.eql({
+          expect(data).toEqual({
             id: 1,
             title: 'add todo',
             completed: false
@@ -185,7 +184,7 @@ describe('Example test', () => {
           });
           res.on('end', () => {
             data = JSON.parse(data.toString());
-            should(data).be.eql({
+            expect(data).toEqual({
               id: 1,
               title: 'add todo',
               completed: false
@@ -213,7 +212,7 @@ describe('Example test', () => {
           });
           res.on('end', () => {
             data = JSON.parse(data.toString());
-            should(data).be.eql('success');
+            expect(data).toEqual('success');
             done();
           });
         }
@@ -240,7 +239,7 @@ describe('Example test', () => {
           });
           res.on('end', () => {
             data = JSON.parse(data.toString());
-            should(data).be.eql('success');
+            expect(data).toEqual('success');
             done();
           });
         }
@@ -264,7 +263,7 @@ describe('Example test', () => {
           });
           res.on('end', () => {
             data = JSON.parse(data.toString());
-            should(data).be.eql([
+            expect(data).toEqual([
               {
                 id: 0,
                 title: 'todo1',

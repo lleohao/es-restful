@@ -1,8 +1,5 @@
 import { createServer, request } from 'http';
-import { requestParse } from '../lib/requestParse';
-import should = require('should');
-
-should['config'].checkProtoEql = false;
+import { requestParse } from '../src/requestParse';
 
 describe('RequestParse', () => {
   const haveBodyCases = {
@@ -156,7 +153,7 @@ describe('RequestParse', () => {
         const data = await requestParse(req);
         res.end();
 
-        should(data).be.deepEqual(e);
+        expect(data).toEqual(e);
         done();
         server.close();
       });
@@ -176,7 +173,7 @@ describe('RequestParse', () => {
           it(`path: ${path}, header: ${h}`, done => {
             let server = createServer(async (req, res) => {
               const data = await requestParse(req);
-              should(data).be.eql(e);
+              expect(data).toEqual(e);
 
               done();
               res.end();

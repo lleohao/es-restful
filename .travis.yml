@@ -1,8 +1,6 @@
 language: node_js
 node_js:
     - "8"
-before_script:
-    - npm install -g mocha should ts-node istanbul coveralls
 script: npm test
 after_success:
     - npm run cover
